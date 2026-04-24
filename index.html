@@ -522,7 +522,8 @@
         <p id="loginError" class="mt-3 text-red-400 font-bold opacity-0">4桁の数字を入力してください</p>
         <p class="mt-5 text-sm text-gray-300 text-center max-w-md leading-relaxed">
             ログイン説明：好きな4桁の数字を自分専用コードとして使ってください。<br>
-            同じコードでログインすると、この端末・このブラウザに保存されたハイスコアを続けて使えます。
+            同じコードでログインすると、一度ブラウザを閉じても、この端末・このブラウザに保存されたハイスコアを続けて使えます。<br>
+            ※「世界のハイスコア」は、このゲーム全体で一番高いスコアです。サーバーなし版なので、このブラウザ内で保存されます。
         </p>
         <button type="button" id="loginBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer mt-6 pointer-events-auto">LOGIN & START</button>
     </div>
@@ -538,7 +539,8 @@
         <h2 class="text-6xl font-bold mb-2 text-white shadow-[0_0_20px_red]">GAME OVER</h2>
         <p class="text-2xl mb-6">生存時間: <span id="finalTime" class="font-bold text-cyan-300"></span></p>
         <p class="text-xl mb-2">最終スコア: <span id="finalScore" class="font-bold text-yellow-300"></span></p>
-        <p class="text-xl mb-2">今までのハイスコア: <span id="finalHighScore" class="font-bold text-cyan-300"></span></p>
+        <p class="text-xl mb-2">あなたのハイスコア: <span id="finalHighScore" class="font-bold text-cyan-300"></span></p>
+        <p class="text-xl mb-2">世界のハイスコア: <span id="finalWorldHighScore" class="font-bold text-pink-300"></span></p>
         <p class="text-sm mb-8 text-gray-300">ログインコード: <span id="finalLoginCode" class="font-bold text-white"></span></p>
         <button type="button" id="restartBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer pointer-events-auto">RETRY</button>
     </div>
@@ -4403,13 +4405,29 @@
             return Number(localStorage.getItem(key) || 0);
         }
 
+        function getWorldHighScoreKey() {
+            return 'neonSurvivorWorldHighScore';
+        }
+
+        function getSavedWorldHighScore() {
+            return Number(localStorage.getItem(getWorldHighScoreKey()) || 0);
+        }
+
+        function saveWorldHighScoreIfNeeded(finalScore) {
+            const oldWorldHighScore = getSavedWorldHighScore();
+            const newWorldHighScore = Math.max(oldWorldHighScore, finalScore);
+            localStorage.setItem(getWorldHighScoreKey(), String(newWorldHighScore));
+            return newWorldHighScore;
+        }
+
         function saveHighScoreIfNeeded(finalScore) {
             const key = getHighScoreKey();
-            if (!key) return finalScore;
+            const worldHighScore = saveWorldHighScoreIfNeeded(finalScore);
+            if (!key) return { personal: finalScore, world: worldHighScore };
             const oldHighScore = getSavedHighScore();
             const newHighScore = Math.max(oldHighScore, finalScore);
             localStorage.setItem(key, String(newHighScore));
-            return newHighScore;
+            return { personal: newHighScore, world: worldHighScore };
         }
 
         function hideOverlay(el) {
@@ -4565,11 +4583,12 @@
             const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
             
             const finalScoreValue = Math.floor(score);
-            const highScoreValue = saveHighScoreIfNeeded(finalScoreValue);
+            const highScoreValues = saveHighScoreIfNeeded(finalScoreValue);
 
             document.getElementById('finalTime').innerText = `${minutes}:${seconds}`;
             document.getElementById('finalScore').innerText = finalScoreValue;
-            document.getElementById('finalHighScore').innerText = highScoreValue;
+            document.getElementById('finalHighScore').innerText = highScoreValues.personal;
+            document.getElementById('finalWorldHighScore').innerText = highScoreValues.world;
             document.getElementById('finalLoginCode').innerText = currentLoginCode || '未ログイン';
             
             const screen = document.getElementById('gameOverScreen');
