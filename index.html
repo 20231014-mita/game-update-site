@@ -280,6 +280,48 @@
         .fade-enter-active { opacity: 1; transition: opacity 0.3s; pointer-events: auto; }
         .fade-exit { opacity: 1; pointer-events: auto; }
         .fade-exit-active { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+
+
+        /* ===== 完全爆速モード：iPad/Safariタッチ最適化 ===== */
+        html, body, canvas {
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            overscroll-behavior: none;
+        }
+        button, .btn-neon, .speed-btn, label {
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-touch-callout: none !important;
+            user-select: none !important;
+            cursor: pointer !important;
+        }
+        button, .btn-neon {
+            min-width: 96px;
+            min-height: 48px;
+            position: relative;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+        }
+        #startScreen, #loginScreen, #pauseScreen, #gameOverScreen, #levelUpScreen {
+            z-index: 9000 !important;
+        }
+        #startBtn, #loginBtn, #pauseBtn, #resumeBtn, #restartBtn {
+            z-index: 10000 !important;
+            pointer-events: auto !important;
+        }
+        #loginCodeInput {
+            touch-action: manipulation !important;
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+        @media (hover: none) {
+            .btn-neon:hover, .upgrade-card:hover {
+                transform: none !important;
+            }
+        }
+
     </style>
 </head>
 <body class="text-white">
@@ -523,8 +565,7 @@
         <p id="loginError" class="mt-3 text-red-400 font-bold opacity-0">4桁の数字を入力してください</p>
         <p class="mt-5 text-sm text-gray-300 text-center max-w-md leading-relaxed">
             ログイン説明：好きな4桁の数字を自分専用コードとして使ってください。<br>
-            同じコードでログインすると、一度ブラウザを閉じても、この端末・このブラウザに保存されたハイスコアを続けて使えます。<br>
-            ※「世界のハイスコア」は、このゲーム全体で一番高いスコアです。サーバーなし版なので、このブラウザ内で保存されます。
+            同じコードでログインすると、一度ブラウザを閉じても、この端末・このブラウザに保存されたハイスコアを続けて使えます。
         </p>
         <button type="button" id="loginBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer mt-6 pointer-events-auto">LOGIN & START</button>
     </div>
@@ -541,7 +582,6 @@
         <p class="text-2xl mb-6">生存時間: <span id="finalTime" class="font-bold text-cyan-300"></span></p>
         <p class="text-xl mb-2">最終スコア: <span id="finalScore" class="font-bold text-yellow-300"></span></p>
         <p class="text-xl mb-2">あなたのハイスコア: <span id="finalHighScore" class="font-bold text-cyan-300"></span></p>
-        <p class="text-xl mb-2">世界のハイスコア: <span id="finalWorldHighScore" class="font-bold text-pink-300"></span></p>
         <p class="text-sm mb-8 text-gray-300">ログインコード: <span id="finalLoginCode" class="font-bold text-white"></span></p>
         <button type="button" id="restartBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer pointer-events-auto">RETRY</button>
     </div>
@@ -4406,29 +4446,14 @@
             return Number(localStorage.getItem(key) || 0);
         }
 
-        function getWorldHighScoreKey() {
-            return 'neonSurvivorWorldHighScore';
-        }
-
-        function getSavedWorldHighScore() {
-            return Number(localStorage.getItem(getWorldHighScoreKey()) || 0);
-        }
-
-        function saveWorldHighScoreIfNeeded(finalScore) {
-            const oldWorldHighScore = getSavedWorldHighScore();
-            const newWorldHighScore = Math.max(oldWorldHighScore, finalScore);
-            localStorage.setItem(getWorldHighScoreKey(), String(newWorldHighScore));
-            return newWorldHighScore;
-        }
 
         function saveHighScoreIfNeeded(finalScore) {
             const key = getHighScoreKey();
-            const worldHighScore = saveWorldHighScoreIfNeeded(finalScore);
-            if (!key) return { personal: finalScore, world: worldHighScore };
+            if (!key) return finalScore;
             const oldHighScore = getSavedHighScore();
             const newHighScore = Math.max(oldHighScore, finalScore);
             localStorage.setItem(key, String(newHighScore));
-            return { personal: newHighScore, world: worldHighScore };
+            return newHighScore;
         }
 
         function hideOverlay(el) {
@@ -4588,12 +4613,11 @@
             const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
             
             const finalScoreValue = Math.floor(score);
-            const highScoreValues = saveHighScoreIfNeeded(finalScoreValue);
+            const personalHighScore = saveHighScoreIfNeeded(finalScoreValue);
 
             document.getElementById('finalTime').innerText = `${minutes}:${seconds}`;
             document.getElementById('finalScore').innerText = finalScoreValue;
-            document.getElementById('finalHighScore').innerText = highScoreValues.personal;
-            document.getElementById('finalWorldHighScore').innerText = highScoreValues.world;
+            document.getElementById('finalHighScore').innerText = personalHighScore;
             document.getElementById('finalLoginCode').innerText = currentLoginCode || '未ログイン';
             
             const screen = document.getElementById('gameOverScreen');
@@ -5107,6 +5131,7 @@
             if (!element) return;
 
             let locked = false;
+            let lastRunTime = 0;
 
             const run = (e) => {
                 if (e) {
@@ -5114,30 +5139,48 @@
                     e.stopPropagation();
                 }
 
-                if (locked) return;
+                const now = performance.now();
+                if (locked || now - lastRunTime < 80) return;
                 locked = true;
+                lastRunTime = now;
 
-                // 入力欄にカーソルが残っていたら外して、キーボードを閉じる
-                if (document.activeElement && document.activeElement.blur) {
+                if (document.activeElement && document.activeElement !== element && document.activeElement.blur) {
                     document.activeElement.blur();
                 }
 
-                handler(e);
-
-                // 連打だけを少し防ぐ。反応は遅くしない。
-                setTimeout(() => {
-                    locked = false;
-                }, 180);
+                requestAnimationFrame(() => {
+                    handler(e);
+                    setTimeout(() => {
+                        locked = false;
+                    }, 80);
+                });
             };
 
-            // pointerdown が一番早い。これで1回タップで即反応する。
-            element.addEventListener('pointerdown', run, { passive: false });
-            element.addEventListener('touchstart', run, { passive: false });
-            element.addEventListener('click', run);
+            element.addEventListener('pointerdown', run, { passive: false, capture: true });
+            element.addEventListener('touchstart', run, { passive: false, capture: true });
+            element.addEventListener('mousedown', run, { capture: true });
+            element.addEventListener('click', run, { capture: true });
             element.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') run(e);
-            });
+            }, { capture: true });
         }
+
+        function addTurboTouch(element, handler) {
+            if (!element) return;
+            let last = 0;
+            const run = (e) => {
+                const now = performance.now();
+                if (now - last < 80) return;
+                last = now;
+                e.preventDefault();
+                e.stopPropagation();
+                if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+                handler(e);
+            };
+            element.addEventListener('pointerdown', run, { passive: false, capture: true });
+            element.addEventListener('touchstart', run, { passive: false, capture: true });
+        }
+
 
         addPressEvent(document.getElementById('startBtn'), showLoginScreen);
         addPressEvent(document.getElementById('loginBtn'), loginAndStart);
@@ -5151,6 +5194,31 @@
         addPressEvent(document.getElementById('restartBtn'), showLoginScreen);
         addPressEvent(document.getElementById('pauseBtn'), togglePause);
         addPressEvent(document.getElementById('resumeBtn'), togglePause);
+
+
+        // ===== 完全爆速モード：小さいボタン・トグル・スピードボタンも即反応 =====
+        document.querySelectorAll('label, .speed-btn').forEach((el) => {
+            addTurboTouch(el, () => {
+                const input = el.querySelector('input') || el.previousElementSibling;
+                if (input && input.tagName === 'INPUT') {
+                    if (input.type === 'radio') {
+                        input.checked = true;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else if (input.type === 'checkbox') {
+                        input.checked = !input.checked;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        });
+
+        // 入力中以外は、画面タップでキーボードをすぐ閉じる
+        window.addEventListener('pointerdown', (e) => {
+            const tag = e.target && e.target.tagName;
+            if (tag !== 'INPUT' && tag !== 'TEXTAREA' && document.activeElement && document.activeElement.blur) {
+                document.activeElement.blur();
+            }
+        }, { passive: true, capture: true });
 
         // ESCキーでポーズ切り替え
         window.addEventListener('keydown', (e) => {
