@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -4459,7 +4460,8 @@
             const input = document.getElementById('loginCodeInput');
             document.getElementById('loginError').classList.add('opacity-0');
             input.value = currentLoginCode || '';
-            setTimeout(() => input.focus(), 50);
+            // iPadで勝手にキーボードが出ないように、自動フォーカスしない
+            setTimeout(() => input.blur(), 50);
         }
 
         function loginAndStart(e) {
@@ -4470,11 +4472,14 @@
 
             if (!/^\d{4}$/.test(code)) {
                 document.getElementById('loginError').classList.remove('opacity-0');
-                input.focus();
+                // エラー時も自動でキーボードを出さない
+                input.blur();
                 return;
             }
 
             currentLoginCode = code;
+            // スタート直前にキーボードを閉じる
+            input.blur();
             document.getElementById('loginError').classList.add('opacity-0');
 
             hideOverlay(document.getElementById('loginScreen'));
@@ -5095,30 +5100,39 @@
                 isGameLoopScheduled = false;
             }
         }
-
         // イベントリスナー登録
+        // ★ 修正版：ボタンは「押した瞬間」に反応させる。
+        // ★ iPad/Safariでキーボードが勝手に出てボタンを邪魔する問題も防ぐ。
         function addPressEvent(element, handler) {
             if (!element) return;
 
-            let lastPressTime = 0;
+            let locked = false;
+
             const run = (e) => {
                 if (e) {
                     e.preventDefault();
                     e.stopPropagation();
                 }
-                const now = performance.now();
-                if (now - lastPressTime < 250) return;
-                lastPressTime = now;
+
+                if (locked) return;
+                locked = true;
+
+                // 入力欄にカーソルが残っていたら外して、キーボードを閉じる
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
+
                 handler(e);
+
+                // 連打だけを少し防ぐ。反応は遅くしない。
+                setTimeout(() => {
+                    locked = false;
+                }, 180);
             };
 
-            element.addEventListener('pointerdown', (e) => {
-                if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, { passive: false });
-            element.addEventListener('pointerup', run, { passive: false });
+            // pointerdown が一番早い。これで1回タップで即反応する。
+            element.addEventListener('pointerdown', run, { passive: false });
+            element.addEventListener('touchstart', run, { passive: false });
             element.addEventListener('click', run);
             element.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') run(e);
