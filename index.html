@@ -10034,4 +10034,638 @@ body.stable-cooldown-visible #stableCooldownHudFinal {
 })();
 </script>
 
+
+<!-- ===== FINAL FIX 2: 開始画面ジョイスティックを完全置き換え＋進行状況をバージョン共通保存 ===== -->
+<style>
+/* 元の開始画面ジョイスティックトグルを隠す */
+#startScreen label:has(#joystickToggle) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 新しい安定版ジョイスティックトグル */
+#finalStartJoystickControl {
+  width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  margin-top: 4px !important;
+  margin-bottom: 6px !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  position: relative !important;
+  z-index: 2147483600 !important;
+}
+
+#finalStartJoystickSwitch {
+  width: 64px !important;
+  height: 36px !important;
+  border-radius: 999px !important;
+  position: relative !important;
+  flex: 0 0 64px !important;
+  background: rgba(80,95,110,.86) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.45), 0 0 12px rgba(0,255,255,.35) !important;
+  pointer-events: none !important;
+}
+
+#finalStartJoystickSwitch::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  left: 3px;
+  top: 3px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 0 10px rgba(255,255,255,.9), 0 0 18px rgba(0,255,255,.45);
+  transform: translateX(0);
+  transition: transform .18s ease;
+}
+
+#finalStartJoystickControl.on #finalStartJoystickSwitch {
+  background: #06b6d4 !important;
+  box-shadow: inset 0 0 12px rgba(255,255,255,.25), 0 0 16px rgba(0,255,255,.8) !important;
+}
+
+#finalStartJoystickControl.on #finalStartJoystickSwitch::after {
+  transform: translateX(28px);
+}
+
+#finalStartJoystickText {
+  color: white !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  pointer-events: none !important;
+}
+</style>
+
+<script>
+(function finalStartToggleAndPersistentProgressFix(){
+  const GLOBAL_PREFIX = "NEON_SURVIVOR_GLOBAL_PROGRESS_";
+
+  function currentCodeFinal(){
+    try {
+      if (typeof currentLoginCode !== "undefined" && currentLoginCode) {
+        const code = String(currentLoginCode);
+        localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+        localStorage.setItem("neon_last_login_code_global", code);
+        localStorage.setItem("neon_last_login_code", code);
+        return code;
+      }
+
+      const input = document.getElementById("loginCodeInput");
+      if (input && /^\d{4}$/.test(String(input.value || "").trim())) {
+        const code = String(input.value).trim();
+        localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+        localStorage.setItem("neon_last_login_code_global", code);
+        localStorage.setItem("neon_last_login_code", code);
+        return code;
+      }
+
+      return (
+        localStorage.getItem("NEON_SURVIVOR_LAST_CODE_GLOBAL") ||
+        localStorage.getItem("neon_last_login_code_global") ||
+        localStorage.getItem("neon_last_login_code") ||
+        "default"
+      );
+    } catch(e) {
+      return "default";
+    }
+  }
+
+  function globalKey(name){
+    return GLOBAL_PREFIX + currentCodeFinal() + "_" + name;
+  }
+
+  function getGlobalNum(name, fallback){
+    try {
+      return Number(localStorage.getItem(globalKey(name)) || fallback || 0);
+    } catch(e) {
+      return Number(fallback || 0);
+    }
+  }
+
+  function setGlobalNum(name, value){
+    try {
+      localStorage.setItem(globalKey(name), String(Math.max(0, Math.floor(Number(value || 0)))));
+    } catch(e) {}
+  }
+
+  /* ===== ハイスコアをバージョン共通にする ===== */
+  function hsKey(){
+    return globalKey("highscore");
+  }
+
+  window.loadHighScore = function(){
+    try {
+      return Number(localStorage.getItem(hsKey()) || 0);
+    } catch(e) {
+      return 0;
+    }
+  };
+
+  window.saveHighScore = function(scoreValue){
+    try {
+      const s = Math.floor(Number(scoreValue || 0));
+      const old = window.loadHighScore();
+      const best = Math.max(old, s);
+      localStorage.setItem(hsKey(), String(best));
+
+      // 古いキーにも同期
+      const code = currentCodeFinal();
+      localStorage.setItem("NEON_SURVIVOR_GLOBAL_HIGHSCORE_ACCOUNT_" + code, String(best));
+      localStorage.setItem("neon_highscore_" + code, String(best));
+      return best;
+    } catch(e) {
+      return Math.floor(Number(scoreValue || 0));
+    }
+  };
+
+  /* 既存のsaveHighScoreIfNeededが使われている場合も上書き */
+  window.saveHighScoreIfNeeded = function(finalScoreValue){
+    const personal = window.saveHighScore(finalScoreValue);
+    return { personal, world: personal };
+  };
+
+  /* ===== NEON LAB進行をバージョン共通保存に同期 ===== */
+  const progressNames = [
+    "cores",
+    "upgrade_hp",
+    "upgrade_damage",
+    "upgrade_exp",
+    "upgrade_control",
+    "upgrade_cooldown"
+  ];
+
+  function oldV2Key(name){
+    return "neon_survivor_v2_" + currentCodeFinal() + "_" + name;
+  }
+
+  function syncProgressBothWays(){
+    try {
+      progressNames.forEach(name => {
+        const oldKey = oldV2Key(name);
+        const newKey = globalKey(name);
+
+        const oldValRaw = localStorage.getItem(oldKey);
+        const newValRaw = localStorage.getItem(newKey);
+
+        const oldVal = Number(oldValRaw || 0);
+        const newVal = Number(newValRaw || 0);
+        const best = Math.max(oldVal, newVal);
+
+        localStorage.setItem(oldKey, String(best));
+        localStorage.setItem(newKey, String(best));
+      });
+    } catch(e) {}
+  }
+
+  /* localStorageを安全に補強：古いv2キーが読まれた時、グローバル側も返せるようにする */
+  if (!window.__neonStoragePersistentPatch) {
+    window.__neonStoragePersistentPatch = true;
+
+    const originalGetItem = Storage.prototype.getItem;
+    const originalSetItem = Storage.prototype.setItem;
+
+    Storage.prototype.getItem = function(k){
+      const v = originalGetItem.call(this, k);
+      try {
+        if (v !== null) return v;
+
+        const code = currentCodeFinal();
+        const prefix = "neon_survivor_v2_" + code + "_";
+        if (String(k).startsWith(prefix)) {
+          const name = String(k).slice(prefix.length);
+          if (progressNames.includes(name)) {
+            return originalGetItem.call(this, globalKey(name));
+          }
+        }
+      } catch(e) {}
+      return v;
+    };
+
+    Storage.prototype.setItem = function(k, v){
+      const r = originalSetItem.call(this, k, v);
+      try {
+        const code = currentCodeFinal();
+        const prefix = "neon_survivor_v2_" + code + "_";
+        if (String(k).startsWith(prefix)) {
+          const name = String(k).slice(prefix.length);
+          if (progressNames.includes(name)) {
+            originalSetItem.call(this, globalKey(name), String(v));
+          }
+        }
+
+        const gPrefix = GLOBAL_PREFIX + code + "_";
+        if (String(k).startsWith(gPrefix)) {
+          const name = String(k).slice(gPrefix.length);
+          if (progressNames.includes(name)) {
+            originalSetItem.call(this, oldV2Key(name), String(v));
+          }
+        }
+      } catch(e) {}
+      return r;
+    };
+  }
+
+  /* ===== 開始画面ジョイスティックトグルを完全新規で作る ===== */
+  function getJoy(){
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") return !!isJoystickEnabled;
+    } catch(e) {}
+
+    return true;
+  }
+
+  function setJoy(v){
+    const next = !!v;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    const originalStart = document.getElementById("joystickToggle");
+    const pause = document.getElementById("pauseJoystickToggle");
+    if (originalStart) originalStart.checked = next;
+    if (pause) pause.checked = next;
+
+    const control = document.getElementById("finalStartJoystickControl");
+    if (control) {
+      control.classList.toggle("on", next);
+      const txt = document.getElementById("finalStartJoystickText");
+      if (txt) txt.textContent = next ? "ジョイスティック ON" : "ジョイスティック OFF";
+    }
+
+    const zone = document.getElementById("joystickZone");
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+    if (zone) {
+      if (next && playing) {
+        zone.classList.remove("hidden");
+        zone.style.display = "flex";
+        zone.style.visibility = "visible";
+        zone.style.opacity = "1";
+        zone.style.pointerEvents = "auto";
+      } else if (!next) {
+        zone.classList.add("hidden");
+        zone.style.display = "none";
+        zone.style.visibility = "hidden";
+        zone.style.opacity = "0";
+        zone.style.pointerEvents = "none";
+      }
+    }
+  }
+
+  function createStartJoystickControl(){
+    if (document.getElementById("finalStartJoystickControl")) return;
+
+    const original = document.getElementById("joystickToggle");
+    const oldLabel = original ? original.closest("label") : null;
+
+    const control = document.createElement("div");
+    control.id = "finalStartJoystickControl";
+    control.innerHTML = `
+      <div id="finalStartJoystickSwitch"></div>
+      <span id="finalStartJoystickText">ジョイスティック ON</span>
+    `;
+
+    if (oldLabel && oldLabel.parentNode) {
+      oldLabel.parentNode.insertBefore(control, oldLabel);
+      oldLabel.style.display = "none";
+    } else {
+      const startScreen = document.getElementById("startScreen");
+      if (startScreen) startScreen.appendChild(control);
+    }
+
+    let last = 0;
+    function toggle(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      const t = performance.now ? performance.now() : Date.now();
+      if (t - last < 220) return false;
+      last = t;
+
+      setJoy(!getJoy());
+      return false;
+    }
+
+    control.addEventListener("pointerdown", toggle, {passive:false, capture:true});
+    control.addEventListener("touchstart", toggle, {passive:false, capture:true});
+    control.addEventListener("mousedown", toggle, {passive:false, capture:true});
+    control.addEventListener("click", function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      return false;
+    }, {passive:false, capture:true});
+
+    setJoy(getJoy());
+  }
+
+  /* startGame直前にも保存を反映 */
+  if (typeof window.startGame === "function" && !window.startGame.__persistentProgressFinal) {
+    const oldStart = window.startGame;
+    window.startGame = function(){
+      currentCodeFinal();
+      syncProgressBothWays();
+      setJoy(getJoy());
+      return oldStart.apply(this, arguments);
+    };
+    window.startGame.__persistentProgressFinal = true;
+  }
+
+  function tick(){
+    currentCodeFinal();
+    syncProgressBothWays();
+    createStartJoystickControl();
+    setJoy(getJoy());
+
+    const scoreNow = (() => {
+      try { return Math.floor(Number(score || 0)); } catch(e) { return 0; }
+    })();
+
+    if ((typeof gameState !== "undefined" && gameState === "gameover") && scoreNow > 0) {
+      window.saveHighScore(scoreNow);
+    }
+
+    const finalHighScore = document.getElementById("finalHighScore");
+    if (finalHighScore && typeof gameState !== "undefined" && gameState === "gameover") {
+      finalHighScore.textContent = window.loadHighScore();
+    }
+  }
+
+  setInterval(tick, 200);
+})();
+</script>
+
+
+<!-- ===== FINAL FIX: NEON CORE獲得とNEON LAB表示を完全同期 ===== -->
+<script>
+(function fixNeonCoreSyncFinal(){
+  const GLOBAL_PREFIX = "NEON_SURVIVOR_GLOBAL_PROGRESS_";
+  const V2_PREFIX = "neon_survivor_v2_";
+
+  function getCode(){
+    try {
+      if (typeof currentLoginCode !== "undefined" && currentLoginCode) {
+        const code = String(currentLoginCode);
+        localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+        localStorage.setItem("neon_last_login_code_global", code);
+        localStorage.setItem("neon_last_login_code", code);
+        return code;
+      }
+
+      const input = document.getElementById("loginCodeInput");
+      if (input && /^\d{4}$/.test(String(input.value || "").trim())) {
+        const code = String(input.value).trim();
+        localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+        localStorage.setItem("neon_last_login_code_global", code);
+        localStorage.setItem("neon_last_login_code", code);
+        return code;
+      }
+
+      return (
+        localStorage.getItem("NEON_SURVIVOR_LAST_CODE_GLOBAL") ||
+        localStorage.getItem("neon_last_login_code_global") ||
+        localStorage.getItem("neon_last_login_code") ||
+        "default"
+      );
+    } catch(e) {
+      return "default";
+    }
+  }
+
+  function globalKey(name){
+    return GLOBAL_PREFIX + getCode() + "_" + name;
+  }
+
+  function v2Key(name){
+    return V2_PREFIX + getCode() + "_" + name;
+  }
+
+  function getBestNum(name){
+    try {
+      const g = Number(localStorage.getItem(globalKey(name)) || 0);
+      const v2 = Number(localStorage.getItem(v2Key(name)) || 0);
+      return Math.max(g, v2);
+    } catch(e) {
+      return 0;
+    }
+  }
+
+  function setBothNum(name, value){
+    const n = Math.max(0, Math.floor(Number(value || 0)));
+    try {
+      localStorage.setItem(globalKey(name), String(n));
+      localStorage.setItem(v2Key(name), String(n));
+    } catch(e) {}
+    return n;
+  }
+
+  function syncOne(name){
+    const best = getBestNum(name);
+    setBothNum(name, best);
+    return best;
+  }
+
+  function syncAllProgress(){
+    [
+      "cores",
+      "upgrade_hp",
+      "upgrade_damage",
+      "upgrade_exp",
+      "upgrade_control",
+      "upgrade_cooldown"
+    ].forEach(syncOne);
+  }
+
+  /* ===== NEON CORE読み書きを全バージョン共通に上書き ===== */
+  window.getNeonCoresFinal = function(){
+    syncAllProgress();
+    return getBestNum("cores");
+  };
+
+  window.setNeonCoresFinal = function(v){
+    return setBothNum("cores", v);
+  };
+
+  window.addNeonCoresFinal = function(v){
+    const next = getBestNum("cores") + Math.floor(Number(v || 0));
+    return setBothNum("cores", next);
+  };
+
+  /* 元コード内のgetCores/setCores風の処理が使われても反映させる保険 */
+  window.getCores = window.getNeonCoresFinal;
+  window.setCores = window.setNeonCoresFinal;
+
+  /* ===== ゲームオーバー時のCORE獲得を確実に保存 ===== */
+  let lastAwardSignature = "";
+
+  function awardCoreIfGameOver(){
+    try {
+      if (typeof gameState === "undefined" || gameState !== "gameover") return;
+
+      const scoreValue = (typeof score !== "undefined") ? Math.floor(Number(score || 0)) : 0;
+      const timeValue = (typeof gameTime !== "undefined") ? Math.floor(Number(gameTime || 0)) : 0;
+      const levelValue = (typeof player !== "undefined" && player) ? Math.floor(Number(player.level || 1)) : 1;
+
+      const signature = getCode() + "_" + scoreValue + "_" + timeValue + "_" + levelValue;
+
+      // 同じゲームオーバーで何度も付与しない
+      if (signature === lastAwardSignature) return;
+      lastAwardSignature = signature;
+
+      // 獲得量：スコア・生存時間・レベルから計算
+      const earned = Math.max(
+        1,
+        Math.floor(scoreValue / 250) +
+        Math.floor(timeValue / 20) +
+        Math.floor(levelValue / 3)
+      );
+
+      addNeonCoresFinal(earned);
+
+      // 画面にも表示
+      const screen = document.getElementById("gameOverScreen");
+      if (screen) {
+        let p = document.getElementById("neonEarnedCoreText");
+        if (!p) {
+          p = document.createElement("p");
+          p.id = "neonEarnedCoreText";
+          p.className = "text-xl mb-2 font-bold";
+          p.style.color = "#fde047";
+          p.style.textShadow = "0 0 12px #facc15";
+
+          const labBtn = document.getElementById("gameOverNeonLabBtn");
+          const retry = document.getElementById("restartBtn");
+
+          if (labBtn && labBtn.parentNode) {
+            labBtn.parentNode.insertBefore(p, labBtn);
+          } else if (retry && retry.parentNode) {
+            retry.parentNode.insertBefore(p, retry);
+          } else {
+            screen.appendChild(p);
+          }
+        }
+
+        p.textContent = "獲得 NEON CORE: +" + earned;
+      }
+
+      refreshLabDisplay();
+    } catch(e) {}
+  }
+
+  /* ===== NEON LAB表示を常に最新COREに更新 ===== */
+  function refreshLabDisplay(){
+    syncAllProgress();
+
+    const coreAmount = document.getElementById("neonCoreAmount");
+    if (coreAmount) {
+      coreAmount.textContent = getBestNum("cores");
+    }
+
+    // 既存renderShopがあるなら実行。ただし連打しすぎない。
+    try {
+      if (typeof renderShop === "function" && !window.__renderShopCoreLock) {
+        window.__renderShopCoreLock = true;
+        renderShop();
+        setTimeout(() => {
+          window.__renderShopCoreLock = false;
+          const coreAmount2 = document.getElementById("neonCoreAmount");
+          if (coreAmount2) coreAmount2.textContent = getBestNum("cores");
+        }, 120);
+      }
+    } catch(e) {}
+  }
+
+  /* NEON LABを開いた瞬間に必ず同期 */
+  function patchLabOpenButtons(){
+    const buttons = [
+      document.getElementById("gameOverNeonLabBtn"),
+      document.getElementById("neonUpgradeBtnGameOver"),
+      document.getElementById("neonUpgradeBtn")
+    ].filter(Boolean);
+
+    buttons.forEach(btn => {
+      if (btn.dataset.coreSyncOpenFixed === "1") return;
+      btn.dataset.coreSyncOpenFixed = "1";
+
+      ["click", "pointerup", "touchend"].forEach(type => {
+        btn.addEventListener(type, function(){
+          setTimeout(refreshLabDisplay, 50);
+          setTimeout(refreshLabDisplay, 250);
+        }, {passive:true, capture:false});
+      });
+    });
+  }
+
+  /* 購入後にも同期 */
+  function patchBuyButtons(){
+    document.querySelectorAll(".neon-buy-btn").forEach(btn => {
+      if (btn.dataset.coreSyncBuyFixed === "1") return;
+      btn.dataset.coreSyncBuyFixed = "1";
+
+      ["click", "pointerup", "touchend"].forEach(type => {
+        btn.addEventListener(type, function(){
+          setTimeout(() => {
+            syncAllProgress();
+            const coreAmount = document.getElementById("neonCoreAmount");
+            if (coreAmount) coreAmount.textContent = getBestNum("cores");
+          }, 100);
+        }, {passive:true, capture:false});
+      });
+    });
+  }
+
+  /* gameOver関数にも獲得処理を挟む */
+  if (typeof window.gameOver === "function" && !window.gameOver.__coreSyncAwardPatched) {
+    const oldGameOver = window.gameOver;
+    window.gameOver = function(){
+      const r = oldGameOver.apply(this, arguments);
+      setTimeout(awardCoreIfGameOver, 80);
+      setTimeout(refreshLabDisplay, 180);
+      return r;
+    };
+    window.gameOver.__coreSyncAwardPatched = true;
+  }
+
+  function tick(){
+    syncAllProgress();
+    patchLabOpenButtons();
+    patchBuyButtons();
+
+    if (typeof gameState !== "undefined" && gameState === "gameover") {
+      awardCoreIfGameOver();
+      refreshLabDisplay();
+    }
+
+    const shop = document.getElementById("neonPermanentShop");
+    if (shop && shop.classList.contains("open")) {
+      const coreAmount = document.getElementById("neonCoreAmount");
+      if (coreAmount) coreAmount.textContent = getBestNum("cores");
+      patchBuyButtons();
+    }
+  }
+
+  setInterval(tick, 250);
+})();
+</script>
+
 </body></html>
