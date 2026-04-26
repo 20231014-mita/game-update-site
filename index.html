@@ -11785,4 +11785,521 @@ body.mobile-game-playing.mobile-joystick-on #joystickZone {
 })();
 </script>
 
+
+<!-- ===== EMERGENCY STABLE REWRITE: 開始画面・ログイン・危険UI処理を安定化 ===== -->
+<style>
+/* ===== 古い開始画面ジョイスティックUIは完全無効化 ===== */
+#startScreen label:has(#joystickToggle),
+#startScreen #joystickToggle,
+#finalStartJoystickControl,
+#ultimateStartJoystickToggle,
+#trueOnlyStartJoystickButton,
+#mobileStartJoystickControl {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ===== 操作設定枠の中に置く、最前面の新ジョイスティックトグル ===== */
+#stableStartJoystickToggle {
+  width: 100% !important;
+  max-width: 280px !important;
+  min-height: 58px !important;
+  margin: 8px auto 6px auto !important;
+  padding: 8px 12px !important;
+  border-radius: 18px !important;
+  border: 2px solid #00f6ff !important;
+  background: rgba(0, 20, 35, 0.92) !important;
+  color: white !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  position: relative !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  box-shadow:
+    0 0 18px rgba(0,255,255,.85),
+    inset 0 0 14px rgba(0,255,255,.28) !important;
+}
+
+#stableStartJoystickToggle:active {
+  transform: scale(0.97) !important;
+}
+
+#stableStartJoystickSwitch {
+  width: 62px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  position: relative !important;
+  flex: 0 0 62px !important;
+  background: rgba(80,95,110,.95) !important;
+  border: 1px solid rgba(255,255,255,.30) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.48), 0 0 12px rgba(0,255,255,.4) !important;
+  pointer-events: none !important;
+}
+
+#stableStartJoystickSwitch::after {
+  content: "";
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  left: 3px;
+  top: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255,255,255,.95), 0 0 18px rgba(0,255,255,.5);
+  transform: translateX(0);
+  transition: transform .15s ease;
+}
+
+#stableStartJoystickToggle.on #stableStartJoystickSwitch {
+  background: #06b6d4 !important;
+}
+
+#stableStartJoystickToggle.on #stableStartJoystickSwitch::after {
+  transform: translateX(28px);
+}
+
+#stableStartJoystickText {
+  pointer-events: none !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  white-space: nowrap !important;
+}
+
+/* 操作設定枠もクリックを邪魔しない */
+#startScreen div,
+#startScreen button {
+  pointer-events: auto !important;
+}
+
+#startScreen::before,
+#startScreen::after {
+  pointer-events: none !important;
+}
+
+/* GAME STARTも最前面 */
+#startBtn {
+  position: relative !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+/* ===== ログイン画面を軽く・安定化 ===== */
+#loginScreen {
+  z-index: 2147483300 !important;
+  backdrop-filter: none !important;
+}
+
+#loginCodeInput,
+#loginBtn {
+  position: relative !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+}
+
+#loginCodeInput {
+  ime-mode: disabled;
+}
+
+/* ログイン中は重い演出を止める */
+body.login-stable-mode::before,
+body.login-stable-mode::after {
+  display: none !important;
+}
+
+body.login-stable-mode canvas {
+  filter: none !important;
+}
+
+/* ゲーム開始前はジョイスティック非表示 */
+body:not(.stable-playing) #joystickZone {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* プレイ中だけ表示 */
+body.stable-playing.stable-joystick-on #joystickZone {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* ジョイスティック見た目だけ2/3サイズ */
+#joystickZone {
+  transform: scale(0.6667) !important;
+  transform-origin: center center !important;
+  right: 2px !important;
+  bottom: 0px !important;
+}
+</style>
+
+<script>
+(function emergencyStableRewrite(){
+  // これ以降は「開始画面・ログイン・ジョイスティック表示」をこの処理だけで管理する
+  let loginTypingLock = false;
+  let lastToggle = 0;
+  let lastLoginStart = 0;
+
+  function getState(){
+    try {
+      if (typeof gameState !== "undefined") return gameState;
+    } catch(e) {}
+    return "start";
+  }
+
+  function getJoy(){
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+    return true;
+  }
+
+  function setJoy(value){
+    const next = !!value;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    const btn = document.getElementById("stableStartJoystickToggle");
+    const text = document.getElementById("stableStartJoystickText");
+    if (btn) btn.classList.toggle("on", next);
+    if (text) text.textContent = next ? "ジョイスティック ON" : "ジョイスティック OFF";
+
+    const pauseToggle = document.getElementById("pauseJoystickToggle");
+    if (pauseToggle) pauseToggle.checked = next;
+
+    updateJoystickVisibility();
+  }
+
+  function removeOldStartToggles(){
+    // 古いトグルは本当に削除する
+    const oldInput = document.getElementById("joystickToggle");
+    if (oldInput) {
+      const label = oldInput.closest("label");
+      if (label) label.remove();
+      else oldInput.remove();
+    }
+
+    [
+      "finalStartJoystickControl",
+      "ultimateStartJoystickToggle",
+      "trueOnlyStartJoystickButton",
+      "mobileStartJoystickControl"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+
+  function findSettingBox(){
+    const startScreen = document.getElementById("startScreen");
+    if (!startScreen) return null;
+
+    const title = Array.from(startScreen.querySelectorAll("span,div"))
+      .find(el => (el.textContent || "").trim() === "操作設定");
+
+    if (title) return title.parentElement;
+
+    // それでも見つからない時は、説明文が入っている箱を探す
+    const p = Array.from(startScreen.querySelectorAll("p"))
+      .find(el => (el.textContent || "").includes("タップした場所"));
+    if (p) return p.parentElement;
+
+    return null;
+  }
+
+  function createStableStartToggle(){
+    removeOldStartToggles();
+
+    let btn = document.getElementById("stableStartJoystickToggle");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "stableStartJoystickToggle";
+      btn.innerHTML = `
+        <div id="stableStartJoystickSwitch"></div>
+        <span id="stableStartJoystickText">ジョイスティック ON</span>
+      `;
+    }
+
+    const settingBox = findSettingBox();
+    const startBtn = document.getElementById("startBtn");
+    const startScreen = document.getElementById("startScreen");
+
+    // 操作設定の枠内に必ず入れる
+    if (settingBox && btn.parentNode !== settingBox) {
+      const desc = Array.from(settingBox.querySelectorAll("p"))
+        .find(el => (el.textContent || "").includes("タップした場所"));
+      if (desc) settingBox.insertBefore(btn, desc);
+      else settingBox.appendChild(btn);
+    } else if (!settingBox && startBtn && startBtn.parentNode && btn.parentNode !== startBtn.parentNode) {
+      startBtn.parentNode.insertBefore(btn, startBtn);
+    } else if (!settingBox && startScreen && !btn.parentNode) {
+      startScreen.appendChild(btn);
+    }
+
+    if (btn.dataset.stableBound !== "1") {
+      btn.dataset.stableBound = "1";
+
+      function toggle(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+
+        const now = performance.now ? performance.now() : Date.now();
+        if (now - lastToggle < 250) return false;
+        lastToggle = now;
+
+        setJoy(!getJoy());
+        return false;
+      }
+
+      // pointerdownだけに寄せると二重発火が減る
+      btn.addEventListener("pointerdown", toggle, {passive:false, capture:true});
+      btn.addEventListener("touchstart", toggle, {passive:false, capture:true});
+      btn.addEventListener("click", function(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    setJoy(getJoy());
+  }
+
+  function updateJoystickVisibility(){
+    const zone = document.getElementById("joystickZone");
+    if (!zone) return;
+
+    const playing = getState() === "playing";
+    const joy = getJoy();
+
+    document.body.classList.toggle("stable-playing", playing);
+    document.body.classList.toggle("stable-joystick-on", joy);
+
+    if (playing && joy) {
+      zone.classList.remove("hidden");
+      zone.style.display = "flex";
+      zone.style.opacity = "1";
+      zone.style.visibility = "visible";
+      zone.style.pointerEvents = "auto";
+    } else {
+      zone.classList.add("hidden");
+      zone.style.display = "none";
+      zone.style.opacity = "0";
+      zone.style.visibility = "hidden";
+      zone.style.pointerEvents = "none";
+    }
+  }
+
+  function showLogin(){
+    const startScreen = document.getElementById("startScreen");
+    const loginScreen = document.getElementById("loginScreen");
+    const input = document.getElementById("loginCodeInput");
+
+    document.body.classList.add("login-stable-mode");
+
+    if (startScreen) {
+      startScreen.style.display = "none";
+      startScreen.style.opacity = "0";
+      startScreen.style.pointerEvents = "none";
+    }
+
+    if (loginScreen) {
+      loginScreen.style.display = "flex";
+      loginScreen.style.visibility = "visible";
+      loginScreen.style.opacity = "1";
+      loginScreen.style.pointerEvents = "auto";
+      loginScreen.style.zIndex = "2147483300";
+    }
+
+    try {
+      if (typeof gameState !== "undefined") gameState = "login";
+    } catch(e) {}
+
+    updateJoystickVisibility();
+
+    if (input) {
+      input.disabled = false;
+      input.readOnly = false;
+      input.style.pointerEvents = "auto";
+      input.value = "";
+      setTimeout(() => input.focus(), 120);
+    }
+  }
+
+  function startAfterLogin(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const now = performance.now ? performance.now() : Date.now();
+    if (now - lastLoginStart < 500) return false;
+    lastLoginStart = now;
+
+    const input = document.getElementById("loginCodeInput");
+    const loginError = document.getElementById("loginError");
+    const loginScreen = document.getElementById("loginScreen");
+    const code = String(input ? input.value : "").trim();
+
+    if (!/^\d{4}$/.test(code)) {
+      if (loginError) {
+        loginError.style.opacity = "1";
+        loginError.textContent = "4桁の数字を入力してください";
+      }
+      if (input) input.focus();
+      return false;
+    }
+
+    try {
+      if (typeof currentLoginCode !== "undefined") currentLoginCode = code;
+      window.currentLoginCode = code;
+      localStorage.setItem("neon_last_login_code", code);
+      localStorage.setItem("neon_last_login_code_global", code);
+      localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+    } catch(err) {}
+
+    document.body.classList.remove("login-stable-mode");
+
+    if (input) input.blur();
+
+    if (loginScreen) {
+      loginScreen.style.display = "none";
+      loginScreen.style.opacity = "0";
+      loginScreen.style.visibility = "hidden";
+      loginScreen.style.pointerEvents = "none";
+    }
+
+    setJoy(getJoy());
+
+    if (typeof Sound !== "undefined" && Sound.init) {
+      try { Sound.init(); } catch(err) {}
+    }
+
+    // startGameの呼び出しは1回だけにする
+    if (typeof startGame === "function") {
+      try { startGame(); } catch(err) {}
+    } else if (typeof initGame === "function") {
+      try { initGame(); } catch(err) {}
+      try { if (typeof gameState !== "undefined") gameState = "playing"; } catch(err) {}
+      if (typeof gameLoop === "function") requestAnimationFrame(gameLoop);
+    }
+
+    setTimeout(updateJoystickVisibility, 50);
+    setTimeout(updateJoystickVisibility, 250);
+
+    return false;
+  }
+
+  function bindStartAndLogin(){
+    const startBtn = document.getElementById("startBtn");
+    const loginBtn = document.getElementById("loginBtn");
+    const input = document.getElementById("loginCodeInput");
+
+    if (startBtn && startBtn.dataset.emergencyStableStart !== "1") {
+      startBtn.dataset.emergencyStableStart = "1";
+      startBtn.addEventListener("pointerdown", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showLogin();
+        return false;
+      }, {passive:false, capture:true});
+      startBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    if (loginBtn && loginBtn.dataset.emergencyStableLogin !== "1") {
+      loginBtn.dataset.emergencyStableLogin = "1";
+      loginBtn.addEventListener("pointerdown", startAfterLogin, {passive:false, capture:true});
+      loginBtn.addEventListener("touchstart", startAfterLogin, {passive:false, capture:true});
+      loginBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    if (input && input.dataset.emergencyStableInput !== "1") {
+      input.dataset.emergencyStableInput = "1";
+
+      // 入力中に重くなる原因になりやすい再描画を減らす
+      input.addEventListener("input", function(){
+        loginTypingLock = true;
+        setTimeout(() => { loginTypingLock = false; }, 350);
+      }, {passive:true});
+
+      input.addEventListener("keydown", function(e){
+        if (e.key === "Enter") startAfterLogin(e);
+      }, {passive:false, capture:true});
+    }
+  }
+
+  function stopDangerousLoginLoops(){
+    // ログイン中は重い見た目更新やジョイスティック復活を止める
+    if (getState() === "login" || loginTypingLock) {
+      updateJoystickVisibility();
+
+      const hint = document.getElementById("pcControlHint");
+      if (hint) hint.remove();
+
+      document.body.classList.remove("pc-control-mode");
+    }
+  }
+
+  // startGameを1回だけ安全に包む
+  if (typeof window.startGame === "function" && !window.startGame.__emergencyStableRewrite) {
+    const oldStart = window.startGame;
+    window.startGame = function(){
+      setJoy(getJoy());
+      const result = oldStart.apply(this, arguments);
+      setTimeout(updateJoystickVisibility, 50);
+      return result;
+    };
+    window.startGame.__emergencyStableRewrite = true;
+  }
+
+  function tick(){
+    createStableStartToggle();
+    bindStartAndLogin();
+    updateJoystickVisibility();
+    stopDangerousLoginLoops();
+  }
+
+  tick();
+  setInterval(tick, 300);
+
+  window.emergencySetJoystick = setJoy;
+})();
+</script>
+
 </body></html>
