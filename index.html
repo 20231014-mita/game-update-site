@@ -11156,99 +11156,177 @@ body.stable-cooldown-visible #stableCooldownHudFinal {
 </script>
 
 
-<!-- ===== START SCREEN TOP LAYER FIX: 最初のトグルとGAME STARTを最前面へ ===== -->
+<!-- ===== PC MOUSE SUPPORT: PCマウス・キーボード操作対応 ===== -->
 <style>
-/* 最初の画面自体をかなり上のレイヤーにする */
-#startScreen {
-  z-index: 2147483000 !important;
-  pointer-events: auto !important;
+#pcControlHint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #c7f9ff;
+  text-align: center;
+  line-height: 1.5;
+  text-shadow: 0 0 8px #00ffff;
+  pointer-events: none;
 }
 
-/* スタート画面内の操作エリアを最前面に固定 */
-#trueOnlyStartJoystickButton,
-#startBtn {
-  position: relative !important;
-  z-index: 2147483646 !important;
-  pointer-events: auto !important;
-  touch-action: manipulation !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
-
-/* トグルとスタートボタンの周りに透明な邪魔レイヤーが来ないようにする */
-#startScreen * {
-  pointer-events: auto;
-}
-
-#startScreen::before,
-#startScreen::after {
-  pointer-events: none !important;
-}
-
-/* 古いトグルは引き続き完全削除 */
-#startScreen label:has(#joystickToggle),
-#startScreen #joystickToggle,
-#startScreen #finalStartJoystickControl,
-#startScreen #ultimateStartJoystickToggle,
-#finalStartJoystickControl,
-#ultimateStartJoystickToggle {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* トグルを見やすく、押しやすく */
-#trueOnlyStartJoystickButton {
-  width: 280px !important;
-  min-height: 62px !important;
-  margin: 8px auto 18px auto !important;
-}
-
-/* GAME STARTも押しやすく */
-#startBtn {
-  min-width: 250px !important;
-  min-height: 64px !important;
-  font-size: 22px !important;
-  margin-top: 4px !important;
+body.pc-control-mode #joystickZone {
+  opacity: 0.65 !important;
 }
 </style>
 
 <script>
-(function moveStartControlsToTopLayer(){
-  function bringToFront(){
+(function addPcMouseAndKeyboardSupport(){
+  const keys = { up:false, down:false, left:false, right:false };
+  let mouseDownMove = false;
+  let pcModeActive = false;
+
+  function isPcLike(){
+    return window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+  }
+
+  function addPcHint(){
     const startScreen = document.getElementById("startScreen");
-    const joyBtn = document.getElementById("trueOnlyStartJoystickButton");
+    if (!startScreen || document.getElementById("pcControlHint")) return;
+
+    const hint = document.createElement("p");
+    hint.id = "pcControlHint";
+    hint.innerHTML = "PC操作：WASD / 矢印キーで移動<br>またはクリックした方向へ移動";
+
     const startBtn = document.getElementById("startBtn");
+    if (startBtn && startBtn.parentNode) {
+      startBtn.parentNode.insertBefore(hint, startBtn.nextSibling);
+    } else {
+      startScreen.appendChild(hint);
+    }
+  }
 
-    if (startScreen) {
-      startScreen.style.zIndex = "2147483000";
-      startScreen.style.pointerEvents = "auto";
+  function setMouseTarget(x, y){
+    try {
+      if (typeof mouse !== "undefined") {
+        mouse.x = x;
+        mouse.y = y;
+      }
+    } catch(e) {}
+  }
+
+  function setPcMoveMode(){
+    pcModeActive = true;
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = false;
+      window.isJoystickEnabled = false;
+    } catch(e) {}
+  }
+
+  window.addEventListener("mousemove", function(e){
+    if (typeof gameState !== "undefined" && gameState === "playing") {
+      setMouseTarget(e.clientX, e.clientY);
+    }
+  }, { passive: true });
+
+  window.addEventListener("mousedown", function(e){
+    if (typeof gameState !== "undefined" && gameState === "playing") {
+      mouseDownMove = true;
+      setPcMoveMode();
+      setMouseTarget(e.clientX, e.clientY);
+    }
+  }, { passive: true });
+
+  window.addEventListener("mouseup", function(){
+    mouseDownMove = false;
+  }, { passive: true });
+
+  window.addEventListener("keydown", function(e){
+    const k = e.key.toLowerCase();
+
+    if (k === "w" || k === "arrowup") keys.up = true;
+    if (k === "s" || k === "arrowdown") keys.down = true;
+    if (k === "a" || k === "arrowleft") keys.left = true;
+    if (k === "d" || k === "arrowright") keys.right = true;
+
+    if (["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(k)) {
+      e.preventDefault();
+      setPcMoveMode();
+    }
+  }, { passive: false });
+
+  window.addEventListener("keyup", function(e){
+    const k = e.key.toLowerCase();
+
+    if (k === "w" || k === "arrowup") keys.up = false;
+    if (k === "s" || k === "arrowdown") keys.down = false;
+    if (k === "a" || k === "arrowleft") keys.left = false;
+    if (k === "d" || k === "arrowright") keys.right = false;
+  }, { passive: true });
+
+  function keyVector(){
+    let dx = 0;
+    let dy = 0;
+
+    if (keys.left) dx -= 1;
+    if (keys.right) dx += 1;
+    if (keys.up) dy -= 1;
+    if (keys.down) dy += 1;
+
+    const len = Math.hypot(dx, dy);
+    if (len > 0) {
+      dx /= len;
+      dy /= len;
     }
 
-    if (joyBtn) {
-      joyBtn.style.position = "relative";
-      joyBtn.style.zIndex = "2147483646";
-      joyBtn.style.pointerEvents = "auto";
-    }
+    return { dx, dy, active: len > 0 };
+  }
 
-    if (startBtn) {
-      startBtn.style.position = "relative";
-      startBtn.style.zIndex = "2147483646";
-      startBtn.style.pointerEvents = "auto";
-    }
+  function patchPlayerUpdateForPc(){
+    try {
+      if (typeof Player === "undefined") return;
+      if (Player.prototype.__pcControlsPatched) return;
 
-    // 念のため、スタート画面中ではこの2つを最後の方に並べる
-    // ただし表示位置は変えすぎない
-    if (startScreen && joyBtn && startBtn && joyBtn.parentNode && startBtn.parentNode) {
-      const parent = startBtn.parentNode;
-      if (joyBtn.nextElementSibling !== startBtn) {
-        parent.insertBefore(joyBtn, startBtn);
+      const oldUpdate = Player.prototype.update;
+
+      Player.prototype.update = function(){
+        const v = keyVector();
+
+        if (typeof gameState !== "undefined" && gameState === "playing" && v.active) {
+          this.faceAngle = Math.atan2(v.dy, v.dx);
+          this.x += v.dx * this.speed;
+          this.y += v.dy * this.speed;
+
+          try {
+            this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
+            this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
+          } catch(e) {}
+
+          try {
+            if (typeof mouse !== "undefined") {
+              mouse.x = this.x;
+              mouse.y = this.y;
+            }
+          } catch(e) {}
+        }
+
+        return oldUpdate.apply(this, arguments);
+      };
+
+      Player.prototype.__pcControlsPatched = true;
+    } catch(e) {}
+  }
+
+  function keepPcControls(){
+    if (isPcLike()) {
+      document.body.classList.add("pc-control-mode");
+      addPcHint();
+      patchPlayerUpdateForPc();
+
+      if (pcModeActive || mouseDownMove) {
+        try {
+          if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = false;
+          window.isJoystickEnabled = false;
+        } catch(e) {}
       }
     }
   }
 
-  bringToFront();
-  setInterval(bringToFront, 300);
+  keepPcControls();
+  setInterval(keepPcControls, 300);
 })();
 </script>
 
