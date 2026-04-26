@@ -11330,4 +11330,459 @@ body.pc-control-mode #joystickZone {
 })();
 </script>
 
+
+<!-- ===== MOBILE/TABLET FINAL FIX: スマホ・タブレット専用化＋開始/ログイン/ジョイスティック修正 ===== -->
+<style>
+/* ===== PC版の説明・PC操作を非表示 ===== */
+#pcControlHint {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.pc-control-mode #joystickZone {
+  opacity: 1 !important;
+}
+
+/* ===== 古い開始画面ジョイスティックUIは全部消す ===== */
+#startScreen label:has(#joystickToggle),
+#startScreen #joystickToggle,
+#finalStartJoystickControl,
+#ultimateStartJoystickToggle,
+#trueOnlyStartJoystickButton {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ===== 操作設定枠の中に入れる新トグル ===== */
+#mobileStartJoystickControl {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  margin: 8px 0 4px 0 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  position: relative !important;
+  z-index: 2147483600 !important;
+}
+
+#mobileStartJoystickSwitch {
+  width: 58px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  flex: 0 0 58px !important;
+  position: relative !important;
+  background: rgba(80, 95, 110, 0.9) !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  box-shadow:
+    inset 0 0 10px rgba(0,0,0,.45),
+    0 0 12px rgba(0,255,255,.35) !important;
+  pointer-events: none !important;
+}
+
+#mobileStartJoystickSwitch::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 10px rgba(255,255,255,.9), 0 0 18px rgba(0,255,255,.45);
+  transform: translateX(0);
+  transition: transform .18s ease;
+}
+
+#mobileStartJoystickControl.on #mobileStartJoystickSwitch {
+  background: #06b6d4 !important;
+}
+
+#mobileStartJoystickControl.on #mobileStartJoystickSwitch::after {
+  transform: translateX(26px);
+}
+
+#mobileStartJoystickText {
+  color: white !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+}
+
+/* ===== ゲーム開始前はジョイスティックを絶対に出さない ===== */
+body:not(.mobile-game-playing) #joystickZone {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ===== プレイ中だけジョイスティック表示 ===== */
+body.mobile-game-playing.mobile-joystick-on #joystickZone {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* ===== ジョイスティック見た目だけ2/3サイズ。入力感度はJS側の計算を変えない ===== */
+#joystickZone {
+  transform: scale(0.6667) !important;
+  transform-origin: center center !important;
+  right: 2px !important;
+  bottom: 0px !important;
+}
+
+/* 中のスティックも見た目だけ一緒に縮小される */
+#joystickStick {
+  pointer-events: none !important;
+}
+
+/* ===== ログイン画面のボタンを必ず押せるように ===== */
+#loginScreen {
+  z-index: 2147483200 !important;
+}
+
+#loginBtn,
+#loginCodeInput {
+  position: relative !important;
+  z-index: 2147483600 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#loginBtn {
+  min-width: 230px !important;
+  min-height: 58px !important;
+  font-size: 20px !important;
+}
+</style>
+
+<script>
+(function mobileTabletOnlyFinalFix(){
+  /* ===== PC対応を実質無効化 ===== */
+  window.__disablePcControls = true;
+
+  function getJoy(){
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+    try {
+      if (typeof isJoystickEnabled !== "undefined") return !!isJoystickEnabled;
+    } catch(e) {}
+    return true;
+  }
+
+  function setJoy(value){
+    const next = !!value;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    const pauseToggle = document.getElementById("pauseJoystickToggle");
+    if (pauseToggle) pauseToggle.checked = next;
+
+    const control = document.getElementById("mobileStartJoystickControl");
+    const text = document.getElementById("mobileStartJoystickText");
+    if (control) control.classList.toggle("on", next);
+    if (text) text.textContent = next ? "ジョイスティック ON" : "ジョイスティック OFF";
+
+    updateJoystickVisibility();
+  }
+
+  function removeOldStartJoystickControls(){
+    const ids = [
+      "finalStartJoystickControl",
+      "ultimateStartJoystickToggle",
+      "trueOnlyStartJoystickButton"
+    ];
+
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    const oldInput = document.getElementById("joystickToggle");
+    if (oldInput) {
+      const oldLabel = oldInput.closest("label");
+      if (oldLabel) oldLabel.remove();
+      else oldInput.remove();
+    }
+  }
+
+  function createStartJoystickInsideSettingBox(){
+    const startScreen = document.getElementById("startScreen");
+    if (!startScreen) return;
+
+    removeOldStartJoystickControls();
+
+    let control = document.getElementById("mobileStartJoystickControl");
+    if (!control) {
+      control = document.createElement("button");
+      control.type = "button";
+      control.id = "mobileStartJoystickControl";
+      control.innerHTML = `
+        <div id="mobileStartJoystickSwitch"></div>
+        <span id="mobileStartJoystickText">ジョイスティック ON</span>
+      `;
+
+      /* 操作設定の枠を探す */
+      const operationTitle = Array.from(startScreen.querySelectorAll("span"))
+        .find(el => (el.textContent || "").trim().includes("操作設定"));
+
+      let settingBox = operationTitle ? operationTitle.parentElement : null;
+
+      /* 見つからない場合はSTARTボタンの前 */
+      if (settingBox) {
+        const smallText = settingBox.querySelector("p");
+        if (smallText) settingBox.insertBefore(control, smallText);
+        else settingBox.appendChild(control);
+      } else {
+        const startBtn = document.getElementById("startBtn");
+        if (startBtn && startBtn.parentNode) startBtn.parentNode.insertBefore(control, startBtn);
+        else startScreen.appendChild(control);
+      }
+    }
+
+    if (control.dataset.mobileJoyBound !== "1") {
+      control.dataset.mobileJoyBound = "1";
+      let last = 0;
+
+      function toggle(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+
+        const now = performance.now ? performance.now() : Date.now();
+        if (now - last < 220) return false;
+        last = now;
+
+        setJoy(!getJoy());
+        return false;
+      }
+
+      control.addEventListener("pointerdown", toggle, {passive:false, capture:true});
+      control.addEventListener("touchstart", toggle, {passive:false, capture:true});
+      control.addEventListener("click", function(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    setJoy(getJoy());
+  }
+
+  function updateJoystickVisibility(){
+    const zone = document.getElementById("joystickZone");
+    if (!zone) return;
+
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+    const joyOn = getJoy();
+
+    document.body.classList.toggle("mobile-game-playing", playing);
+    document.body.classList.toggle("mobile-joystick-on", joyOn);
+
+    if (playing && joyOn) {
+      zone.classList.remove("hidden");
+      zone.style.display = "flex";
+      zone.style.visibility = "visible";
+      zone.style.opacity = "1";
+      zone.style.pointerEvents = "auto";
+    } else {
+      zone.classList.add("hidden");
+      zone.style.display = "none";
+      zone.style.visibility = "hidden";
+      zone.style.opacity = "0";
+      zone.style.pointerEvents = "none";
+    }
+  }
+
+  function showLoginScreenFixed(){
+    const startScreen = document.getElementById("startScreen");
+    const loginScreen = document.getElementById("loginScreen");
+    const input = document.getElementById("loginCodeInput");
+
+    if (startScreen) {
+      startScreen.style.display = "none";
+      startScreen.style.opacity = "0";
+      startScreen.style.pointerEvents = "none";
+    }
+
+    if (loginScreen) {
+      loginScreen.style.display = "flex";
+      loginScreen.style.visibility = "visible";
+      loginScreen.style.opacity = "1";
+      loginScreen.style.pointerEvents = "auto";
+      loginScreen.style.zIndex = "2147483200";
+      if (typeof gameState !== "undefined") gameState = "login";
+    }
+
+    updateJoystickVisibility();
+
+    if (input) {
+      input.disabled = false;
+      input.style.pointerEvents = "auto";
+      setTimeout(() => input.focus(), 120);
+    }
+  }
+
+  function startGameFromLoginFixed(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const input = document.getElementById("loginCodeInput");
+    const loginError = document.getElementById("loginError");
+    const loginScreen = document.getElementById("loginScreen");
+
+    const code = String(input ? input.value : "").trim();
+
+    if (!/^\d{4}$/.test(code)) {
+      if (loginError) {
+        loginError.style.opacity = "1";
+        loginError.textContent = "4桁の数字を入力してください";
+      }
+      if (input) input.focus();
+      return false;
+    }
+
+    try {
+      if (typeof currentLoginCode !== "undefined") currentLoginCode = code;
+      window.currentLoginCode = code;
+      localStorage.setItem("neon_last_login_code", code);
+      localStorage.setItem("neon_last_login_code_global", code);
+      localStorage.setItem("NEON_SURVIVOR_LAST_CODE_GLOBAL", code);
+    } catch(err) {}
+
+    if (loginScreen) {
+      loginScreen.style.display = "none";
+      loginScreen.style.opacity = "0";
+      loginScreen.style.pointerEvents = "none";
+      loginScreen.style.visibility = "hidden";
+    }
+
+    setJoy(getJoy());
+
+    if (typeof Sound !== "undefined" && Sound.init) {
+      try { Sound.init(); } catch(err) {}
+    }
+
+    if (typeof startGame === "function") {
+      try { startGame(); } catch(err) {}
+    } else if (typeof initGame === "function") {
+      try { initGame(); } catch(err) {}
+      if (typeof gameState !== "undefined") gameState = "playing";
+      if (typeof gameLoop === "function") requestAnimationFrame(gameLoop);
+    } else {
+      if (typeof gameState !== "undefined") gameState = "playing";
+      if (typeof gameLoop === "function") requestAnimationFrame(gameLoop);
+    }
+
+    setTimeout(updateJoystickVisibility, 50);
+    setTimeout(updateJoystickVisibility, 250);
+
+    return false;
+  }
+
+  function bindStartAndLoginButtons(){
+    const startBtn = document.getElementById("startBtn");
+    const loginBtn = document.getElementById("loginBtn");
+    const input = document.getElementById("loginCodeInput");
+
+    if (startBtn && startBtn.dataset.mobileStartFixed !== "1") {
+      startBtn.dataset.mobileStartFixed = "1";
+      startBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showLoginScreenFixed();
+        return false;
+      }, {passive:false, capture:true});
+      startBtn.addEventListener("pointerup", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showLoginScreenFixed();
+        return false;
+      }, {passive:false, capture:true});
+      startBtn.addEventListener("touchend", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showLoginScreenFixed();
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    if (loginBtn && loginBtn.dataset.mobileLoginFixed !== "1") {
+      loginBtn.dataset.mobileLoginFixed = "1";
+      loginBtn.addEventListener("click", startGameFromLoginFixed, {passive:false, capture:true});
+      loginBtn.addEventListener("pointerup", startGameFromLoginFixed, {passive:false, capture:true});
+      loginBtn.addEventListener("touchend", startGameFromLoginFixed, {passive:false, capture:true});
+    }
+
+    if (input && input.dataset.mobileLoginEnterFixed !== "1") {
+      input.dataset.mobileLoginEnterFixed = "1";
+      input.addEventListener("keydown", function(e){
+        if (e.key === "Enter") {
+          startGameFromLoginFixed(e);
+        }
+      }, {passive:false, capture:true});
+    }
+  }
+
+  function removePcPatchVisuals(){
+    const hint = document.getElementById("pcControlHint");
+    if (hint) hint.remove();
+    document.body.classList.remove("pc-control-mode");
+  }
+
+  /* startGame前後にもジョイスティック表示を正しくする */
+  if (typeof window.startGame === "function" && !window.startGame.__mobileTabletOnlyPatch) {
+    const oldStart = window.startGame;
+    window.startGame = function(){
+      const r = oldStart.apply(this, arguments);
+      setTimeout(updateJoystickVisibility, 30);
+      setTimeout(updateJoystickVisibility, 200);
+      return r;
+    };
+    window.startGame.__mobileTabletOnlyPatch = true;
+  }
+
+  function tick(){
+    removePcPatchVisuals();
+    createStartJoystickInsideSettingBox();
+    bindStartAndLoginButtons();
+    updateJoystickVisibility();
+  }
+
+  tick();
+  setInterval(tick, 200);
+
+  window.mobileTabletSetJoystick = setJoy;
+})();
+</script>
+
 </body></html>
