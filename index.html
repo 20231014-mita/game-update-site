@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Survivor</title>
+    <title>Neon Survivor Perfect Stable Edition Final UI Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -280,49 +280,39 @@
         .fade-enter-active { opacity: 1; transition: opacity 0.3s; pointer-events: auto; }
         .fade-exit { opacity: 1; pointer-events: auto; }
         .fade-exit-active { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    
+/* ===== FUTURE CYBER UI UPGRADE ===== */
+:root{--cyber-cyan:#00f5ff;--cyber-purple:#a855f7;--cyber-pink:#ff2bd6;--cyber-bg:#02040a}
+body{background:radial-gradient(circle at 20% 20%,rgba(0,245,255,.14),transparent 30%),radial-gradient(circle at 80% 30%,rgba(168,85,247,.16),transparent 35%),radial-gradient(circle at 50% 90%,rgba(255,43,214,.12),transparent 35%),linear-gradient(135deg,#02040a 0%,#050816 45%,#02040a 100%)!important}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;background-image:linear-gradient(rgba(0,245,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.08) 1px,transparent 1px);background-size:42px 42px;mask-image:radial-gradient(circle at center,black 0%,transparent 75%);animation:cyberGridMove 12s linear infinite}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999999;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.035) 0px,rgba(255,255,255,.035) 1px,transparent 2px,transparent 5px);mix-blend-mode:screen;opacity:.18}
+@keyframes cyberGridMove{from{background-position:0 0,0 0}to{background-position:42px 84px,84px 42px}}
+canvas{filter:contrast(1.12) saturate(1.2)}
+.neon-text{background:linear-gradient(90deg,#fff,var(--cyber-cyan),var(--cyber-purple),#fff);background-size:240% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;text-shadow:0 0 8px rgba(0,245,255,.9),0 0 22px rgba(0,245,255,.7),0 0 48px rgba(168,85,247,.7)!important;animation:holoShift 4s linear infinite,neonPulse 2.4s ease-in-out infinite}
+@keyframes holoShift{0%{background-position:0% 50%}100%{background-position:240% 50%}}@keyframes neonPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+.btn-neon{min-height:48px;border:1px solid rgba(0,245,255,.95)!important;border-radius:14px!important;background:linear-gradient(135deg,rgba(0,245,255,.16),rgba(168,85,247,.12)),rgba(2,8,20,.72)!important;color:#eaffff!important;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 0 16px rgba(0,245,255,.55),inset 0 0 18px rgba(0,245,255,.18),0 10px 30px rgba(0,0,0,.45)!important;backdrop-filter:blur(12px);transform:translateZ(0);overflow:hidden}
+.btn-neon:before{content:"";position:absolute;inset:-2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent);transform:translateX(-120%);transition:transform .45s ease}
+.btn-neon:hover:before,.btn-neon:active:before{transform:translateX(120%)}.btn-neon:hover,.btn-neon:active{background:linear-gradient(135deg,rgba(0,245,255,.45),rgba(255,43,214,.26)),rgba(2,8,20,.9)!important;color:white!important;transform:scale(1.04);box-shadow:0 0 24px rgba(0,245,255,.95),0 0 50px rgba(168,85,247,.5),inset 0 0 20px rgba(255,255,255,.16)!important}
+#startScreen,#loginScreen,#pauseScreen,#levelUpScreen,#gameOverScreen{background:radial-gradient(circle at top,rgba(0,245,255,.16),transparent 34%),radial-gradient(circle at bottom,rgba(255,43,214,.16),transparent 38%),rgba(0,0,0,.78)!important;backdrop-filter:blur(18px) saturate(1.35)!important}
+#startScreen:before,#loginScreen:before,#pauseScreen:before,#levelUpScreen:before,#gameOverScreen:before{content:"";position:absolute;inset:20px;pointer-events:none;border:1px solid rgba(0,245,255,.35);border-radius:28px;box-shadow:inset 0 0 36px rgba(0,245,255,.12),0 0 36px rgba(0,245,255,.2);clip-path:polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px))}
+#startScreen h1{font-size:clamp(4rem,12vw,9rem)!important;line-height:.86!important;margin-bottom:1.4rem!important;transform:perspective(700px) rotateX(8deg)}
+#startScreen>p,#loginScreen>p,#gameOverScreen p{color:#dffcff!important;text-shadow:0 0 12px rgba(0,245,255,.45)}
+#uiLayer>div:first-child>div:first-child,#uiLayer>div:first-child>div:last-child{background:linear-gradient(135deg,rgba(0,245,255,.12),rgba(168,85,247,.08));border:1px solid rgba(0,245,255,.35);border-radius:18px;padding:12px 14px;box-shadow:0 0 22px rgba(0,245,255,.16),inset 0 0 18px rgba(0,245,255,.08);backdrop-filter:blur(12px)}
+#scoreDisplay,#timeDisplay,#levelDisplay{color:#9ffcff!important;text-shadow:0 0 12px rgba(0,245,255,.9),0 0 26px rgba(168,85,247,.45)}
+#hpBar{background:linear-gradient(90deg,#ff1744,#ff6b9a,#fff)!important;box-shadow:0 0 18px #ff1744!important}
+#expBar{background:linear-gradient(90deg,#00f5ff,#39ff88,#fff)!important;box-shadow:0 0 18px #00f5ff!important}
+#bossHpBar{background:linear-gradient(90deg,#ff004c,#ff9d00,#fff)!important}
+#loginCodeInput{border-radius:18px!important;background:linear-gradient(135deg,rgba(0,245,255,.12),rgba(168,85,247,.12)),rgba(2,8,20,.92)!important;border:1px solid rgba(0,245,255,.9)!important;color:#fff!important;box-shadow:0 0 24px rgba(0,245,255,.65),inset 0 0 22px rgba(0,245,255,.12)!important}
+#loginCodeInput:focus{outline:none!important;border-color:#ff2bd6!important;box-shadow:0 0 28px rgba(255,43,214,.7),0 0 60px rgba(0,245,255,.3),inset 0 0 22px rgba(255,43,214,.12)!important}
+.upgrade-card{border-radius:22px!important;background:linear-gradient(135deg,rgba(0,245,255,.12),rgba(168,85,247,.12)),rgba(2,8,20,.86)!important;border:1px solid rgba(0,245,255,.6)!important;box-shadow:0 0 26px rgba(0,245,255,.22),inset 0 0 18px rgba(0,245,255,.08)!important;backdrop-filter:blur(12px)}
+.upgrade-card:hover,.upgrade-card:active{transform:translateY(-8px) scale(1.04)!important;box-shadow:0 0 34px rgba(0,245,255,.75),0 0 70px rgba(168,85,247,.45),inset 0 0 20px rgba(255,255,255,.12)!important}
+#joystickZone{background:radial-gradient(circle,rgba(0,245,255,.22),rgba(0,0,0,.3) 52%,rgba(168,85,247,.14))!important;border:1px solid rgba(0,245,255,.7)!important;box-shadow:0 0 26px rgba(0,245,255,.5),inset 0 0 30px rgba(0,245,255,.16)!important}
+#joystickStick{background:radial-gradient(circle,#fff,#00f5ff 45%,#2563ff)!important;box-shadow:0 0 22px #00f5ff,0 0 42px rgba(168,85,247,.6)!important}
+.speed-btn{border-radius:999px!important;background:rgba(2,8,20,.72)!important;box-shadow:inset 0 0 12px rgba(0,245,255,.08)}
+input[name="gameSpeed"]:checked+.speed-btn{background:linear-gradient(135deg,#00f5ff,#a855f7)!important;color:white!important;box-shadow:0 0 18px #00f5ff,0 0 36px rgba(168,85,247,.4)!important}
+@media(max-width:768px){.btn-neon{min-height:56px;padding-left:22px!important;padding-right:22px!important}#pauseBtn{min-height:46px;font-size:14px!important}#startScreen h1{font-size:clamp(4.2rem,18vw,7rem)!important}}
 
-
-        /* ===== 完全爆速モード：iPad/Safariタッチ最適化 ===== */
-        html, body, canvas {
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            overscroll-behavior: none;
-        }
-        button, .btn-neon, .speed-btn, label {
-            touch-action: manipulation !important;
-            -webkit-tap-highlight-color: transparent !important;
-            -webkit-touch-callout: none !important;
-            user-select: none !important;
-            cursor: pointer !important;
-        }
-        button, .btn-neon {
-            min-width: 96px;
-            min-height: 48px;
-            position: relative;
-            z-index: 9999 !important;
-            pointer-events: auto !important;
-        }
-        #startScreen, #loginScreen, #pauseScreen, #gameOverScreen, #levelUpScreen {
-            z-index: 9000 !important;
-        }
-        #startBtn, #loginBtn, #pauseBtn, #resumeBtn, #restartBtn {
-            z-index: 10000 !important;
-            pointer-events: auto !important;
-        }
-        #loginCodeInput {
-            touch-action: manipulation !important;
-            -webkit-user-select: text !important;
-            user-select: text !important;
-        }
-        @media (hover: none) {
-            .btn-neon:hover, .upgrade-card:hover {
-                transform: none !important;
-            }
-        }
-
-    </style>
+</style>
 </head>
 <body class="text-white">
 
@@ -565,7 +555,7 @@
         <p id="loginError" class="mt-3 text-red-400 font-bold opacity-0">4桁の数字を入力してください</p>
         <p class="mt-5 text-sm text-gray-300 text-center max-w-md leading-relaxed">
             ログイン説明：好きな4桁の数字を自分専用コードとして使ってください。<br>
-            同じコードでログインすると、一度ブラウザを閉じても、この端末・このブラウザに保存されたハイスコアを続けて使えます。
+            同じコードでログインすると、一度ブラウザを閉じても、この端末・このブラウザに保存されたハイスコアを続けて使えます。<br>
         </p>
         <button type="button" id="loginBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer mt-6 pointer-events-auto">LOGIN & START</button>
     </div>
@@ -4446,14 +4436,29 @@
             return Number(localStorage.getItem(key) || 0);
         }
 
+        function getWorldHighScoreKey() {
+            return 'neonSurvivorWorldHighScore';
+        }
+
+        function getSavedWorldHighScore() {
+            return Number(localStorage.getItem(getWorldHighScoreKey()) || 0);
+        }
+
+        function saveWorldHighScoreIfNeeded(finalScore) {
+            const oldWorldHighScore = getSavedWorldHighScore();
+            const newWorldHighScore = Math.max(oldWorldHighScore, finalScore);
+            localStorage.setItem(getWorldHighScoreKey(), String(newWorldHighScore));
+            return newWorldHighScore;
+        }
 
         function saveHighScoreIfNeeded(finalScore) {
             const key = getHighScoreKey();
-            if (!key) return finalScore;
+            const worldHighScore = saveWorldHighScoreIfNeeded(finalScore);
+            if (!key) return { personal: finalScore, world: worldHighScore };
             const oldHighScore = getSavedHighScore();
             const newHighScore = Math.max(oldHighScore, finalScore);
             localStorage.setItem(key, String(newHighScore));
-            return newHighScore;
+            return { personal: newHighScore, world: worldHighScore };
         }
 
         function hideOverlay(el) {
@@ -4497,14 +4502,11 @@
 
             if (!/^\d{4}$/.test(code)) {
                 document.getElementById('loginError').classList.remove('opacity-0');
-                // エラー時も自動でキーボードを出さない
-                input.blur();
+                input.focus();
                 return;
             }
 
             currentLoginCode = code;
-            // スタート直前にキーボードを閉じる
-            input.blur();
             document.getElementById('loginError').classList.add('opacity-0');
 
             hideOverlay(document.getElementById('loginScreen'));
@@ -4613,11 +4615,12 @@
             const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
             
             const finalScoreValue = Math.floor(score);
-            const personalHighScore = saveHighScoreIfNeeded(finalScoreValue);
+            const highScoreValues = saveHighScoreIfNeeded(finalScoreValue);
 
             document.getElementById('finalTime').innerText = `${minutes}:${seconds}`;
             document.getElementById('finalScore').innerText = finalScoreValue;
-            document.getElementById('finalHighScore').innerText = personalHighScore;
+            document.getElementById('finalHighScore').innerText = highScoreValues.personal;
+            const worldScoreEl = document.getElementById('finalWorldHighScore'); if (worldScoreEl) worldScoreEl.innerText = highScoreValues.world;
             document.getElementById('finalLoginCode').innerText = currentLoginCode || '未ログイン';
             
             const screen = document.getElementById('gameOverScreen');
@@ -5124,15 +5127,16 @@
                 isGameLoopScheduled = false;
             }
         }
+
         // イベントリスナー登録
-        // ★ 修正版：ボタンは「押した瞬間」に反応させる。
-        // ★ iPad/Safariでキーボードが勝手に出てボタンを邪魔する問題も防ぐ。
+        // ===== 全ボタン反応 修正版 =====
+        // ポイント：touchstartで強制クリックしない。
+        // touchstartでpreventDefaultしすぎると、iPad/Safariで全ボタンが反応しなくなることがあるため。
         function addPressEvent(element, handler) {
-            if (!element) return;
+            if (!element || element.dataset.pressFixed === '1') return;
+            element.dataset.pressFixed = '1';
 
-            let locked = false;
-            let lastRunTime = 0;
-
+            let lastPressTime = 0;
             const run = (e) => {
                 if (e) {
                     e.preventDefault();
@@ -5140,85 +5144,107 @@
                 }
 
                 const now = performance.now();
-                if (locked || now - lastRunTime < 80) return;
-                locked = true;
-                lastRunTime = now;
+                if (now - lastPressTime < 180) return;
+                lastPressTime = now;
 
-                if (document.activeElement && document.activeElement !== element && document.activeElement.blur) {
-                    document.activeElement.blur();
-                }
-
-                requestAnimationFrame(() => {
+                try {
                     handler(e);
-                    setTimeout(() => {
-                        locked = false;
-                    }, 80);
-                });
+                } catch (err) {
+                    console.error('button handler error:', err);
+                }
             };
 
-            element.addEventListener('pointerdown', run, { passive: false, capture: true });
-            element.addEventListener('touchstart', run, { passive: false, capture: true });
-            element.addEventListener('mousedown', run, { capture: true });
-            element.addEventListener('click', run, { capture: true });
+            // iPad/Safari/スマホ用：指を離した時に実行
+            element.addEventListener('touchend', run, { passive: false });
+
+            // PC/タブレット用：pointerupで実行
+            element.addEventListener('pointerup', run, { passive: false });
+
+            // 通常クリック用
+            element.addEventListener('click', run, { passive: false });
+
+            // キーボード操作用
             element.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') run(e);
-            }, { capture: true });
-        }
-
-        function addTurboTouch(element, handler) {
-            if (!element) return;
-            let last = 0;
-            const run = (e) => {
-                const now = performance.now();
-                if (now - last < 80) return;
-                last = now;
-                e.preventDefault();
-                e.stopPropagation();
-                if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-                handler(e);
-            };
-            element.addEventListener('pointerdown', run, { passive: false, capture: true });
-            element.addEventListener('touchstart', run, { passive: false, capture: true });
-        }
-
-
-        addPressEvent(document.getElementById('startBtn'), showLoginScreen);
-        addPressEvent(document.getElementById('loginBtn'), loginAndStart);
-        document.getElementById('loginCodeInput').addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
-            document.getElementById('loginError').classList.add('opacity-0');
-        });
-        document.getElementById('loginCodeInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') loginAndStart(e);
-        });
-        addPressEvent(document.getElementById('restartBtn'), showLoginScreen);
-        addPressEvent(document.getElementById('pauseBtn'), togglePause);
-        addPressEvent(document.getElementById('resumeBtn'), togglePause);
-
-
-        // ===== 完全爆速モード：小さいボタン・トグル・スピードボタンも即反応 =====
-        document.querySelectorAll('label, .speed-btn').forEach((el) => {
-            addTurboTouch(el, () => {
-                const input = el.querySelector('input') || el.previousElementSibling;
-                if (input && input.tagName === 'INPUT') {
-                    if (input.type === 'radio') {
-                        input.checked = true;
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                    } else if (input.type === 'checkbox') {
-                        input.checked = !input.checked;
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
             });
+        }
+
+        const startBtn = document.getElementById('startBtn');
+        const loginBtn = document.getElementById('loginBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const pauseScreen = document.getElementById('pauseScreen');
+
+        // ボタンが必ず押せるようにするCSS補強
+        [startBtn, loginBtn, restartBtn, pauseBtn, resumeBtn].forEach(btn => {
+            if (!btn) return;
+            btn.style.pointerEvents = 'auto';
+            btn.style.touchAction = 'manipulation';
+            btn.style.webkitTapHighlightColor = 'transparent';
+            btn.style.userSelect = 'none';
+            btn.style.position = btn.style.position || 'relative';
+            btn.style.zIndex = '1000';
         });
 
-        // 入力中以外は、画面タップでキーボードをすぐ閉じる
-        window.addEventListener('pointerdown', (e) => {
-            const tag = e.target && e.target.tagName;
-            if (tag !== 'INPUT' && tag !== 'TEXTAREA' && document.activeElement && document.activeElement.blur) {
-                document.activeElement.blur();
+        // ポーズ画面は開いている時だけタップを受け取る
+        function showPauseScreenSafe() {
+            if (!pauseScreen) return;
+            pauseScreen.classList.remove('opacity-0', 'pointer-events-none');
+            pauseScreen.classList.add('opacity-100', 'pointer-events-auto');
+            pauseScreen.style.pointerEvents = 'auto';
+            pauseScreen.style.zIndex = '9999';
+            if (resumeBtn) {
+                resumeBtn.style.pointerEvents = 'auto';
+                resumeBtn.style.zIndex = '10000';
             }
-        }, { passive: true, capture: true });
+            resetJoystick();
+            const toggle = document.getElementById('pauseJoystickToggle');
+            if (toggle) toggle.checked = isJoystickEnabled;
+        }
+
+        function hidePauseScreenSafe() {
+            if (!pauseScreen) return;
+            pauseScreen.classList.remove('opacity-100', 'pointer-events-auto');
+            pauseScreen.classList.add('opacity-0', 'pointer-events-none');
+            pauseScreen.style.pointerEvents = 'none';
+        }
+
+        function pauseGameSafe(e) {
+            if (gameState !== 'playing' || isTimeStopped) return;
+            gameState = 'paused';
+            if (animationId) cancelAnimationFrame(animationId);
+            isGameLoopScheduled = false;
+            showPauseScreenSafe();
+        }
+
+        function resumeGameSafe(e) {
+            if (gameState !== 'paused') return;
+            gameState = 'playing';
+            hidePauseScreenSafe();
+            lastTime = performance.now();
+            if (typeof timeAccumulator !== 'undefined') timeAccumulator = 0;
+            if (!isGameLoopScheduled) {
+                isGameLoopScheduled = true;
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        addPressEvent(startBtn, showLoginScreen);
+        addPressEvent(loginBtn, loginAndStart);
+        const loginInput = document.getElementById('loginCodeInput');
+        if (loginInput) {
+            loginInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                document.getElementById('loginError').classList.add('opacity-0');
+            });
+            loginInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') loginAndStart(e);
+            });
+        }
+        addPressEvent(restartBtn, showLoginScreen);
+        addPressEvent(pauseBtn, pauseGameSafe);
+        addPressEvent(resumeBtn, resumeGameSafe);
 
         // ESCキーでポーズ切り替え
         window.addEventListener('keydown', (e) => {
@@ -5227,6 +5253,4785 @@
             }
         });
 
-    </script>
-</body>
+    
+
+        /* ===== LOGIN SCREEN FIX 2026-04-26 =====
+           GAME START後、キーボードだけ出てログイン画面が見えない問題を修正 */
+        (function fixLoginScreenVisibility(){
+            const startScreen = document.getElementById('startScreen');
+            const loginScreen = document.getElementById('loginScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const startBtn = document.getElementById('startBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const loginInput = document.getElementById('loginCodeInput');
+            const loginError = document.getElementById('loginError');
+
+            function forceShow(el) {
+                if (!el) return;
+                el.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                el.classList.add('opacity-100', 'pointer-events-auto');
+                el.style.display = 'flex';
+                el.style.visibility = 'visible';
+                el.style.opacity = '1';
+                el.style.pointerEvents = 'auto';
+                el.style.zIndex = '99999';
+            }
+
+            function forceHide(el) {
+                if (!el) return;
+                el.classList.remove('opacity-100', 'pointer-events-auto');
+                el.classList.add('opacity-0', 'pointer-events-none', 'hidden');
+                el.style.opacity = '0';
+                el.style.pointerEvents = 'none';
+                el.style.visibility = 'hidden';
+                el.style.zIndex = '0';
+            }
+
+            window.showLoginScreen = function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+                }
+
+                if (gameState === 'playing' || gameState === 'levelup' || gameState === 'paused') return;
+                gameState = 'login';
+
+                forceHide(startScreen);
+                forceHide(gameOverScreen);
+                forceShow(loginScreen);
+
+                if (loginError) loginError.classList.add('opacity-0');
+                if (loginInput) {
+                    loginInput.disabled = false;
+                    loginInput.readOnly = false;
+                    loginInput.style.pointerEvents = 'auto';
+                    loginInput.style.zIndex = '100000';
+                    loginInput.value = currentLoginCode || '';
+                    // 画面が完全に出てからキーボードを出す
+                    setTimeout(() => loginInput.focus(), 180);
+                }
+            };
+
+            // 古いボタン処理より先に動かす。これで透明レイヤーや二重イベントを回避。
+            function bindOpenLogin(btn) {
+                if (!btn) return;
+                ['pointerup', 'touchend', 'click'].forEach(type => {
+                    btn.addEventListener(type, window.showLoginScreen, { capture: true, passive: false });
+                });
+            }
+
+            bindOpenLogin(startBtn);
+            bindOpenLogin(restartBtn);
+        })();
+</script>
+
+
+<script>
+/* ===== FINAL START BUTTON FIX =====
+   最初のGAME STARTだけログイン画面に切り替わらない問題を修正 */
+(function finalStartButtonFix(){
+  function byId(id){ return document.getElementById(id); }
+
+  function hardHide(el){
+    if(!el) return;
+    el.classList.add('hidden');
+    el.classList.remove('opacity-100','pointer-events-auto');
+    el.classList.add('opacity-0','pointer-events-none');
+    el.style.display = 'none';
+    el.style.opacity = '0';
+    el.style.visibility = 'hidden';
+    el.style.pointerEvents = 'none';
+    el.style.zIndex = '-1';
+  }
+
+  function hardShowLogin(){
+    const startScreen = byId('startScreen');
+    const loginScreen = byId('loginScreen');
+    const gameOverScreen = byId('gameOverScreen');
+    const input = byId('loginCodeInput');
+    const err = byId('loginError');
+
+    if (typeof gameState !== 'undefined') gameState = 'login';
+
+    hardHide(startScreen);
+    hardHide(gameOverScreen);
+
+    if(loginScreen){
+      loginScreen.classList.remove('hidden','opacity-0','pointer-events-none');
+      loginScreen.classList.add('opacity-100','pointer-events-auto');
+      loginScreen.style.setProperty('display','flex','important');
+      loginScreen.style.setProperty('opacity','1','important');
+      loginScreen.style.setProperty('visibility','visible','important');
+      loginScreen.style.setProperty('pointer-events','auto','important');
+      loginScreen.style.setProperty('z-index','2147483647','important');
+      loginScreen.style.position = 'fixed';
+      loginScreen.style.inset = '0';
+      loginScreen.style.background = 'rgba(0,0,0,0.88)';
+    }
+
+    if(err) err.classList.add('opacity-0');
+
+    if(input){
+      input.disabled = false;
+      input.readOnly = false;
+      input.style.pointerEvents = 'auto';
+      input.style.zIndex = '2147483647';
+      input.value = (typeof currentLoginCode !== 'undefined' && currentLoginCode) ? currentLoginCode : '';
+      setTimeout(function(){ input.focus(); }, 120);
+    }
+  }
+
+  function replaceButtonAndBind(id){
+    const oldBtn = byId(id);
+    if(!oldBtn) return;
+    const newBtn = oldBtn.cloneNode(true); // 古いイベントを全部消す
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+    newBtn.style.pointerEvents = 'auto';
+    newBtn.style.touchAction = 'manipulation';
+    newBtn.style.zIndex = '2147483647';
+
+    const run = function(e){
+      if(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if(typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      }
+      hardShowLogin();
+      return false;
+    };
+
+    // touchstartにも入れることで、iPadで一番最初の反応を確実にする
+    ['touchstart','touchend','pointerdown','pointerup','mousedown','mouseup','click'].forEach(function(type){
+      newBtn.addEventListener(type, run, {capture:true, passive:false});
+    });
+  }
+
+  // 最初のスタートとリトライだけログイン画面へ
+  replaceButtonAndBind('startBtn');
+  replaceButtonAndBind('restartBtn');
+})();
+</script>
+
+
+<!-- START BUTTON -> LOGIN SCREEN ABSOLUTE FIX 2026-04-26 -->
+<style id="start-login-absolute-fix-style">
+  body.login-mode #startScreen { display:none !important; opacity:0 !important; visibility:hidden !important; pointer-events:none !important; }
+  body.login-mode #loginScreen { display:flex !important; opacity:1 !important; visibility:visible !important; pointer-events:auto !important; z-index:2147483647 !important; position:fixed !important; inset:0 !important; background:rgba(0,0,0,0.92) !important; }
+  body.login-mode #loginScreen * { visibility:visible !important; }
+  body.login-mode #loginCodeInput, body.login-mode #loginBtn { pointer-events:auto !important; opacity:1 !important; visibility:visible !important; z-index:2147483647 !important; }
+</style>
+<script id="start-login-absolute-fix-script">
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function showLoginScreenAbsolutely(){
+    var startScreen=$('startScreen'), loginScreen=$('loginScreen'), input=$('loginCodeInput'), err=$('loginError');
+    document.body.classList.add('login-mode');
+    if (typeof gameState !== 'undefined') gameState='login';
+    if(startScreen){ startScreen.classList.add('hidden','opacity-0','pointer-events-none'); startScreen.style.setProperty('display','none','important'); startScreen.style.setProperty('opacity','0','important'); startScreen.style.setProperty('visibility','hidden','important'); startScreen.style.setProperty('pointer-events','none','important'); }
+    if(loginScreen){ loginScreen.classList.remove('hidden','opacity-0','pointer-events-none'); loginScreen.classList.add('opacity-100','pointer-events-auto'); loginScreen.style.setProperty('display','flex','important'); loginScreen.style.setProperty('opacity','1','important'); loginScreen.style.setProperty('visibility','visible','important'); loginScreen.style.setProperty('pointer-events','auto','important'); loginScreen.style.setProperty('z-index','2147483647','important'); loginScreen.style.setProperty('position','fixed','important'); loginScreen.style.setProperty('inset','0','important'); loginScreen.style.setProperty('background','rgba(0,0,0,0.92)','important'); }
+    if(err){ err.style.opacity='0'; err.classList.add('opacity-0'); }
+    if(input){ input.disabled=false; input.readOnly=false; input.value=''; input.style.setProperty('display','block','important'); input.style.setProperty('opacity','1','important'); input.style.setProperty('visibility','visible','important'); input.style.setProperty('pointer-events','auto','important'); input.style.setProperty('z-index','2147483647','important'); requestAnimationFrame(function(){ requestAnimationFrame(function(){ setTimeout(function(){ input.focus(); },80); }); }); }
+  }
+  function bindStartButton(){
+    var btn=$('startBtn'); if(!btn) return;
+    var fresh=btn.cloneNode(true); btn.parentNode.replaceChild(fresh,btn);
+    fresh.style.setProperty('pointer-events','auto','important'); fresh.style.setProperty('touch-action','manipulation','important'); fresh.style.setProperty('z-index','2147483647','important');
+    function handler(e){ if(e){ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); } showLoginScreenAbsolutely(); return false; }
+    ['pointerup','touchend','click'].forEach(function(type){ fresh.addEventListener(type,handler,{capture:true,passive:false}); });
+  }
+  document.addEventListener('keydown',function(e){ if(e.key!=='Enter') return; var loginScreen=$('loginScreen'); var visible=document.body.classList.contains('login-mode')&&loginScreen&&getComputedStyle(loginScreen).display!=='none'&&getComputedStyle(loginScreen).visibility!=='hidden'&&Number(getComputedStyle(loginScreen).opacity)>0.5; if(!visible){ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); showLoginScreenAbsolutely(); return false; } },true);
+  bindStartButton();
+})();
+</script>
+
+
+<script>
+(function addFutureUiDetails(){
+ if(document.getElementById('future-ui-badge'))return;
+ const badge=document.createElement('div');badge.id='future-ui-badge';badge.textContent='SYSTEM ONLINE // NEON SURVIVOR';badge.style.cssText='position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:35;pointer-events:none;padding:7px 16px;border:1px solid rgba(0,245,255,.45);border-radius:999px;background:rgba(2,8,20,.55);color:#dffcff;font:700 12px Orbitron,sans-serif;letter-spacing:.18em;text-shadow:0 0 12px #00f5ff;box-shadow:0 0 20px rgba(0,245,255,.2),inset 0 0 14px rgba(0,245,255,.08);backdrop-filter:blur(10px)';document.body.appendChild(badge);
+ const s=document.createElement('style');s.textContent='.cyber-corner{position:fixed;width:54px;height:54px;z-index:34;pointer-events:none;border-color:rgba(0,245,255,.7);filter:drop-shadow(0 0 8px #00f5ff)}.cyber-corner.tl{left:18px;top:18px;border-left:2px solid;border-top:2px solid}.cyber-corner.tr{right:18px;top:18px;border-right:2px solid;border-top:2px solid}.cyber-corner.bl{left:18px;bottom:18px;border-left:2px solid;border-bottom:2px solid}.cyber-corner.br{right:18px;bottom:18px;border-right:2px solid;border-bottom:2px solid}';document.head.appendChild(s);['tl','tr','bl','br'].forEach(p=>{const c=document.createElement('div');c.className='cyber-corner '+p;document.body.appendChild(c)})
+})();
+</script>
+
+
+<!-- ===== FINAL FUTURE UI PATCH: readable text + cyber noise + no world high score ===== -->
+<style>
+body{color:#f8feff!important;text-shadow:0 0 6px rgba(0,255,255,.45);background:radial-gradient(circle at 20% 15%,rgba(0,255,255,.13),transparent 25%),radial-gradient(circle at 80% 70%,rgba(70,90,255,.14),transparent 30%),#050505!important}p,span,div,button,input{letter-spacing:.03em}.neon-text,h1,h2{color:#fff!important;text-shadow:0 0 4px #fff,0 0 12px #00ffff,0 0 28px #00ffff,0 0 55px #0066ff!important}#scoreDisplay,#timeDisplay,#levelDisplay,#finalScore,#finalHighScore,#finalTime,#finalLoginCode{color:#fff!important;text-shadow:0 0 6px #00ffff,0 0 14px rgba(0,255,255,.8),0 0 26px rgba(0,180,255,.5)!important}.btn-neon{position:relative!important;overflow:hidden!important;min-height:48px;border:2px solid #00f6ff!important;background:linear-gradient(135deg,rgba(0,255,255,.12),rgba(0,80,255,.18))!important;color:#fff!important;text-shadow:0 0 8px #00ffff!important;box-shadow:0 0 12px rgba(0,255,255,.85),inset 0 0 14px rgba(0,255,255,.45),0 0 35px rgba(0,100,255,.35)!important;backdrop-filter:blur(8px)}.btn-neon:before{content:"";position:absolute;top:0;left:-120%;width:80%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);transform:skewX(-25deg);animation:buttonScanFinal 2.4s infinite;pointer-events:none}@keyframes buttonScanFinal{0%{left:-120%}55%{left:140%}100%{left:140%}}.btn-neon:hover,.btn-neon:active{background:rgba(0,255,255,.9)!important;color:#001014!important;text-shadow:none!important;transform:scale(.98)}body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999999;opacity:.11;background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.16) 0px,rgba(255,255,255,.16) 1px,transparent 1px,transparent 4px);animation:scanNoiseFinal .12s infinite linear;mix-blend-mode:screen}body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999998;opacity:.08;background:radial-gradient(circle at 20% 20%,rgba(0,255,255,.35),transparent 25%),radial-gradient(circle at 80% 70%,rgba(0,80,255,.35),transparent 30%),linear-gradient(90deg,transparent 0%,rgba(0,255,255,.1) 50%,transparent 100%);animation:cyberNoiseMoveFinal 3.5s infinite alternate ease-in-out}@keyframes scanNoiseFinal{0%{transform:translateY(0)}100%{transform:translateY(4px)}}@keyframes cyberNoiseMoveFinal{0%{filter:hue-rotate(0deg);transform:translateX(-8px)}100%{filter:hue-rotate(18deg);transform:translateX(8px)}}.cyber-glitch-line{position:fixed;left:0;width:100vw;height:2px;background:rgba(0,255,255,.9);box-shadow:0 0 18px #00ffff;pointer-events:none;z-index:1000000;opacity:0;animation:glitchLineRunFinal 1.8s infinite}@keyframes glitchLineRunFinal{0%{top:12%;opacity:0;transform:translateX(-100%)}8%{opacity:1}18%{top:28%;opacity:.8;transform:translateX(100%)}19%{opacity:0}45%{top:62%;opacity:0;transform:translateX(-100%)}52%{opacity:1}62%{top:74%;opacity:.7;transform:translateX(100%)}63%{opacity:0}100%{opacity:0}}#hpBar{box-shadow:0 0 12px #ff004c,0 0 25px rgba(255,0,76,.7)!important}#expBar{box-shadow:0 0 12px #00ffff,0 0 25px rgba(0,255,255,.8)!important}
+</style>
+<script>
+(function finalNoWorldScoreAndCyberUI(){
+if(!document.querySelector('.cyber-glitch-line')){const line=document.createElement('div');line.className='cyber-glitch-line';document.body.appendChild(line)}
+const worldHighScore=document.getElementById('finalWorldHighScore');if(worldHighScore){const parent=worldHighScore.closest('p');if(parent)parent.remove()}
+document.querySelectorAll('p, div, span').forEach(el=>{if(el.textContent&&el.textContent.includes('世界のハイスコア')){el.innerHTML=el.innerHTML.replace(/<br>\s*※「世界のハイスコア」[^<。]*。[^<。]*。?/g,'').replace(/※「世界のハイスコア」[^。]*。[^。]*。?/g,'').replace(/世界のハイスコア[^。]*。?/g,'')}})
+})();
+</script>
+
+
 </html>
+<!-- ===== LOGIN BUTTON FINAL FIX 2026-04-26 ===== -->
+<script id="login-button-final-fix">
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function hideLoginScreenCompletely(){
+    var loginScreen=$('loginScreen');
+    document.body.classList.remove('login-mode');
+    if(loginScreen){
+      loginScreen.classList.remove('opacity-100','pointer-events-auto');
+      loginScreen.classList.add('opacity-0','pointer-events-none');
+      loginScreen.style.setProperty('display','none','important');
+      loginScreen.style.setProperty('opacity','0','important');
+      loginScreen.style.setProperty('visibility','hidden','important');
+      loginScreen.style.setProperty('pointer-events','none','important');
+      loginScreen.style.setProperty('z-index','50','important');
+    }
+  }
+  function startFromLogin(e){
+    if(e){ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); }
+    var input=$('loginCodeInput');
+    var err=$('loginError');
+    var code=input ? String(input.value||'').replace(/\D/g,'').slice(0,4) : '';
+    if(code.length!==4){
+      if(err){ err.textContent='4桁の数字を入力してください'; err.classList.remove('opacity-0'); err.style.opacity='1'; }
+      if(input) input.focus();
+      return false;
+    }
+    if(typeof currentLoginCode!=='undefined') currentLoginCode=code;
+    if(err){ err.classList.add('opacity-0'); err.style.opacity='0'; }
+    hideLoginScreenCompletely();
+    var gameOverScreen=$('gameOverScreen');
+    if(gameOverScreen){ gameOverScreen.classList.remove('opacity-100','pointer-events-auto'); gameOverScreen.classList.add('opacity-0','pointer-events-none'); gameOverScreen.style.pointerEvents='none'; }
+    if(typeof gameState!=='undefined') gameState='start';
+    if(typeof initGame==='function') initGame();
+    else if(typeof startGame==='function') startGame();
+    else { if(typeof gameState!=='undefined') gameState='playing'; if(typeof gameLoop==='function') requestAnimationFrame(gameLoop); }
+    return false;
+  }
+  var oldBtn=$('loginBtn');
+  if(oldBtn){
+    var btn=oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(btn,oldBtn);
+    btn.style.setProperty('pointer-events','auto','important');
+    btn.style.setProperty('touch-action','manipulation','important');
+    btn.style.setProperty('z-index','2147483647','important');
+    ['pointerup','touchend','click'].forEach(function(type){ btn.addEventListener(type,startFromLogin,{capture:true,passive:false}); });
+  }
+  var input=$('loginCodeInput');
+  if(input){
+    input.addEventListener('input',function(){ input.value=String(input.value||'').replace(/\D/g,'').slice(0,4); var err=$('loginError'); if(err){err.classList.add('opacity-0');err.style.opacity='0';} });
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter') startFromLogin(e); },true);
+  }
+})();
+</script>
+
+
+<!-- === プレイ中だけノイズOFF 修正 === -->
+<style>
+body.playing-no-noise::before,
+body.playing-no-noise::after,
+body.playing-no-noise .cyber-glitch-line {
+  display: none !important;
+}
+</style>
+<script>
+(function removeNoiseWhilePlaying(){
+  function updateNoiseState(){
+    if (typeof gameState !== 'undefined' && gameState === 'playing') {
+      document.body.classList.add('playing-no-noise');
+    } else {
+      document.body.classList.remove('playing-no-noise');
+    }
+  }
+  setInterval(updateNoiseState, 100);
+  document.addEventListener('visibilitychange', updateNoiseState);
+  window.addEventListener('focus', updateNoiseState);
+})();
+</script>
+<!-- === /プレイ中だけノイズOFF 修正 === -->
+
+
+<!-- ===== 5倍速フリーズ対策＋武器選択反応改善 ===== -->
+<style>
+#levelUpScreen {
+  z-index: 99999 !important;
+}
+
+#upgradesContainer,
+.upgrade-card {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.upgrade-card {
+  min-width: 220px !important;
+  min-height: 140px !important;
+  padding: 18px !important;
+  transform: translateZ(0);
+}
+
+.upgrade-card:active {
+  transform: scale(0.96) translateZ(0) !important;
+  box-shadow: 0 0 35px rgba(0, 255, 255, 0.95) !important;
+}
+</style>
+
+<script>
+(function fixSpeedAndUpgradeTapComplete(){
+  const SAFE_MAX_SPEED = 3.2;
+
+  const originalSetGameSpeed = window.setGameSpeed;
+  window.setGameSpeed = function(speed){
+    const requestedSpeed = Number(speed) || 1;
+    const safeSpeed = Math.min(requestedSpeed, SAFE_MAX_SPEED);
+
+    if (typeof gameSpeed !== 'undefined') {
+      gameSpeed = safeSpeed;
+    }
+
+    if (typeof originalSetGameSpeed === 'function') {
+      try { originalSetGameSpeed(safeSpeed); } catch(e) {}
+    }
+  };
+
+  document.querySelectorAll('input[name="gameSpeed"]').forEach(input => {
+    input.addEventListener('change', function(){
+      window.setGameSpeed(Number(this.value));
+    }, true);
+  });
+
+  setInterval(() => {
+    if (typeof particles !== 'undefined' && particles.length > 220) {
+      particles.splice(0, particles.length - 220);
+    }
+    if (typeof floatingTexts !== 'undefined' && floatingTexts.length > 80) {
+      floatingTexts.splice(0, floatingTexts.length - 80);
+    }
+    if (typeof bullets !== 'undefined' && bullets.length > 180) {
+      bullets.splice(0, bullets.length - 180);
+    }
+    if (typeof enemies !== 'undefined' && enemies.length > 160) {
+      enemies.splice(0, enemies.length - 160);
+    }
+  }, 500);
+
+  function makeUpgradeCardsEasyToTap(){
+    document.querySelectorAll('.upgrade-card').forEach(card => {
+      if (card.dataset.tapFixed === 'true') return;
+      card.dataset.tapFixed = 'true';
+
+      card.addEventListener('pointerup', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        this.click();
+      }, { capture: true });
+
+      card.addEventListener('touchend', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        this.click();
+      }, { passive: false, capture: true });
+    });
+  }
+
+  const container = document.getElementById('upgradesContainer');
+  if (container) {
+    new MutationObserver(makeUpgradeCardsEasyToTap).observe(container, { childList: true, subtree: true });
+  }
+  makeUpgradeCardsEasyToTap();
+})();
+</script>
+
+
+<!-- ===== 一時停止メニュー完全修正：RESUME・倍速・ジョイスティック ===== -->
+<style>
+#pauseScreen {
+  z-index: 100000 !important;
+}
+
+#pauseScreen.is-open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  display: flex !important;
+}
+
+#pauseScreen * {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#resumeBtn,
+#pauseScreen .speed-btn,
+#pauseScreen label,
+#pauseJoystickToggle {
+  position: relative !important;
+  z-index: 100002 !important;
+  pointer-events: auto !important;
+}
+</style>
+
+<script>
+(function fixPauseMenuControlsComplete(){
+  const pauseScreen = document.getElementById('pauseScreen');
+  const resumeBtn = document.getElementById('resumeBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const pauseJoystickToggle = document.getElementById('pauseJoystickToggle');
+  const joystickToggle = document.getElementById('joystickToggle');
+  const joystickZone = document.getElementById('joystickZone');
+
+  function showPauseScreenFixed(){
+    if (!pauseScreen) return;
+    pauseScreen.classList.add('is-open');
+    pauseScreen.style.display = 'flex';
+    pauseScreen.style.opacity = '1';
+    pauseScreen.style.pointerEvents = 'auto';
+    pauseScreen.style.zIndex = '100000';
+
+    if (typeof gameState !== 'undefined') gameState = 'paused';
+
+    if (typeof Sound !== 'undefined' && Sound.stopBGM) {
+      try { Sound.stopBGM(); } catch(e) {}
+    }
+  }
+
+  function hidePauseScreenFixed(){
+    if (!pauseScreen) return;
+    pauseScreen.classList.remove('is-open');
+    pauseScreen.style.opacity = '0';
+    pauseScreen.style.pointerEvents = 'none';
+    pauseScreen.style.display = 'none';
+
+    if (typeof gameState !== 'undefined') gameState = 'playing';
+    if (typeof lastTime !== 'undefined') lastTime = performance.now();
+
+    if (typeof Sound !== 'undefined' && Sound.startBGM) {
+      try { Sound.startBGM(); } catch(e) {}
+    }
+
+    if (typeof isGameLoopScheduled !== 'undefined') {
+      isGameLoopScheduled = false;
+    }
+
+    if (typeof gameLoop === 'function') {
+      try { requestAnimationFrame(gameLoop); } catch(e) {}
+    }
+  }
+
+  function setSpeedFixed(speed){
+    const requested = Number(speed) || 1;
+    const safe = Math.min(requested, 3.2);
+
+    if (typeof gameSpeed !== 'undefined') gameSpeed = safe;
+    window.gameSpeed = safe;
+
+    document.querySelectorAll('input[name="gameSpeed"]').forEach(input => {
+      input.checked = Number(input.value) === requested;
+    });
+  }
+
+  function setJoystickFixed(enabled){
+    const next = !!enabled;
+
+    if (typeof isJoystickEnabled !== 'undefined') isJoystickEnabled = next;
+    window.isJoystickEnabled = next;
+
+    if (pauseJoystickToggle) pauseJoystickToggle.checked = next;
+    if (joystickToggle) joystickToggle.checked = next;
+
+    if (joystickZone) {
+      if (next && typeof gameState !== 'undefined' && gameState === 'playing') {
+        joystickZone.classList.remove('hidden');
+        joystickZone.style.opacity = '1';
+        joystickZone.style.pointerEvents = 'auto';
+      } else if (!next) {
+        joystickZone.classList.add('hidden');
+        joystickZone.style.opacity = '0';
+        joystickZone.style.pointerEvents = 'none';
+      }
+    }
+  }
+
+  function bindTap(el, fn){
+    if (!el || el.dataset.pauseFixed === 'true') return;
+    el.dataset.pauseFixed = 'true';
+
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      fn(e);
+      return false;
+    }
+
+    el.addEventListener('click', handler, { passive: false, capture: true });
+    el.addEventListener('pointerup', handler, { passive: false, capture: true });
+    el.addEventListener('touchend', handler, { passive: false, capture: true });
+  }
+
+  bindTap(pauseBtn, showPauseScreenFixed);
+  bindTap(resumeBtn, hidePauseScreenFixed);
+
+  document.querySelectorAll('input[name="gameSpeed"]').forEach(input => {
+    const label = input.closest('label');
+    const btn = label ? label.querySelector('.speed-btn') : null;
+    const fn = () => setSpeedFixed(input.value);
+
+    bindTap(input, fn);
+    bindTap(label, fn);
+    bindTap(btn, fn);
+  });
+
+  const joystickLabel = pauseJoystickToggle ? pauseJoystickToggle.closest('label') : null;
+
+  function toggleJoystickFromPauseFixed(){
+    const now = pauseJoystickToggle ? pauseJoystickToggle.checked : false;
+    setJoystickFixed(!now);
+  }
+
+  bindTap(pauseJoystickToggle, toggleJoystickFromPauseFixed);
+  bindTap(joystickLabel, toggleJoystickFromPauseFixed);
+
+  window.resumeGameFixed = hidePauseScreenFixed;
+})();
+</script>
+
+
+<!-- ===== RETRYボタン修正：同じログインコードで再スタート ===== -->
+<style>
+#gameOverScreen {
+  z-index: 100000 !important;
+}
+
+#gameOverScreen.is-open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  display: flex !important;
+}
+
+#restartBtn {
+  position: relative !important;
+  z-index: 100002 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+</style>
+
+<script>
+(function fixRetryButtonSameLoginCode(){
+  const restartBtn = document.getElementById('restartBtn');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const loginScreen = document.getElementById('loginScreen');
+  const startScreen = document.getElementById('startScreen');
+
+  if (!restartBtn) return;
+
+  function hideAllMenusForRetry(){
+    if (gameOverScreen) {
+      gameOverScreen.classList.remove('is-open');
+      gameOverScreen.style.opacity = '0';
+      gameOverScreen.style.pointerEvents = 'none';
+      gameOverScreen.style.display = 'none';
+    }
+    if (loginScreen) {
+      loginScreen.style.opacity = '0';
+      loginScreen.style.pointerEvents = 'none';
+      loginScreen.style.display = 'none';
+    }
+    if (startScreen) {
+      startScreen.style.opacity = '0';
+      startScreen.style.pointerEvents = 'none';
+      startScreen.style.display = 'none';
+    }
+  }
+
+  function retrySameLoginCode(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const savedCode = (typeof currentLoginCode !== 'undefined' && currentLoginCode)
+      ? currentLoginCode
+      : (localStorage.getItem('neon_last_login_code') || null);
+
+    if (savedCode && typeof currentLoginCode !== 'undefined') {
+      currentLoginCode = savedCode;
+      try { localStorage.setItem('neon_last_login_code', savedCode); } catch(err) {}
+    }
+
+    hideAllMenusForRetry();
+
+    if (typeof Sound !== 'undefined' && Sound.init) {
+      try { Sound.init(); } catch(err) {}
+    }
+
+    if (typeof isGameLoopScheduled !== 'undefined') {
+      isGameLoopScheduled = false;
+    }
+
+    if (typeof startGame === 'function') {
+      startGame();
+    } else if (typeof initGame === 'function') {
+      initGame();
+      if (typeof gameState !== 'undefined') gameState = 'playing';
+      if (typeof lastTime !== 'undefined') lastTime = performance.now();
+      if (typeof gameLoop === 'function') requestAnimationFrame(gameLoop);
+    } else {
+      if (typeof gameState !== 'undefined') gameState = 'playing';
+      if (typeof score !== 'undefined') score = 0;
+      if (typeof gameTime !== 'undefined') gameTime = 0;
+      if (typeof frameCount !== 'undefined') frameCount = 0;
+      if (typeof lastTime !== 'undefined') lastTime = performance.now();
+      if (typeof gameLoop === 'function') requestAnimationFrame(gameLoop);
+    }
+
+    return false;
+  }
+
+  restartBtn.onclick = null;
+  restartBtn.onpointerup = null;
+  restartBtn.ontouchend = null;
+
+  restartBtn.addEventListener('click', retrySameLoginCode, { passive: false, capture: true });
+  restartBtn.addEventListener('pointerup', retrySameLoginCode, { passive: false, capture: true });
+  restartBtn.addEventListener('touchend', retrySameLoginCode, { passive: false, capture: true });
+})();
+</script>
+
+
+<!-- ===== BIG UPDATE: 音量ON/OFF・永久アップグレード・必殺技ゲージ・操作しやすさ改善 ===== -->
+<style>
+  #neonMuteBtn, #neonUpgradeBtn, #neonUpgradeBtnGameOver {
+    position: fixed;
+    z-index: 2147483000;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    border: 2px solid #00f6ff;
+    background: rgba(0, 20, 35, 0.78);
+    color: white;
+    font-weight: 800;
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 0 16px rgba(0,255,255,.7), inset 0 0 12px rgba(0,255,255,.25);
+    text-shadow: 0 0 8px #00ffff;
+    backdrop-filter: blur(8px);
+  }
+  #neonMuteBtn { right: 16px; top: 76px; }
+  #neonUpgradeBtn { left: 50%; transform: translateX(-50%); bottom: 26px; }
+  #neonUpgradeBtnGameOver { left: 50%; transform: translateX(-50%); bottom: 86px; }
+
+  #neonPermanentShop {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,.78);
+    backdrop-filter: blur(10px);
+    pointer-events: auto;
+  }
+  #neonPermanentShop.open { display: flex; }
+  #neonShopPanel {
+    width: min(920px, 94vw);
+    max-height: 88vh;
+    overflow: auto;
+    border: 2px solid #00f6ff;
+    border-radius: 24px;
+    padding: 20px;
+    background:
+      linear-gradient(135deg, rgba(0,255,255,.13), rgba(0,30,90,.33)),
+      rgba(0, 12, 24, .94);
+    box-shadow: 0 0 40px rgba(0,255,255,.65), inset 0 0 26px rgba(0,255,255,.18);
+    color: #fff;
+  }
+  .neon-shop-title {
+    font-size: clamp(26px, 5vw, 46px);
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 0 10px #fff, 0 0 22px #00ffff, 0 0 48px #0066ff;
+    margin-bottom: 8px;
+  }
+  .neon-core-box {
+    text-align: center;
+    font-size: 20px;
+    color: #fef08a;
+    text-shadow: 0 0 12px #facc15;
+    margin-bottom: 14px;
+    font-weight: 800;
+  }
+  .neon-upgrade-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .neon-upgrade-card {
+    border: 1px solid rgba(0,255,255,.8);
+    border-radius: 18px;
+    padding: 14px;
+    background: rgba(0, 40, 70, .72);
+    box-shadow: inset 0 0 14px rgba(0,255,255,.18), 0 0 12px rgba(0,255,255,.25);
+  }
+  .neon-upgrade-card h3 {
+    font-size: 19px;
+    font-weight: 900;
+    margin: 0 0 8px;
+    color: #a5f3fc;
+  }
+  .neon-upgrade-card p {
+    font-size: 13px;
+    color: #e0f2fe;
+    margin: 4px 0 10px;
+    line-height: 1.45;
+  }
+  .neon-buy-btn, #neonCloseShop {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 12px;
+    border: 2px solid #00f6ff;
+    background: rgba(0,255,255,.15);
+    color: white;
+    font-weight: 900;
+    text-shadow: 0 0 8px #00ffff;
+    box-shadow: 0 0 12px rgba(0,255,255,.45);
+    pointer-events: auto !important;
+  }
+  .neon-buy-btn:active, #neonCloseShop:active, #neonMuteBtn:active, #neonUpgradeBtn:active, #neonUpgradeBtnGameOver:active {
+    transform: scale(.96);
+  }
+  #neonCloseShop { margin-top: 16px; background: rgba(255,255,255,.08); }
+
+  #skillCooldownHud {
+    position: fixed;
+    left: 14px;
+    bottom: 18px;
+    z-index: 45;
+    width: min(350px, 92vw);
+    pointer-events: none;
+    display: none;
+    gap: 7px;
+    flex-direction: column;
+  }
+  body.playing-skill-hud #skillCooldownHud { display: flex; }
+  .skill-cool-row {
+    background: rgba(0, 12, 24, .62);
+    border: 1px solid rgba(0,255,255,.55);
+    border-radius: 11px;
+    padding: 6px 8px;
+    box-shadow: 0 0 12px rgba(0,255,255,.22);
+    backdrop-filter: blur(6px);
+  }
+  .skill-cool-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 900;
+    color: #e0faff;
+    text-shadow: 0 0 7px #00ffff;
+    margin-bottom: 4px;
+  }
+  .skill-cool-bar {
+    height: 7px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255,255,255,.15);
+  }
+  .skill-cool-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #00ffff, #a78bfa, #facc15);
+    box-shadow: 0 0 10px #00ffff;
+  }
+
+  /* 移動が速すぎて操作しにくい問題の軽減 */
+  body.neon-control-mode #joystickZone {
+    width: 190px !important;
+    height: 190px !important;
+    right: 18px !important;
+    bottom: 22px !important;
+  }
+</style>
+
+<div id="neonPermanentShop">
+  <div id="neonShopPanel">
+    <div class="neon-shop-title">NEON LAB</div>
+    <div class="neon-core-box">所持 NEON CORE：<span id="neonCoreAmount">0</span></div>
+    <div class="neon-upgrade-grid" id="neonUpgradeGrid"></div>
+    <button id="neonCloseShop" type="button">CLOSE</button>
+  </div>
+</div>
+
+<div id="skillCooldownHud"></div>
+
+<script>
+(function neonBigUpdate(){
+  const STORAGE_PREFIX = "neon_survivor_v2_";
+  let gameOverAwarded = false;
+
+  function currentCode(){
+    try {
+      if (typeof currentLoginCode !== "undefined" && currentLoginCode) return String(currentLoginCode);
+      const last = localStorage.getItem("neon_last_login_code");
+      if (last) return String(last);
+    } catch(e) {}
+    return "default";
+  }
+  function key(name){ return STORAGE_PREFIX + currentCode() + "_" + name; }
+  function getNum(name, fallback=0){
+    try { return Number(localStorage.getItem(key(name)) || fallback); } catch(e) { return fallback; }
+  }
+  function setNum(name, value){
+    try { localStorage.setItem(key(name), String(Math.max(0, Math.floor(value)))); } catch(e) {}
+  }
+
+  const upgrades = [
+    { id:"hp", name:"装甲強化", desc:"最大HPが増える。長く生き残りやすい。", base:8, step:5, max:20 },
+    { id:"damage", name:"攻撃強化", desc:"弾と一部武器の火力が上がる。", base:10, step:7, max:20 },
+    { id:"exp", name:"経験値効率", desc:"レベルアップしやすくなる。", base:9, step:6, max:15 },
+    { id:"control", name:"制御チューニング", desc:"移動が速すぎる時でも操作しやすくなる。", base:7, step:5, max:15 },
+    { id:"cooldown", name:"必殺技チャージ", desc:"紫・剣などの準備時間が少し短くなる。", base:14, step:9, max:10 }
+  ];
+
+  function costOf(u, lv){ return u.base + lv * u.step; }
+  function getLv(id){ return getNum("upgrade_" + id, 0); }
+  function setLv(id, v){ setNum("upgrade_" + id, v); }
+  function getCores(){ return getNum("cores", 0); }
+  function setCores(v){ setNum("cores", v); }
+
+  function ensureButtons(){
+    if (!document.getElementById("neonMuteBtn")) {
+      const b = document.createElement("button");
+      b.id = "neonMuteBtn";
+      b.type = "button";
+      document.body.appendChild(b);
+      const updateText = () => {
+        const muted = localStorage.getItem("neon_sound_muted") === "1";
+        b.textContent = muted ? "SOUND OFF" : "SOUND ON";
+      };
+      updateText();
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
+        const muted = localStorage.getItem("neon_sound_muted") === "1";
+        localStorage.setItem("neon_sound_muted", muted ? "0" : "1");
+        if (!muted && typeof Sound !== "undefined" && Sound.stopBGM) {
+          try { Sound.stopBGM(); } catch(err) {}
+        } else if (muted && typeof gameState !== "undefined" && gameState === "playing" && typeof Sound !== "undefined" && Sound.startBGM) {
+          try { Sound.startBGM(); } catch(err) {}
+        }
+        updateText();
+      }, {passive:false});
+    }
+
+    if (!document.getElementById("neonUpgradeBtn")) {
+      const b = document.createElement("button");
+      b.id = "neonUpgradeBtn";
+      b.type = "button";
+      b.textContent = "NEON LAB";
+      document.body.appendChild(b);
+      b.addEventListener("click", openShop, {passive:false});
+    }
+
+    if (!document.getElementById("neonUpgradeBtnGameOver")) {
+      const b = document.createElement("button");
+      b.id = "neonUpgradeBtnGameOver";
+      b.type = "button";
+      b.textContent = "UPGRADE";
+      b.style.display = "none";
+      document.body.appendChild(b);
+      b.addEventListener("click", openShop, {passive:false});
+    }
+
+    const close = document.getElementById("neonCloseShop");
+    if (close && !close.dataset.bound) {
+      close.dataset.bound = "1";
+      close.addEventListener("click", closeShop, {passive:false});
+    }
+  }
+
+  function openShop(e){
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    renderShop();
+    const shop = document.getElementById("neonPermanentShop");
+    if (shop) shop.classList.add("open");
+  }
+  function closeShop(e){
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const shop = document.getElementById("neonPermanentShop");
+    if (shop) shop.classList.remove("open");
+  }
+
+  function renderShop(){
+    const coreEl = document.getElementById("neonCoreAmount");
+    const grid = document.getElementById("neonUpgradeGrid");
+    if (!coreEl || !grid) return;
+    coreEl.textContent = getCores();
+    grid.innerHTML = "";
+    upgrades.forEach(u => {
+      const lv = getLv(u.id);
+      const cost = costOf(u, lv);
+      const maxed = lv >= u.max;
+      const card = document.createElement("div");
+      card.className = "neon-upgrade-card";
+      card.innerHTML = `
+        <h3>${u.name} Lv.${lv}/${u.max}</h3>
+        <p>${u.desc}</p>
+        <button class="neon-buy-btn" type="button">${maxed ? "MAX" : "強化する：CORE " + cost}</button>
+      `;
+      const btn = card.querySelector("button");
+      btn.disabled = maxed;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (maxed) return;
+        const cores = getCores();
+        if (cores < cost) {
+          btn.textContent = "CORE不足";
+          setTimeout(renderShop, 700);
+          return;
+        }
+        setCores(cores - cost);
+        setLv(u.id, lv + 1);
+        applyPermanentUpgrades();
+        renderShop();
+      }, {passive:false});
+      grid.appendChild(card);
+    });
+  }
+
+  function applyPermanentUpgrades(){
+    if (typeof player === "undefined" || !player) return;
+    const hpLv = getLv("hp");
+    const dmgLv = getLv("damage");
+    const expLv = getLv("exp");
+    const controlLv = getLv("control");
+    const cdLv = getLv("cooldown");
+
+    if (!player.__permApplied) {
+      player.__permApplied = true;
+      player.maxHp += hpLv * 15;
+      player.hp = Math.min(player.maxHp, player.hp + hpLv * 15);
+      player.damage *= (1 + dmgLv * 0.07);
+      player.bulletSize += Math.min(5, Math.floor(dmgLv / 4));
+      player.expToNext = Math.max(5, Math.floor(player.expToNext * (1 - expLv * 0.025)));
+      player.__cooldownBoost = 1 - Math.min(0.28, cdLv * 0.028);
+    }
+
+    // 速くなりすぎ防止。制御Lvが高いほど少し扱いやすい。
+    const safeCap = 4.6 + controlLv * 0.05;
+    if (player.speed > safeCap) player.speed = safeCap;
+
+    document.body.classList.add("neon-control-mode");
+    if (typeof updateUI === "function") {
+      try { updateUI(); } catch(e) {}
+    }
+  }
+
+  function awardCoresOnce(){
+    if (gameOverAwarded) return;
+    gameOverAwarded = true;
+    try {
+      const finalScore = typeof score !== "undefined" ? Math.floor(score) : 0;
+      const survived = typeof gameTime !== "undefined" ? Math.floor(gameTime) : 0;
+      const level = (typeof player !== "undefined" && player) ? player.level : 1;
+      const earned = Math.max(1, Math.floor(finalScore / 250) + Math.floor(survived / 20) + Math.floor(level / 3));
+      setCores(getCores() + earned);
+
+      const screen = document.getElementById("gameOverScreen");
+      if (screen && !document.getElementById("neonEarnedCoreText")) {
+        const p = document.createElement("p");
+        p.id = "neonEarnedCoreText";
+        p.className = "text-xl mb-2 font-bold";
+        p.style.color = "#fde047";
+        p.style.textShadow = "0 0 12px #facc15";
+        p.textContent = "獲得 NEON CORE: +" + earned;
+        const retry = document.getElementById("restartBtn");
+        if (retry && retry.parentNode) retry.parentNode.insertBefore(p, retry);
+        else screen.appendChild(p);
+      } else {
+        const p = document.getElementById("neonEarnedCoreText");
+        if (p) p.textContent = "獲得 NEON CORE: +" + earned;
+      }
+    } catch(e) {}
+  }
+
+  function installSoundMute(){
+    if (typeof Sound === "undefined" || Sound.__mutePatched) return;
+    Sound.__mutePatched = true;
+    const oldPlayTone = Sound.playTone;
+    const oldPlayNoise = Sound.playNoise;
+    const oldStartBGM = Sound.startBGM;
+    Sound.playTone = function(){
+      if (localStorage.getItem("neon_sound_muted") === "1") return;
+      return oldPlayTone.apply(Sound, arguments);
+    };
+    Sound.playNoise = function(){
+      if (localStorage.getItem("neon_sound_muted") === "1") return;
+      return oldPlayNoise.apply(Sound, arguments);
+    };
+    Sound.startBGM = function(){
+      if (localStorage.getItem("neon_sound_muted") === "1") return;
+      return oldStartBGM.apply(Sound, arguments);
+    };
+  }
+
+  function installFunctionHooks(){
+    if (!window.__neonBigHooksInstalled) {
+      window.__neonBigHooksInstalled = true;
+
+      const oldInit = window.initGame;
+      if (typeof oldInit === "function") {
+        window.initGame = function(){
+          gameOverAwarded = false;
+          const earnedText = document.getElementById("neonEarnedCoreText");
+          if (earnedText) earnedText.remove();
+          const goBtn = document.getElementById("neonUpgradeBtnGameOver");
+          if (goBtn) goBtn.style.display = "none";
+          const result = oldInit.apply(this, arguments);
+          setTimeout(applyPermanentUpgrades, 30);
+          return result;
+        };
+      }
+
+      const oldGameOver = window.gameOver;
+      if (typeof oldGameOver === "function") {
+        window.gameOver = function(){
+          awardCoresOnce();
+          const result = oldGameOver.apply(this, arguments);
+          const goBtn = document.getElementById("neonUpgradeBtnGameOver");
+          if (goBtn) goBtn.style.display = "block";
+          return result;
+        };
+      }
+
+      const oldUpdateUI = window.updateUI;
+      if (typeof oldUpdateUI === "function") {
+        window.updateUI = function(){
+          const r = oldUpdateUI.apply(this, arguments);
+          applyPermanentUpgrades();
+          return r;
+        };
+      }
+    }
+  }
+
+  function cooldownPercent(timer, interval){
+    if (!timer || !interval) return 0;
+    return Math.max(0, Math.min(100, (timer / interval) * 100));
+  }
+
+  function updateSkillHud(){
+    const hud = document.getElementById("skillCooldownHud");
+    if (!hud) return;
+
+    if (typeof gameState !== "undefined" && gameState === "playing") {
+      document.body.classList.add("playing-skill-hud");
+    } else {
+      document.body.classList.remove("playing-skill-hud");
+    }
+
+    if (typeof player === "undefined" || !player) {
+      hud.innerHTML = "";
+      return;
+    }
+
+    const cdBoost = player.__cooldownBoost || 1;
+    const skills = [];
+
+    if (player.hollowMurasakiLevel > 0) {
+      const interval = Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)) * cdBoost;
+      skills.push(["虚式「茈」", cooldownPercent(player.hollowMurasakiTimer, interval)]);
+    }
+    if (player.infiniteBladeLevel > 0) {
+      const interval = Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)) * cdBoost;
+      skills.push(["無限の剣陣", cooldownPercent(player.infiniteBladeTimer, interval)]);
+    }
+    if (player.kamehamehaLevel > 0) {
+      const interval = Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)) * cdBoost;
+      skills.push(["かめはめ波", cooldownPercent(player.kamehamehaTimer, interval)]);
+    }
+    if (player.keraunosLevel > 0) {
+      skills.push(["天帝の神罰", cooldownPercent(player.keraunosTimer, 900 * cdBoost)]);
+    }
+    if (player.disneyMagicLevel > 0) {
+      skills.push(["ディズニー・マジック", cooldownPercent(player.disneyMagicTimer, 3600 * cdBoost)]);
+    }
+    if (player.muryokuLevel > 0) {
+      skills.push(["領域展開", cooldownPercent(player.muryokuTimer, 1200 * cdBoost)]);
+    }
+
+    if (skills.length === 0) {
+      hud.innerHTML = "";
+      return;
+    }
+
+    hud.innerHTML = skills.slice(0, 6).map(([name, pct]) => {
+      const ready = pct >= 99;
+      return `
+        <div class="skill-cool-row">
+          <div class="skill-cool-top">
+            <span>${name}</span>
+            <span>${ready ? "READY" : Math.floor(pct) + "%"}</span>
+          </div>
+          <div class="skill-cool-bar"><div class="skill-cool-fill" style="width:${pct}%"></div></div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function showHideUpgradeButtons(){
+    const lab = document.getElementById("neonUpgradeBtn");
+    const go = document.getElementById("neonUpgradeBtnGameOver");
+    if (!lab) return;
+    const st = typeof gameState !== "undefined" ? gameState : "start";
+    lab.style.display = (st === "start" || st === "login") ? "block" : "none";
+    if (go) go.style.display = (st === "gameover") ? "block" : "none";
+  }
+
+  ensureButtons();
+  installSoundMute();
+  installFunctionHooks();
+  renderShop();
+
+  setInterval(() => {
+    ensureButtons();
+    installSoundMute();
+    installFunctionHooks();
+    showHideUpgradeButtons();
+    applyPermanentUpgrades();
+    updateSkillHud();
+
+    if (typeof gameState !== "undefined" && gameState === "gameover") {
+      awardCoresOnce();
+    }
+  }, 250);
+})();
+</script>
+
+
+<!-- ===== UI配置バグ修正：トグル・メニューボタン・白い角マーク ===== -->
+<style>
+#neonMuteBtn {
+  top: 18px !important;
+  right: 18px !important;
+  min-width: 132px !important;
+  height: 56px !important;
+  padding: 0 18px !important;
+  font-size: 16px !important;
+  border-radius: 16px !important;
+}
+
+#neonUpgradeBtn {
+  left: 50% !important;
+  bottom: 28px !important;
+  transform: translateX(-50%) !important;
+  min-width: 180px !important;
+  height: 58px !important;
+  padding: 0 22px !important;
+  font-size: 17px !important;
+  border-radius: 16px !important;
+}
+
+#neonUpgradeBtnGameOver {
+  left: 50% !important;
+  bottom: 86px !important;
+  transform: translateX(-50%) !important;
+  min-width: 180px !important;
+  height: 56px !important;
+  font-size: 17px !important;
+  border-radius: 16px !important;
+}
+
+#startBtn {
+  margin-bottom: 94px !important;
+  min-width: 230px !important;
+  min-height: 62px !important;
+  font-size: 22px !important;
+}
+
+#pauseScreen .relative:has(#pauseJoystickToggle),
+#startScreen .relative:has(#joystickToggle) {
+  width: 56px !important;
+  height: 32px !important;
+  flex: 0 0 56px !important;
+  display: inline-block !important;
+  position: relative !important;
+}
+
+#pauseScreen #pauseJoystickToggle,
+#startScreen #joystickToggle {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 56px !important;
+  height: 32px !important;
+  left: 0 !important;
+  top: 0 !important;
+  margin: 0 !important;
+  z-index: 3 !important;
+}
+
+#pauseScreen #pauseJoystickToggle ~ .block,
+#startScreen #joystickToggle ~ .block {
+  width: 56px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  background: rgba(90, 110, 125, 0.75) !important;
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.18), 0 0 12px rgba(0,255,255,0.35) !important;
+}
+
+#pauseScreen #pauseJoystickToggle ~ .dot,
+#startScreen #joystickToggle ~ .dot {
+  width: 26px !important;
+  height: 26px !important;
+  left: 3px !important;
+  top: 3px !important;
+  border-radius: 999px !important;
+  position: absolute !important;
+  background: white !important;
+  transform: translateX(0) !important;
+  box-shadow: 0 0 12px rgba(255,255,255,0.95) !important;
+}
+
+#pauseScreen #pauseJoystickToggle:checked ~ .block,
+#startScreen #joystickToggle:checked ~ .block {
+  background: #06b6d4 !important;
+}
+
+#pauseScreen #pauseJoystickToggle:checked ~ .dot,
+#startScreen #joystickToggle:checked ~ .dot {
+  transform: translateX(24px) !important;
+}
+
+#pauseScreen label,
+#startScreen label {
+  gap: 16px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.corner,
+.corners,
+.ui-corner,
+.hud-corner,
+.screen-corner,
+.cyber-corner,
+.neon-corner,
+.corner-frame,
+#cornerFrame,
+#uiCorners,
+#screenCorners {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+</style>
+
+<script>
+(function fixNeonUiLayoutBugs(){
+  function updateCornerHide(){
+    const isPlaying = (typeof gameState !== 'undefined' && gameState === 'playing');
+
+    if (isPlaying) {
+      document.querySelectorAll('div, span').forEach(el => {
+        if (el.id === 'joystickZone' || el.id === 'joystickStick') return;
+        const s = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        const isSmallCorner =
+          s.position === 'fixed' &&
+          r.width <= 90 && r.height <= 90 &&
+          (r.left < 35 || r.right > innerWidth - 35) &&
+          (r.top < 35 || r.bottom > innerHeight - 35) &&
+          (s.borderColor.includes('255') || s.backgroundColor.includes('255'));
+        if (isSmallCorner) {
+          el.style.display = 'none';
+        }
+      });
+    }
+  }
+
+  function fixToggleState(){
+    const p = document.getElementById('pauseJoystickToggle');
+    const s = document.getElementById('joystickToggle');
+    if (typeof isJoystickEnabled !== 'undefined') {
+      if (p) p.checked = !!isJoystickEnabled;
+      if (s) s.checked = !!isJoystickEnabled;
+    }
+  }
+
+  setInterval(() => {
+    updateCornerHide();
+    fixToggleState();
+  }, 350);
+})();
+</script>
+
+
+<!-- ===== SOUND ON/OFFを一時停止画面内に移動 ===== -->
+<style>
+/* 画面右上のサウンドボタンは非表示 */
+#neonMuteBtn {
+  display: none !important;
+}
+
+/* 一時停止画面内のサウンドボタン */
+#pauseSoundBtn {
+  width: 220px !important;
+  height: 56px !important;
+  margin-bottom: 22px !important;
+  border-radius: 16px !important;
+  border: 2px solid #00f6ff !important;
+  background: rgba(0, 20, 35, 0.78) !important;
+  color: white !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  box-shadow:
+    0 0 16px rgba(0,255,255,.7),
+    inset 0 0 12px rgba(0,255,255,.25) !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+#pauseSoundBtn:active {
+  transform: scale(0.96);
+}
+</style>
+
+<script>
+(function moveSoundButtonToPauseScreen(){
+  const pauseScreen = document.getElementById('pauseScreen');
+  if (!pauseScreen) return;
+
+  let pauseSoundBtn = document.getElementById('pauseSoundBtn');
+  if (!pauseSoundBtn) {
+    pauseSoundBtn = document.createElement('button');
+    pauseSoundBtn.id = 'pauseSoundBtn';
+    pauseSoundBtn.type = 'button';
+    pauseSoundBtn.textContent = 'SOUND ON';
+
+    const resumeBtn = document.getElementById('resumeBtn');
+    if (resumeBtn && resumeBtn.parentNode) {
+      resumeBtn.parentNode.insertBefore(pauseSoundBtn, resumeBtn);
+    } else {
+      pauseScreen.appendChild(pauseSoundBtn);
+    }
+  }
+
+  function isMuted(){
+    try {
+      return localStorage.getItem('neon_sound_muted') === '1';
+    } catch(e) {
+      return false;
+    }
+  }
+
+  function updateSoundText(){
+    pauseSoundBtn.textContent = isMuted() ? 'SOUND OFF' : 'SOUND ON';
+  }
+
+  function toggleSound(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const nextMuted = !isMuted();
+
+    try {
+      localStorage.setItem('neon_sound_muted', nextMuted ? '1' : '0');
+    } catch(err) {}
+
+    if (nextMuted) {
+      if (typeof Sound !== 'undefined' && Sound.stopBGM) {
+        try { Sound.stopBGM(); } catch(err) {}
+      }
+    } else {
+      if (typeof Sound !== 'undefined' && Sound.init) {
+        try { Sound.init(); } catch(err) {}
+      }
+      if (typeof gameState !== 'undefined' && gameState === 'paused') {
+        /* 一時停止中なのでBGMは再開しない */
+      } else if (typeof gameState !== 'undefined' && gameState === 'playing') {
+        if (typeof Sound !== 'undefined' && Sound.startBGM) {
+          try { Sound.startBGM(); } catch(err) {}
+        }
+      }
+    }
+
+    updateSoundText();
+    return false;
+  }
+
+  pauseSoundBtn.onclick = null;
+  pauseSoundBtn.onpointerup = null;
+  pauseSoundBtn.ontouchend = null;
+
+  pauseSoundBtn.addEventListener('click', toggleSound, { passive:false, capture:true });
+  pauseSoundBtn.addEventListener('pointerup', toggleSound, { passive:false, capture:true });
+  pauseSoundBtn.addEventListener('touchend', toggleSound, { passive:false, capture:true });
+
+  updateSoundText();
+
+  setInterval(updateSoundText, 500);
+})();
+</script>
+
+
+<!-- ===== SOUND ON/OFFをCONTROLS内のトグルに変更 ===== -->
+<style>
+/* 前の一時停止サウンドボタンは消す */
+#pauseSoundBtn {
+  display: none !important;
+}
+
+/* サウンドトグルもジョイスティックと同じ見た目にする */
+#pauseSoundToggleWrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  margin-top: 10px !important;
+}
+
+#pauseSoundToggleBox {
+  width: 56px !important;
+  height: 32px !important;
+  flex: 0 0 56px !important;
+  display: inline-block !important;
+  position: relative !important;
+}
+
+#pauseSoundToggle {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 56px !important;
+  height: 32px !important;
+  left: 0 !important;
+  top: 0 !important;
+  margin: 0 !important;
+  z-index: 3 !important;
+}
+
+#pauseSoundToggleBg {
+  width: 56px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  background: rgba(90, 110, 125, 0.75) !important;
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.18), 0 0 12px rgba(0,255,255,0.35) !important;
+}
+
+#pauseSoundToggleDot {
+  width: 26px !important;
+  height: 26px !important;
+  left: 3px !important;
+  top: 3px !important;
+  border-radius: 999px !important;
+  position: absolute !important;
+  background: white !important;
+  transform: translateX(0) !important;
+  box-shadow: 0 0 12px rgba(255,255,255,0.95) !important;
+  transition: transform 0.2s !important;
+}
+
+#pauseSoundToggle:checked ~ #pauseSoundToggleBg {
+  background: #06b6d4 !important;
+}
+
+#pauseSoundToggle:checked ~ #pauseSoundToggleDot {
+  transform: translateX(24px) !important;
+}
+
+#pauseSoundToggleText {
+  color: white !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  user-select: none !important;
+}
+</style>
+
+<script>
+(function moveSoundToggleIntoControls(){
+  const pauseScreen = document.getElementById('pauseScreen');
+  const oldSoundBtn = document.getElementById('pauseSoundBtn');
+  if (oldSoundBtn) oldSoundBtn.style.display = 'none';
+
+  if (!pauseScreen) return;
+
+  function isMuted(){
+    try {
+      return localStorage.getItem('neon_sound_muted') === '1';
+    } catch(e) {
+      return false;
+    }
+  }
+
+  function setMuted(muted){
+    try {
+      localStorage.setItem('neon_sound_muted', muted ? '1' : '0');
+    } catch(e) {}
+
+    if (muted) {
+      if (typeof Sound !== 'undefined' && Sound.stopBGM) {
+        try { Sound.stopBGM(); } catch(err) {}
+      }
+    } else {
+      if (typeof Sound !== 'undefined' && Sound.init) {
+        try { Sound.init(); } catch(err) {}
+      }
+      if (typeof gameState !== 'undefined' && gameState === 'playing') {
+        if (typeof Sound !== 'undefined' && Sound.startBGM) {
+          try { Sound.startBGM(); } catch(err) {}
+        }
+      }
+    }
+
+    updateSoundToggle();
+  }
+
+  function updateSoundToggle(){
+    const toggle = document.getElementById('pauseSoundToggle');
+    const text = document.getElementById('pauseSoundToggleText');
+    const soundOn = !isMuted();
+
+    if (toggle) toggle.checked = soundOn;
+    if (text) text.textContent = soundOn ? 'サウンド ON' : 'サウンド OFF';
+  }
+
+  function createSoundToggle(){
+    if (document.getElementById('pauseSoundToggleWrap')) {
+      updateSoundToggle();
+      return;
+    }
+
+    const controlsTitle = Array.from(pauseScreen.querySelectorAll('span'))
+      .find(el => el.textContent && el.textContent.trim() === 'CONTROLS');
+
+    let controlsBox = controlsTitle ? controlsTitle.parentElement : null;
+    if (!controlsBox) {
+      controlsBox = pauseScreen;
+    }
+
+    const wrap = document.createElement('label');
+    wrap.id = 'pauseSoundToggleWrap';
+    wrap.innerHTML = `
+      <div id="pauseSoundToggleBox">
+        <input type="checkbox" id="pauseSoundToggle">
+        <div id="pauseSoundToggleBg"></div>
+        <div id="pauseSoundToggleDot"></div>
+      </div>
+      <span id="pauseSoundToggleText">サウンド ON</span>
+    `;
+
+    controlsBox.appendChild(wrap);
+
+    const toggle = document.getElementById('pauseSoundToggle');
+
+    function toggleSound(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      setMuted(!isMuted());
+      return false;
+    }
+
+    wrap.addEventListener('click', toggleSound, { passive:false, capture:true });
+    wrap.addEventListener('pointerup', toggleSound, { passive:false, capture:true });
+    wrap.addEventListener('touchend', toggleSound, { passive:false, capture:true });
+
+    if (toggle) {
+      toggle.addEventListener('change', function(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        setMuted(!this.checked);
+      }, true);
+    }
+
+    updateSoundToggle();
+  }
+
+  createSoundToggle();
+  setInterval(updateSoundToggle, 500);
+})();
+</script>
+
+
+<!-- ===== 全トグル安定化：ジョイスティック・サウンド・開始画面 ===== -->
+<style>
+/* 既存トグルのズレ・押せない問題をまとめて修正 */
+#startScreen label,
+#pauseScreen label,
+#pauseSoundToggleWrap {
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  cursor: pointer !important;
+}
+
+/* トグル本体を安定したサイズに固定 */
+#startScreen .relative:has(#joystickToggle),
+#pauseScreen .relative:has(#pauseJoystickToggle),
+#pauseSoundToggleBox {
+  width: 62px !important;
+  height: 34px !important;
+  flex: 0 0 62px !important;
+  position: relative !important;
+  display: inline-block !important;
+  overflow: visible !important;
+}
+
+/* 本物のcheckboxは透明だが、必ずタッチ判定を持たせる */
+#joystickToggle,
+#pauseJoystickToggle,
+#pauseSoundToggle {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 62px !important;
+  height: 34px !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  z-index: 5 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* 背景 */
+#joystickToggle ~ .block,
+#pauseJoystickToggle ~ .block,
+#pauseSoundToggleBg {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 62px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(80, 95, 110, 0.85) !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  box-shadow:
+    inset 0 0 10px rgba(0,0,0,0.45),
+    0 0 12px rgba(0,255,255,0.35) !important;
+  pointer-events: none !important;
+}
+
+/* 丸 */
+#joystickToggle ~ .dot,
+#pauseJoystickToggle ~ .dot,
+#pauseSoundToggleDot {
+  position: absolute !important;
+  width: 28px !important;
+  height: 28px !important;
+  left: 3px !important;
+  top: 3px !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  transform: translateX(0) !important;
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  box-shadow:
+    0 0 10px rgba(255,255,255,0.9),
+    0 0 18px rgba(0,255,255,0.45) !important;
+  pointer-events: none !important;
+}
+
+/* ON時 */
+#joystickToggle:checked ~ .block,
+#pauseJoystickToggle:checked ~ .block,
+#pauseSoundToggle:checked ~ #pauseSoundToggleBg {
+  background: #06b6d4 !important;
+  box-shadow:
+    inset 0 0 12px rgba(255,255,255,0.25),
+    0 0 16px rgba(0,255,255,0.8) !important;
+}
+
+#joystickToggle:checked ~ .dot,
+#pauseJoystickToggle:checked ~ .dot,
+#pauseSoundToggle:checked ~ #pauseSoundToggleDot {
+  transform: translateX(28px) !important;
+}
+
+/* コントロール欄の見た目を整理 */
+#pauseScreen .mb-8.bg-gray-900\/80,
+#pauseScreen div[class*="border-cyan-500"] {
+  pointer-events: auto !important;
+}
+
+#pauseSoundToggleWrap {
+  width: 100% !important;
+  justify-content: center !important;
+  margin-top: 14px !important;
+}
+
+#pauseSoundToggleText,
+#pauseScreen label span,
+#startScreen label span {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* 一時停止画面の操作系が必ず前面 */
+#pauseScreen {
+  z-index: 2147482000 !important;
+}
+
+#pauseScreen * {
+  pointer-events: auto;
+}
+
+#resumeBtn,
+#pauseScreen input,
+#pauseScreen label,
+#pauseScreen .speed-btn,
+#pauseSoundToggleWrap {
+  position: relative !important;
+  z-index: 2147482100 !important;
+}
+</style>
+
+<script>
+(function fixAllToggleControlsForSmoothPlay(){
+  function safeSetJoystick(enabled){
+    const next = !!enabled;
+
+    try {
+      if (typeof isJoystickEnabled !== 'undefined') isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+    } catch(e) {}
+
+    const startT = document.getElementById('joystickToggle');
+    const pauseT = document.getElementById('pauseJoystickToggle');
+
+    if (startT) startT.checked = next;
+    if (pauseT) pauseT.checked = next;
+
+    const zone = document.getElementById('joystickZone');
+    if (zone) {
+      if (next && typeof gameState !== 'undefined' && gameState === 'playing') {
+        zone.classList.remove('hidden');
+        zone.style.opacity = '1';
+        zone.style.pointerEvents = 'auto';
+      } else if (!next) {
+        zone.classList.add('hidden');
+        zone.style.opacity = '0';
+        zone.style.pointerEvents = 'none';
+      }
+    }
+
+    try { localStorage.setItem('neon_joystick_enabled', next ? '1' : '0'); } catch(e) {}
+  }
+
+  function isSoundOn(){
+    try { return localStorage.getItem('neon_sound_muted') !== '1'; }
+    catch(e) { return true; }
+  }
+
+  function safeSetSound(on){
+    const soundOn = !!on;
+
+    try { localStorage.setItem('neon_sound_muted', soundOn ? '0' : '1'); } catch(e) {}
+
+    const t = document.getElementById('pauseSoundToggle');
+    const text = document.getElementById('pauseSoundToggleText');
+
+    if (t) t.checked = soundOn;
+    if (text) text.textContent = soundOn ? 'サウンド ON' : 'サウンド OFF';
+
+    if (!soundOn) {
+      if (typeof Sound !== 'undefined' && Sound.stopBGM) {
+        try { Sound.stopBGM(); } catch(e) {}
+      }
+    } else {
+      if (typeof Sound !== 'undefined' && Sound.init) {
+        try { Sound.init(); } catch(e) {}
+      }
+      if (typeof gameState !== 'undefined' && gameState === 'playing') {
+        if (typeof Sound !== 'undefined' && Sound.startBGM) {
+          try { Sound.startBGM(); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function bindCleanToggle(el, getter, setter){
+    if (!el || el.dataset.cleanToggleFixed === '1') return;
+    el.dataset.cleanToggleFixed = '1';
+
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      setter(!getter());
+      return false;
+    }
+
+    el.addEventListener('click', handler, {passive:false, capture:true});
+    el.addEventListener('pointerup', handler, {passive:false, capture:true});
+    el.addEventListener('touchend', handler, {passive:false, capture:true});
+  }
+
+  function installToggleHandlers(){
+    const startJoy = document.getElementById('joystickToggle');
+    const pauseJoy = document.getElementById('pauseJoystickToggle');
+    const soundToggle = document.getElementById('pauseSoundToggle');
+
+    const startJoyLabel = startJoy ? startJoy.closest('label') : null;
+    const pauseJoyLabel = pauseJoy ? pauseJoy.closest('label') : null;
+    const soundWrap = document.getElementById('pauseSoundToggleWrap');
+
+    const joyGetter = () => {
+      try {
+        if (typeof isJoystickEnabled !== 'undefined') return !!isJoystickEnabled;
+      } catch(e) {}
+      return startJoy ? !!startJoy.checked : true;
+    };
+
+    bindCleanToggle(startJoy, joyGetter, safeSetJoystick);
+    bindCleanToggle(startJoyLabel, joyGetter, safeSetJoystick);
+    bindCleanToggle(pauseJoy, joyGetter, safeSetJoystick);
+    bindCleanToggle(pauseJoyLabel, joyGetter, safeSetJoystick);
+
+    bindCleanToggle(soundToggle, isSoundOn, safeSetSound);
+    bindCleanToggle(soundWrap, isSoundOn, safeSetSound);
+  }
+
+  function restoreSavedSettingsOnce(){
+    if (window.__neonToggleSettingsRestored) return;
+    window.__neonToggleSettingsRestored = true;
+
+    try {
+      const savedJoy = localStorage.getItem('neon_joystick_enabled');
+      if (savedJoy !== null) safeSetJoystick(savedJoy === '1');
+    } catch(e) {}
+
+    safeSetSound(isSoundOn());
+  }
+
+  function syncToggleVisuals(){
+    const joy = (() => {
+      try {
+        if (typeof isJoystickEnabled !== 'undefined') return !!isJoystickEnabled;
+      } catch(e) {}
+      return true;
+    })();
+
+    const startJoy = document.getElementById('joystickToggle');
+    const pauseJoy = document.getElementById('pauseJoystickToggle');
+
+    if (startJoy) startJoy.checked = joy;
+    if (pauseJoy) pauseJoy.checked = joy;
+
+    const soundToggle = document.getElementById('pauseSoundToggle');
+    const soundText = document.getElementById('pauseSoundToggleText');
+
+    if (soundToggle) soundToggle.checked = isSoundOn();
+    if (soundText) soundText.textContent = isSoundOn() ? 'サウンド ON' : 'サウンド OFF';
+  }
+
+  restoreSavedSettingsOnce();
+  installToggleHandlers();
+  syncToggleVisuals();
+
+  setInterval(() => {
+    installToggleHandlers();
+    syncToggleVisuals();
+  }, 300);
+})();
+</script>
+
+
+<!-- ===== 定期発動武器の発動タイミング表示 強化版 ===== -->
+<style>
+#weaponTimerHud {
+  position: fixed !important;
+  left: 14px !important;
+  bottom: 92px !important;
+  width: min(330px, 42vw) !important;
+  max-height: 46vh !important;
+  overflow: hidden !important;
+  z-index: 46 !important;
+  pointer-events: none !important;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.weapon-timer-visible #weaponTimerHud {
+  display: flex !important;
+}
+
+.weapon-timer-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: #a5f3fc;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 8px #00ffff;
+  margin-bottom: 2px;
+  opacity: 0.95;
+}
+
+.weapon-timer-row {
+  background: rgba(0, 12, 24, 0.68);
+  border: 1px solid rgba(0, 255, 255, 0.45);
+  border-radius: 11px;
+  padding: 6px 8px;
+  box-shadow: 0 0 10px rgba(0,255,255,0.18), inset 0 0 8px rgba(0,255,255,0.10);
+  backdrop-filter: blur(6px);
+}
+
+.weapon-timer-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 6px #00ffff;
+  margin-bottom: 4px;
+}
+
+.weapon-timer-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.weapon-timer-status.ready {
+  color: #fef08a;
+  text-shadow: 0 0 8px #facc15;
+}
+
+.weapon-timer-bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.14);
+}
+
+.weapon-timer-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00ffff, #8b5cf6, #facc15);
+  box-shadow: 0 0 8px #00ffff;
+}
+
+/* 小さい画面ではさらに邪魔にならないように */
+@media (max-width: 700px) {
+  #weaponTimerHud {
+    width: min(300px, 52vw) !important;
+    bottom: 86px !important;
+    left: 10px !important;
+  }
+  .weapon-timer-row {
+    padding: 5px 7px;
+  }
+  .weapon-timer-top {
+    font-size: 10px;
+  }
+}
+
+/* 既存のskillCooldownHudがある場合は非表示にして重複防止 */
+#skillCooldownHud {
+  display: none !important;
+}
+</style>
+
+<div id="weaponTimerHud"></div>
+
+<script>
+(function installFullWeaponTimerHud(){
+  function clamp(n, min, max){
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function pct(timer, interval){
+    if (!timer || !interval) return 0;
+    return clamp((timer / interval) * 100, 0, 100);
+  }
+
+  function secondsLeft(timer, interval){
+    const remainFrames = Math.max(0, interval - (timer || 0));
+    return Math.ceil(remainFrames / 60);
+  }
+
+  function addSkill(list, label, level, timer, interval){
+    if (!level || level <= 0) return;
+    const p = pct(timer, interval);
+    const sec = secondsLeft(timer, interval);
+    list.push({
+      label,
+      pct: p,
+      status: p >= 99 ? "READY" : sec + "s"
+    });
+  }
+
+  function getCooldownBoost(){
+    if (typeof player !== "undefined" && player && player.__cooldownBoost) {
+      return player.__cooldownBoost;
+    }
+    return 1;
+  }
+
+  function updateWeaponTimerHud(){
+    const hud = document.getElementById("weaponTimerHud");
+    if (!hud) return;
+
+    const isPlaying = (typeof gameState !== "undefined" && gameState === "playing");
+    if (!isPlaying || typeof player === "undefined" || !player) {
+      document.body.classList.remove("weapon-timer-visible");
+      hud.innerHTML = "";
+      return;
+    }
+
+    const boost = getCooldownBoost();
+    const skills = [];
+
+    // 定期発動系をできるだけ全部表示
+    addSkill(skills, "虚式「茈」", player.hollowMurasakiLevel, player.hollowMurasakiTimer, Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)) * boost);
+    addSkill(skills, "かめはめ波", player.kamehamehaLevel, player.kamehamehaTimer, Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)) * boost);
+    addSkill(skills, "無限の剣陣", player.infiniteBladeLevel, player.infiniteBladeTimer, Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)) * boost);
+    addSkill(skills, "虚空の暴風", player.voidTempestLevel, player.voidTempestTimer, Math.max(240, 480 - ((player.voidTempestLevel - 1) * 60)) * boost);
+    addSkill(skills, "インフィニティ・スナップ", player.infinitySnapLevel, player.infinitySnapTimer, Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30)) * boost);
+    addSkill(skills, "衛星レーザー", player.orbitalStrikeLevel, player.orbitalStrikeTimer, Math.max(90, 240 - (player.orbitalStrikeLevel * 30)) * boost);
+    addSkill(skills, "電撃フィールド", player.electricFieldLevel, player.electricFieldTimer, Math.max(30, 120 - (player.electricFieldLevel * 15)) * boost);
+    addSkill(skills, "シールド投擲", player.shieldLevel, player.shieldTimer, 900 * boost);
+    addSkill(skills, "天帝の神罰", player.keraunosLevel, player.keraunosTimer, 900 * boost);
+    addSkill(skills, "機動兵装", player.funnelLevel, player.funnelTimer, 900 * boost);
+    addSkill(skills, "暗黒卿", player.vaderLevel, player.vaderTimer, 900 * boost);
+    addSkill(skills, "ディズニー・マジック", player.disneyMagicLevel, player.disneyMagicTimer, 3600 * boost);
+    addSkill(skills, "領域展開", player.muryokuLevel, player.muryokuTimer, 1200 * boost);
+
+    // ソーは特殊：4連発の準備状態も表示
+    if (player.thorLevel > 0) {
+      if (player.thorThrowsLeft > 0 || player.thorIsActive) {
+        skills.push({
+          label: "雷神の力",
+          pct: 100,
+          status: "READY"
+        });
+      } else {
+        addSkill(skills, "雷神の力", player.thorLevel, player.thorTimer, 900 * boost);
+      }
+    }
+
+    if (skills.length === 0) {
+      document.body.classList.remove("weapon-timer-visible");
+      hud.innerHTML = "";
+      return;
+    }
+
+    document.body.classList.add("weapon-timer-visible");
+
+    // READYを上に、次に残り時間が短い順
+    skills.sort((a, b) => {
+      if (a.status === "READY" && b.status !== "READY") return -1;
+      if (a.status !== "READY" && b.status === "READY") return 1;
+      return b.pct - a.pct;
+    });
+
+    hud.innerHTML = `
+      <div class="weapon-timer-title">WEAPON CHARGE</div>
+      ${skills.slice(0, 8).map(s => `
+        <div class="weapon-timer-row">
+          <div class="weapon-timer-top">
+            <span class="weapon-timer-name">${s.label}</span>
+            <span class="weapon-timer-status ${s.status === "READY" ? "ready" : ""}">${s.status}</span>
+          </div>
+          <div class="weapon-timer-bar">
+            <div class="weapon-timer-fill" style="width:${s.pct}%"></div>
+          </div>
+        </div>
+      `).join("")}
+    `;
+  }
+
+  setInterval(updateWeaponTimerHud, 120);
+})();
+</script>
+
+
+<!-- ===== FINAL FIX: 一時停止トグル安定化＋ジョイスティック表示修正 ===== -->
+<style>
+/* トグルは見た目側だけで押せるようにして、透明inputの誤作動を防ぐ */
+#pauseScreen #pauseJoystickToggle,
+#pauseScreen #pauseSoundToggle,
+#startScreen #joystickToggle {
+  pointer-events: none !important;
+}
+
+/* ラベル全体を押せるエリアにする */
+#pauseScreen label,
+#startScreen label,
+#pauseSoundToggleWrap {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+}
+
+/* 一時停止中のトグルを確実に前面へ */
+#pauseScreen .relative:has(#pauseJoystickToggle),
+#pauseSoundToggleBox,
+#startScreen .relative:has(#joystickToggle) {
+  position: relative !important;
+  z-index: 2147483000 !important;
+}
+
+/* ジョイスティックをプレイ中は必ず見えるようにする */
+body.joystick-visible #joystickZone {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2147481000 !important;
+}
+
+/* ジョイスティックの見た目を強くする */
+#joystickZone {
+  background: rgba(0, 25, 45, 0.55) !important;
+  border: 2px solid rgba(0,255,255,0.75) !important;
+  box-shadow: 0 0 18px rgba(0,255,255,0.45), inset 0 0 18px rgba(0,255,255,0.16) !important;
+}
+
+#joystickStick {
+  background: rgba(0,255,255,0.95) !important;
+  box-shadow: 0 0 18px #00ffff, 0 0 32px rgba(0,255,255,0.65) !important;
+}
+</style>
+
+<script>
+(function finalFixTogglesAndJoystickDisplay(){
+  let lastToggleAt = 0;
+
+  function now(){ return performance.now ? performance.now() : Date.now(); }
+
+  function blockDoubleTap(){
+    const t = now();
+    if (t - lastToggleAt < 180) return true;
+    lastToggleAt = t;
+    return false;
+  }
+
+  function getJoystickState(){
+    try {
+      if (typeof isJoystickEnabled !== 'undefined') return !!isJoystickEnabled;
+    } catch(e) {}
+    try {
+      const saved = localStorage.getItem('neon_joystick_enabled');
+      if (saved !== null) return saved === '1';
+    } catch(e) {}
+    return true;
+  }
+
+  function setJoystickState(enabled){
+    const next = !!enabled;
+
+    try {
+      if (typeof isJoystickEnabled !== 'undefined') isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem('neon_joystick_enabled', next ? '1' : '0');
+    } catch(e) {}
+
+    const startT = document.getElementById('joystickToggle');
+    const pauseT = document.getElementById('pauseJoystickToggle');
+    if (startT) startT.checked = next;
+    if (pauseT) pauseT.checked = next;
+
+    updateJoystickVisibility();
+  }
+
+  function getSoundState(){
+    try { return localStorage.getItem('neon_sound_muted') !== '1'; }
+    catch(e) { return true; }
+  }
+
+  function setSoundState(on){
+    const soundOn = !!on;
+    try { localStorage.setItem('neon_sound_muted', soundOn ? '0' : '1'); } catch(e) {}
+
+    const t = document.getElementById('pauseSoundToggle');
+    const text = document.getElementById('pauseSoundToggleText');
+    if (t) t.checked = soundOn;
+    if (text) text.textContent = soundOn ? 'サウンド ON' : 'サウンド OFF';
+
+    if (!soundOn) {
+      if (typeof Sound !== 'undefined' && Sound.stopBGM) {
+        try { Sound.stopBGM(); } catch(e) {}
+      }
+    } else {
+      if (typeof Sound !== 'undefined' && Sound.init) {
+        try { Sound.init(); } catch(e) {}
+      }
+      if (typeof gameState !== 'undefined' && gameState === 'playing') {
+        if (typeof Sound !== 'undefined' && Sound.startBGM) {
+          try { Sound.startBGM(); } catch(e) {}
+        }
+      }
+    }
+  }
+
+  function updateJoystickVisibility(){
+    const zone = document.getElementById('joystickZone');
+    if (!zone) return;
+
+    const joyOn = getJoystickState();
+    const playing = (typeof gameState !== 'undefined' && gameState === 'playing');
+
+    if (joyOn && playing) {
+      zone.classList.remove('hidden');
+      zone.style.display = 'flex';
+      zone.style.visibility = 'visible';
+      zone.style.opacity = '1';
+      zone.style.pointerEvents = 'auto';
+      document.body.classList.add('joystick-visible');
+    } else {
+      document.body.classList.remove('joystick-visible');
+      if (!joyOn) {
+        zone.classList.add('hidden');
+        zone.style.display = 'none';
+        zone.style.visibility = 'hidden';
+        zone.style.opacity = '0';
+        zone.style.pointerEvents = 'none';
+      }
+    }
+  }
+
+  function bindOneTap(el, fn){
+    if (!el || el.dataset.finalToggleFixed === '1') return;
+    el.dataset.finalToggleFixed = '1';
+
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      if (blockDoubleTap()) return false;
+      fn();
+      return false;
+    }
+
+    el.addEventListener('pointerdown', handler, {passive:false, capture:true});
+    el.addEventListener('touchstart', handler, {passive:false, capture:true});
+    el.addEventListener('click', function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      return false;
+    }, {passive:false, capture:true});
+  }
+
+  function install(){
+    const startJoy = document.getElementById('joystickToggle');
+    const pauseJoy = document.getElementById('pauseJoystickToggle');
+    const soundToggle = document.getElementById('pauseSoundToggle');
+
+    const startJoyLabel = startJoy ? startJoy.closest('label') : null;
+    const pauseJoyLabel = pauseJoy ? pauseJoy.closest('label') : null;
+    const soundWrap = document.getElementById('pauseSoundToggleWrap') || (soundToggle ? soundToggle.closest('label') : null);
+
+    bindOneTap(startJoyLabel, () => setJoystickState(!getJoystickState()));
+    bindOneTap(pauseJoyLabel, () => setJoystickState(!getJoystickState()));
+    bindOneTap(soundWrap, () => setSoundState(!getSoundState()));
+  }
+
+  function syncVisual(){
+    const joy = getJoystickState();
+    const startT = document.getElementById('joystickToggle');
+    const pauseT = document.getElementById('pauseJoystickToggle');
+    if (startT) startT.checked = joy;
+    if (pauseT) pauseT.checked = joy;
+
+    const soundOn = getSoundState();
+    const soundT = document.getElementById('pauseSoundToggle');
+    const soundText = document.getElementById('pauseSoundToggleText');
+    if (soundT) soundT.checked = soundOn;
+    if (soundText) soundText.textContent = soundOn ? 'サウンド ON' : 'サウンド OFF';
+
+    updateJoystickVisibility();
+  }
+
+  // 起動時に保存状態を反映
+  try {
+    const savedJoy = localStorage.getItem('neon_joystick_enabled');
+    if (savedJoy !== null) setJoystickState(savedJoy === '1');
+  } catch(e) {}
+
+  install();
+  syncVisual();
+
+  setInterval(() => {
+    install();
+    syncVisual();
+  }, 200);
+
+  // グローバル関数も安全版に上書き
+  window.toggleJoystickFromPause = function(checked){
+    setJoystickState(!!checked);
+  };
+})();
+</script>
+
+
+<!-- ===== ULTIMATE FINAL FIX: タイマー非表示・停止対策・最初のNEON LAB削除 ===== -->
+<style>
+/* 最初の画面のNEON LABボタンを消す */
+#neonUpgradeBtn {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 画面停止対策：重すぎる演出を少し軽くする */
+body.performance-safe-mode .particle-heavy,
+body.performance-safe-mode .extra-glow {
+  display: none !important;
+}
+</style>
+
+<script>
+(function ultimateFinalFix(){
+  /* ===== 最初のNEON LABボタンを完全に消す ===== */
+  function hideStartNeonLab(){
+    const lab = document.getElementById('neonUpgradeBtn');
+    if (lab) {
+      lab.style.display = 'none';
+      lab.style.visibility = 'hidden';
+      lab.style.opacity = '0';
+      lab.style.pointerEvents = 'none';
+      lab.removeAttribute('onclick');
+    }
+  }
+
+  /* ===== 電撃フィールド・虚空の暴風をタイマー表示から除外 ===== */
+  function patchWeaponTimerHud(){
+    const oldHud = document.getElementById('weaponTimerHud');
+    if (!oldHud) return;
+
+    // 既存のタイマー更新を上書きせず、表示後に不要項目を消す
+    oldHud.querySelectorAll('.weapon-timer-row').forEach(row => {
+      const text = row.textContent || '';
+      if (text.includes('電撃フィールド') || text.includes('虚空の暴風')) {
+        row.remove();
+      }
+    });
+
+    // タイトルだけ残って中身ゼロなら非表示
+    const rows = oldHud.querySelectorAll('.weapon-timer-row');
+    if (rows.length === 0) {
+      oldHud.innerHTML = '';
+      document.body.classList.remove('weapon-timer-visible');
+    }
+  }
+
+  /* ===== 画面停止・フリーズ軽減 ===== */
+  function performanceGuard(){
+    try {
+      document.body.classList.add('performance-safe-mode');
+
+      // 配列が増えすぎると止まりやすいので上限をかける
+      if (typeof particles !== 'undefined' && particles.length > 180) {
+        particles.splice(0, particles.length - 180);
+      }
+      if (typeof floatingTexts !== 'undefined' && floatingTexts.length > 60) {
+        floatingTexts.splice(0, floatingTexts.length - 60);
+      }
+      if (typeof bullets !== 'undefined' && bullets.length > 160) {
+        bullets.splice(0, bullets.length - 160);
+      }
+      if (typeof enemies !== 'undefined' && enemies.length > 140) {
+        enemies.splice(0, enemies.length - 140);
+      }
+      if (typeof gems !== 'undefined' && gems.length > 180) {
+        gems.splice(0, gems.length - 180);
+      }
+
+      // 5倍速などで処理が重すぎる場合、安全速度にする
+      if (typeof gameSpeed !== 'undefined' && gameSpeed > 3.2) {
+        gameSpeed = 3.2;
+      }
+      if (window.gameSpeed && window.gameSpeed > 3.2) {
+        window.gameSpeed = 3.2;
+      }
+
+      // ゲーム中なのにループが止まった時の保険
+      if (typeof gameState !== 'undefined' && gameState === 'playing') {
+        if (typeof isGameLoopScheduled !== 'undefined') {
+          isGameLoopScheduled = false;
+        }
+        if (typeof gameLoop === 'function' && !window.__neonLoopKickLock) {
+          window.__neonLoopKickLock = true;
+          requestAnimationFrame(function(t){
+            try { gameLoop(t); } catch(e) {}
+            setTimeout(() => { window.__neonLoopKickLock = false; }, 250);
+          });
+        }
+      }
+    } catch(e) {}
+  }
+
+  /* ===== startGame時にもNEON LABを消す ===== */
+  const oldStartGame = window.startGame;
+  if (typeof oldStartGame === 'function' && !oldStartGame.__ultimatePatched) {
+    const patched = function(){
+      hideStartNeonLab();
+      return oldStartGame.apply(this, arguments);
+    };
+    patched.__ultimatePatched = true;
+    window.startGame = patched;
+  }
+
+  /* ===== initGame時にも安全対策 ===== */
+  const oldInitGame = window.initGame;
+  if (typeof oldInitGame === 'function' && !oldInitGame.__ultimatePatched) {
+    const patchedInit = function(){
+      hideStartNeonLab();
+      const r = oldInitGame.apply(this, arguments);
+      setTimeout(performanceGuard, 100);
+      return r;
+    };
+    patchedInit.__ultimatePatched = true;
+    window.initGame = patchedInit;
+  }
+
+  hideStartNeonLab();
+
+  setInterval(() => {
+    hideStartNeonLab();
+    patchWeaponTimerHud();
+  }, 120);
+
+  setInterval(performanceGuard, 700);
+})();
+</script>
+
+
+<!-- ===== FINAL PATCH: 武器タイマーを入手順表示＋ソーハンマー軽量化 ===== -->
+<style>
+/* ソー発動中の重い発光・残像を軽くする */
+body.thor-safe-mode canvas {
+  filter: none !important;
+}
+
+body.thor-safe-mode .thor-cutin,
+body.thor-safe-mode .cutin-thor-text {
+  animation-duration: 1.2s !important;
+}
+
+/* 武器タイマーは入手順で見やすく */
+#weaponTimerHud {
+  max-height: 52vh !important;
+}
+</style>
+
+<script>
+(function finalOrderAndThorPerformanceFix(){
+  const weaponAcquireOrder = [];
+  const seenWeaponIds = new Set();
+
+  function addByAcquireOrder(list, id, label, level, timer, interval){
+    if (!level || level <= 0) return;
+
+    if (!seenWeaponIds.has(id)) {
+      seenWeaponIds.add(id);
+      weaponAcquireOrder.push(id);
+    }
+
+    const remainFrames = Math.max(0, interval - (timer || 0));
+    const pct = Math.max(0, Math.min(100, ((timer || 0) / interval) * 100));
+    const sec = Math.ceil(remainFrames / 60);
+
+    list.push({
+      id,
+      label,
+      pct,
+      status: pct >= 99 ? "READY" : sec + "s"
+    });
+  }
+
+  function getCooldownBoostFinal(){
+    if (typeof player !== "undefined" && player && player.__cooldownBoost) {
+      return player.__cooldownBoost;
+    }
+    return 1;
+  }
+
+  function updateWeaponTimerByAcquireOrder(){
+    const hud = document.getElementById("weaponTimerHud");
+    if (!hud) return;
+
+    const isPlaying = (typeof gameState !== "undefined" && gameState === "playing");
+    if (!isPlaying || typeof player === "undefined" || !player) {
+      return;
+    }
+
+    const boost = getCooldownBoostFinal();
+    const skills = [];
+
+    // 表示しないもの：電撃フィールド、虚空の暴風
+    addByAcquireOrder(skills, "hollow", "虚式「茈」", player.hollowMurasakiLevel, player.hollowMurasakiTimer, Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)) * boost);
+    addByAcquireOrder(skills, "kamehameha", "かめはめ波", player.kamehamehaLevel, player.kamehamehaTimer, Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)) * boost);
+    addByAcquireOrder(skills, "blade", "無限の剣陣", player.infiniteBladeLevel, player.infiniteBladeTimer, Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)) * boost);
+    addByAcquireOrder(skills, "snap", "インフィニティ・スナップ", player.infinitySnapLevel, player.infinitySnapTimer, Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30)) * boost);
+    addByAcquireOrder(skills, "orbital", "衛星レーザー", player.orbitalStrikeLevel, player.orbitalStrikeTimer, Math.max(90, 240 - (player.orbitalStrikeLevel * 30)) * boost);
+    addByAcquireOrder(skills, "shield", "シールド投擲", player.shieldLevel, player.shieldTimer, 900 * boost);
+    addByAcquireOrder(skills, "keraunos", "天帝の神罰", player.keraunosLevel, player.keraunosTimer, 900 * boost);
+    addByAcquireOrder(skills, "funnel", "機動兵装", player.funnelLevel, player.funnelTimer, 900 * boost);
+    addByAcquireOrder(skills, "vader", "暗黒卿", player.vaderLevel, player.vaderTimer, 900 * boost);
+    addByAcquireOrder(skills, "disney", "ディズニー・マジック", player.disneyMagicLevel, player.disneyMagicTimer, 3600 * boost);
+    addByAcquireOrder(skills, "muryoku", "領域展開", player.muryokuLevel, player.muryokuTimer, 1200 * boost);
+
+    if (player.thorLevel > 0) {
+      if (!seenWeaponIds.has("thor")) {
+        seenWeaponIds.add("thor");
+        weaponAcquireOrder.push("thor");
+      }
+
+      if (player.thorThrowsLeft > 0 || player.thorIsActive) {
+        skills.push({ id:"thor", label:"雷神の力", pct:100, status:"READY" });
+      } else {
+        const interval = 900 * boost;
+        const p = Math.max(0, Math.min(100, ((player.thorTimer || 0) / interval) * 100));
+        skills.push({
+          id:"thor",
+          label:"雷神の力",
+          pct:p,
+          status:p >= 99 ? "READY" : Math.ceil(Math.max(0, interval - (player.thorTimer || 0)) / 60) + "s"
+        });
+      }
+    }
+
+    if (skills.length === 0) return;
+
+    // ここが重要：READY順・残り時間順に並べ替えない。入手順だけで表示。
+    skills.sort((a, b) => weaponAcquireOrder.indexOf(a.id) - weaponAcquireOrder.indexOf(b.id));
+
+    document.body.classList.add("weapon-timer-visible");
+    hud.innerHTML = `
+      <div class="weapon-timer-title">WEAPON CHARGE</div>
+      ${skills.slice(0, 8).map(s => `
+        <div class="weapon-timer-row" data-weapon-id="${s.id}">
+          <div class="weapon-timer-top">
+            <span class="weapon-timer-name">${s.label}</span>
+            <span class="weapon-timer-status ${s.status === "READY" ? "ready" : ""}">${s.status}</span>
+          </div>
+          <div class="weapon-timer-bar">
+            <div class="weapon-timer-fill" style="width:${s.pct}%"></div>
+          </div>
+        </div>
+      `).join("")}
+    `;
+  }
+
+  function thorPerformanceGuard(){
+    try {
+      if (typeof player === "undefined" || !player) return;
+
+      const thorActive = player.thorLevel > 0 && (player.thorIsActive || player.thorThrowsLeft > 0);
+      if (thorActive) {
+        document.body.classList.add("thor-safe-mode");
+
+        // ソー中に増えやすい描画物を軽くする
+        if (typeof particles !== "undefined" && particles.length > 90) {
+          particles.splice(0, particles.length - 90);
+        }
+        if (typeof floatingTexts !== "undefined" && floatingTexts.length > 35) {
+          floatingTexts.splice(0, floatingTexts.length - 35);
+        }
+        if (typeof bullets !== "undefined" && bullets.length > 120) {
+          bullets.splice(0, bullets.length - 120);
+        }
+        if (typeof lightningBolts !== "undefined" && lightningBolts.length > 12) {
+          lightningBolts.splice(0, lightningBolts.length - 12);
+        }
+        if (typeof effects !== "undefined" && effects.length > 40) {
+          effects.splice(0, effects.length - 40);
+        }
+      } else {
+        document.body.classList.remove("thor-safe-mode");
+      }
+    } catch(e) {}
+  }
+
+  // ソー武器の発動関数がある場合、連続発動を少し抑える
+  function patchThorStart(){
+    if (typeof player === "undefined" || !player) return;
+    if (player.__thorLightPatched) return;
+
+    if (typeof player.startThorSingle === "function") {
+      const oldThor = player.startThorSingle.bind(player);
+      player.startThorSingle = function(){
+        const t = performance.now ? performance.now() : Date.now();
+        if (this.__lastThorStartAt && t - this.__lastThorStartAt < 450) {
+          return;
+        }
+        this.__lastThorStartAt = t;
+
+        if (typeof particles !== "undefined" && particles.length > 80) {
+          particles.splice(0, particles.length - 80);
+        }
+
+        return oldThor();
+      };
+      player.__thorLightPatched = true;
+    }
+  }
+
+  // 既存の武器タイマー更新より後に上書きする
+  setInterval(() => {
+    updateWeaponTimerByAcquireOrder();
+    thorPerformanceGuard();
+    patchThorStart();
+  }, 140);
+})();
+</script>
+
+
+<!-- ===== FINAL PATCH: 倍速設定を完全削除＋バージョン変更でもハイスコア永久保存 ===== -->
+<style>
+/* 倍速設定を完全に非表示 */
+#pauseScreen span,
+#pauseScreen div,
+#pauseScreen label {
+  /* JS側でGAME SPEED欄を消す。ここは保険 */
+}
+
+#pauseScreen input[name="gameSpeed"],
+#pauseScreen input[name="gameSpeed"] + .speed-btn {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* GAME SPEEDのボックス自体をJSで消す */
+.speed-btn {
+  display: none !important;
+}
+
+/* 一時停止画面内で空欄が残らないように */
+.neon-speed-removed {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+</style>
+
+<script>
+(function removeSpeedAndMakeHighScorePersistent(){
+  /* ===== 倍速機能を完全無効化 ===== */
+  function removeSpeedControls(){
+    document.querySelectorAll('input[name="gameSpeed"]').forEach(input => {
+      const label = input.closest('label');
+      if (label) {
+        label.classList.add('neon-speed-removed');
+        label.style.display = 'none';
+      }
+      input.checked = Number(input.value) === 1;
+      input.disabled = true;
+    });
+
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.classList.add('neon-speed-removed');
+      btn.style.display = 'none';
+      btn.style.pointerEvents = 'none';
+    });
+
+    // GAME SPEEDと書かれた親ボックスを消す
+    document.querySelectorAll('#pauseScreen span').forEach(span => {
+      if ((span.textContent || '').trim().toUpperCase() === 'GAME SPEED') {
+        const box = span.closest('div');
+        if (box) {
+          box.classList.add('neon-speed-removed');
+          box.style.display = 'none';
+        }
+      }
+    });
+
+    // 速度は常に1倍
+    try {
+      if (typeof gameSpeed !== 'undefined') gameSpeed = 1;
+      window.gameSpeed = 1;
+    } catch(e) {}
+  }
+
+  // setGameSpeed自体も1倍固定にする
+  window.setGameSpeed = function(){
+    try {
+      if (typeof gameSpeed !== 'undefined') gameSpeed = 1;
+      window.gameSpeed = 1;
+    } catch(e) {}
+    return 1;
+  };
+
+  /* ===== バージョンが変わっても残るハイスコア保存 ===== */
+  function getLoginCodeForScore(){
+    try {
+      if (typeof currentLoginCode !== 'undefined' && currentLoginCode) {
+        localStorage.setItem('neon_last_login_code_global', String(currentLoginCode));
+        return String(currentLoginCode);
+      }
+      const last1 = localStorage.getItem('neon_last_login_code_global');
+      if (last1) return last1;
+      const last2 = localStorage.getItem('neon_last_login_code');
+      if (last2) return last2;
+    } catch(e) {}
+    return 'default';
+  }
+
+  function persistentHighScoreKey(code){
+    // バージョン名を入れない固定キー
+    return 'NEON_SURVIVOR_GLOBAL_HIGHSCORE_ACCOUNT_' + String(code);
+  }
+
+  function loadPersistentHighScore(){
+    const code = getLoginCodeForScore();
+    try {
+      return Number(localStorage.getItem(persistentHighScoreKey(code)) || 0);
+    } catch(e) {
+      return 0;
+    }
+  }
+
+  function savePersistentHighScore(newScore){
+    const code = getLoginCodeForScore();
+    const s = Number(newScore || 0);
+    const old = loadPersistentHighScore();
+
+    if (s > old) {
+      try {
+        localStorage.setItem(persistentHighScoreKey(code), String(Math.floor(s)));
+      } catch(e) {}
+    }
+
+    // 古いバージョンのキーにも同期しておく
+    try {
+      localStorage.setItem('neon_highscore_' + code, String(Math.max(old, s)));
+      localStorage.setItem('neon_last_login_code_global', code);
+      localStorage.setItem('neon_last_login_code', code);
+    } catch(e) {}
+  }
+
+  /* 既存のsave/load関数があれば上書き */
+  window.loadHighScore = loadPersistentHighScore;
+  window.saveHighScore = savePersistentHighScore;
+
+  /* ログイン時にコードをグローバル保存 */
+  function rememberLoginCode(){
+    try {
+      if (typeof currentLoginCode !== 'undefined' && currentLoginCode) {
+        localStorage.setItem('neon_last_login_code_global', String(currentLoginCode));
+        localStorage.setItem('neon_last_login_code', String(currentLoginCode));
+      }
+
+      const input = document.getElementById('loginCodeInput');
+      if (input && /^\d{4}$/.test(String(input.value || '').trim())) {
+        localStorage.setItem('neon_last_login_code_global', String(input.value).trim());
+        localStorage.setItem('neon_last_login_code', String(input.value).trim());
+      }
+    } catch(e) {}
+  }
+
+  /* ゲームオーバー画面表示時に必ず保存・表示 */
+  function syncHighScoreDisplay(){
+    try {
+      rememberLoginCode();
+
+      if (typeof score !== 'undefined') {
+        savePersistentHighScore(score);
+      }
+
+      const hs = loadPersistentHighScore();
+
+      const finalHighScore = document.getElementById('finalHighScore');
+      if (finalHighScore) finalHighScore.textContent = hs;
+
+      const finalLoginCode = document.getElementById('finalLoginCode');
+      if (finalLoginCode) finalLoginCode.textContent = getLoginCodeForScore();
+    } catch(e) {}
+  }
+
+  /* gameOver関数があれば保存処理を挟む */
+  const oldGameOver = window.gameOver;
+  if (typeof oldGameOver === 'function' && !oldGameOver.__persistentHighScorePatched) {
+    const patchedGameOver = function(){
+      rememberLoginCode();
+      try {
+        if (typeof score !== 'undefined') savePersistentHighScore(score);
+      } catch(e) {}
+
+      const r = oldGameOver.apply(this, arguments);
+
+      setTimeout(syncHighScoreDisplay, 50);
+      setTimeout(syncHighScoreDisplay, 300);
+      return r;
+    };
+    patchedGameOver.__persistentHighScorePatched = true;
+    window.gameOver = patchedGameOver;
+  }
+
+  /* startGame/initGame時にもログインコードを保存 */
+  const oldStartGame = window.startGame;
+  if (typeof oldStartGame === 'function' && !oldStartGame.__rememberCodePatched) {
+    const patchedStart = function(){
+      rememberLoginCode();
+      removeSpeedControls();
+      try {
+        if (typeof gameSpeed !== 'undefined') gameSpeed = 1;
+        window.gameSpeed = 1;
+      } catch(e) {}
+      return oldStartGame.apply(this, arguments);
+    };
+    patchedStart.__rememberCodePatched = true;
+    window.startGame = patchedStart;
+  }
+
+  const oldInitGame = window.initGame;
+  if (typeof oldInitGame === 'function' && !oldInitGame.__speedRemovedPatched) {
+    const patchedInit = function(){
+      removeSpeedControls();
+      try {
+        if (typeof gameSpeed !== 'undefined') gameSpeed = 1;
+        window.gameSpeed = 1;
+      } catch(e) {}
+      return oldInitGame.apply(this, arguments);
+    };
+    patchedInit.__speedRemovedPatched = true;
+    window.initGame = patchedInit;
+  }
+
+  /* 定期的に保険 */
+  removeSpeedControls();
+  setInterval(() => {
+    removeSpeedControls();
+    rememberLoginCode();
+
+    try {
+      if (typeof gameSpeed !== 'undefined' && gameSpeed !== 1) gameSpeed = 1;
+      window.gameSpeed = 1;
+    } catch(e) {}
+
+    // ゲームオーバー中は表示も同期
+    if (typeof gameState !== 'undefined' && gameState === 'gameover') {
+      syncHighScoreDisplay();
+    }
+  }, 300);
+})();
+</script>
+
+
+<!-- ===== SMOOTH PERFORMANCE FINAL: 常にスムーズ動作・虚空の暴風軽量化 ===== -->
+<style>
+/* プレイ中は重い画面効果をできるだけOFF */
+body.smooth-play-mode::before,
+body.smooth-play-mode::after {
+  display: none !important;
+}
+
+body.smooth-play-mode canvas {
+  filter: none !important;
+}
+
+/* カットインの重い演出を短くする */
+body.smooth-play-mode .purple-cutin,
+body.smooth-play-mode .blue-cutin,
+body.smooth-play-mode .gold-cutin,
+body.smooth-play-mode .iron-cutin,
+body.smooth-play-mode .lightning-cutin,
+body.smooth-play-mode .funnel-cutin,
+body.smooth-play-mode .vader-cutin,
+body.smooth-play-mode .thor-cutin,
+body.smooth-play-mode .disney-cutin,
+body.smooth-play-mode .muryoku-cutin {
+  animation-duration: 1.15s !important;
+}
+
+/* プレイ中の余計な発光負荷を少し軽くする */
+body.smooth-play-mode .neon-text,
+body.smooth-play-mode .btn-neon {
+  text-shadow: 0 0 8px #00ffff !important;
+  box-shadow: 0 0 8px rgba(0,255,255,0.55) !important;
+}
+</style>
+
+<script>
+(function installSmoothPerformanceMode(){
+  const LIMITS = {
+    particles: 90,
+    floatingTexts: 35,
+    bullets: 130,
+    enemies: 115,
+    gems: 120,
+    effects: 35,
+    lightningBolts: 10,
+    voidTempests: 2,
+    hollowMurasakiCharges: 2,
+    kamehamehas: 2,
+    infinitySnaps: 1,
+    shields: 6,
+    blades: 80,
+    orbitalStrikes: 4
+  };
+
+  function trimArray(name, limit){
+    try {
+      if (typeof window[name] !== "undefined" && Array.isArray(window[name]) && window[name].length > limit) {
+        window[name].splice(0, window[name].length - limit);
+      }
+    } catch(e) {}
+
+    try {
+      // let/constで定義されている場合に備えた直接参照
+      const arr = eval("typeof " + name + " !== 'undefined' ? " + name + " : null");
+      if (Array.isArray(arr) && arr.length > limit) {
+        arr.splice(0, arr.length - limit);
+      }
+    } catch(e) {}
+  }
+
+  function lightVoidTempest(){
+    try {
+      if (typeof voidTempests !== "undefined" && Array.isArray(voidTempests)) {
+        if (voidTempests.length > LIMITS.voidTempests) {
+          voidTempests.splice(0, voidTempests.length - LIMITS.voidTempests);
+        }
+
+        // 虚空の暴風が出ている間はさらに粒子と文字を減らす
+        if (voidTempests.length > 0) {
+          trimArray("particles", 45);
+          trimArray("floatingTexts", 18);
+          trimArray("enemies", 100);
+          trimArray("bullets", 100);
+        }
+      }
+    } catch(e) {}
+  }
+
+  function patchVoidTempestCreation(){
+    try {
+      if (typeof player === "undefined" || !player || player.__voidSmoothPatched) return;
+
+      // VoidTempest自体が重いので、同時発生数を1〜2個に制限
+      const oldUpdate = player.update;
+      if (typeof oldUpdate === "function") {
+        player.update = function(){
+          const beforeCount = (typeof voidTempests !== "undefined" && Array.isArray(voidTempests)) ? voidTempests.length : 0;
+          const result = oldUpdate.apply(this, arguments);
+          const afterCount = (typeof voidTempests !== "undefined" && Array.isArray(voidTempests)) ? voidTempests.length : 0;
+
+          if (afterCount > beforeCount && afterCount > LIMITS.voidTempests) {
+            voidTempests.splice(0, afterCount - LIMITS.voidTempests);
+          }
+
+          // 発動直後に出る重い表示を削る
+          lightVoidTempest();
+          return result;
+        };
+        player.__voidSmoothPatched = true;
+      }
+    } catch(e) {}
+  }
+
+  function forceSmoothMode(){
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+
+    if (playing) {
+      document.body.classList.add("smooth-play-mode");
+    } else {
+      document.body.classList.remove("smooth-play-mode");
+    }
+
+    // 倍速は完全に1倍固定
+    try {
+      if (typeof gameSpeed !== "undefined") gameSpeed = 1;
+      window.gameSpeed = 1;
+    } catch(e) {}
+
+    // 配列増えすぎ対策
+    Object.entries(LIMITS).forEach(([name, limit]) => trimArray(name, limit));
+
+    lightVoidTempest();
+    patchVoidTempestCreation();
+
+    // ゲーム中にループが止まった時の保険。ただし呼びすぎ防止。
+    if (playing && typeof gameLoop === "function" && !window.__smoothLoopKickLock) {
+      window.__smoothLoopKickLock = true;
+      requestAnimationFrame(function(t){
+        try {
+          if (typeof gameState !== "undefined" && gameState === "playing") {
+            gameLoop(t);
+          }
+        } catch(e) {}
+        setTimeout(() => { window.__smoothLoopKickLock = false; }, 500);
+      });
+    }
+  }
+
+  // 重いスキル使用時はより強く軽量化
+  function heavySkillGuard(){
+    try {
+      const hasHeavy =
+        (typeof voidTempests !== "undefined" && Array.isArray(voidTempests) && voidTempests.length > 0) ||
+        (typeof player !== "undefined" && player && player.thorLevel > 0 && (player.thorIsActive || player.thorThrowsLeft > 0));
+
+      if (hasHeavy) {
+        trimArray("particles", 35);
+        trimArray("floatingTexts", 12);
+        trimArray("effects", 18);
+        trimArray("bullets", 90);
+        trimArray("enemies", 95);
+      }
+    } catch(e) {}
+  }
+
+  // requestAnimationFrameの多重実行を少し抑える保険
+  if (!window.__smoothRAFPatched) {
+    window.__smoothRAFPatched = true;
+    const originalRAF = window.requestAnimationFrame;
+    let lastRAFTime = 0;
+
+    window.requestAnimationFrame = function(cb){
+      return originalRAF.call(window, function(t){
+        // 低すぎる間隔で処理が走る時は少し間引く
+        if (typeof gameState !== "undefined" && gameState === "playing") {
+          if (t - lastRAFTime < 8) return originalRAF.call(window, cb);
+          lastRAFTime = t;
+        }
+        return cb(t);
+      });
+    };
+  }
+
+  setInterval(forceSmoothMode, 250);
+  setInterval(heavySkillGuard, 120);
+})();
+</script>
+
+
+<!-- ===== FINAL PATCH: 特殊武器の初回だけ半分クールダウン ===== -->
+<script>
+(function specialWeaponFirstHalfCooldown(){
+  const weaponCooldowns = [
+    ["hollowMurasakiLevel", "hollowMurasakiTimer", 1200],
+    ["kamehamehaLevel", "kamehamehaTimer", 1200],
+    ["infiniteBladeLevel", "infiniteBladeTimer", 600],
+    ["infinitySnapLevel", "infinitySnapTimer", 600],
+    ["orbitalStrikeLevel", "orbitalStrikeTimer", 240],
+    ["keraunosLevel", "keraunosTimer", 900],
+    ["funnelLevel", "funnelTimer", 900],
+    ["vaderLevel", "vaderTimer", 900],
+    ["disneyMagicLevel", "disneyMagicTimer", 3600],
+    ["muryokuLevel", "muryokuTimer", 1200],
+    ["thorLevel", "thorTimer", 900],
+    ["shieldLevel", "shieldTimer", 900]
+  ];
+
+  function ensureTracker(){
+    if (typeof player === "undefined" || !player) return false;
+    if (!player.__firstCooldownWeaponLevels) {
+      player.__firstCooldownWeaponLevels = {};
+    }
+    return true;
+  }
+
+  function applyFirstHalfCooldown(){
+    if (!ensureTracker()) return;
+
+    weaponCooldowns.forEach(([levelKey, timerKey, cooldown]) => {
+      const level = Number(player[levelKey] || 0);
+      const oldLevel = Number(player.__firstCooldownWeaponLevels[levelKey] || 0);
+
+      // 新しく取得した瞬間だけ処理
+      if (level > oldLevel) {
+        player.__firstCooldownWeaponLevels[levelKey] = level;
+
+        // 取得直後に即発動しないよう、初回だけ半分からスタート
+        const halfCooldown = Math.floor(cooldown / 2);
+
+        // timerが0付近なら半分クールダウンを入れる
+        if (!player[timerKey] || player[timerKey] < 10) {
+          player[timerKey] = halfCooldown;
+        }
+
+        // ソー用の特殊状態もリセット
+        if (levelKey === "thorLevel") {
+          player.thorThrowsLeft = 0;
+          player.thorIsActive = false;
+        }
+      }
+    });
+  }
+
+  // initGame/startGame後に追跡をリセット
+  function resetTracker(){
+    if (typeof player !== "undefined" && player) {
+      player.__firstCooldownWeaponLevels = {};
+    }
+  }
+
+  const oldInitGame = window.initGame;
+  if (typeof oldInitGame === "function" && !oldInitGame.__halfCooldownPatched) {
+    const patchedInit = function(){
+      const r = oldInitGame.apply(this, arguments);
+      setTimeout(resetTracker, 50);
+      return r;
+    };
+    patchedInit.__halfCooldownPatched = true;
+    window.initGame = patchedInit;
+  }
+
+  const oldStartGame = window.startGame;
+  if (typeof oldStartGame === "function" && !oldStartGame.__halfCooldownPatched) {
+    const patchedStart = function(){
+      const r = oldStartGame.apply(this, arguments);
+      setTimeout(resetTracker, 50);
+      return r;
+    };
+    patchedStart.__halfCooldownPatched = true;
+    window.startGame = patchedStart;
+  }
+
+  // 武器選択後に反映されるように高頻度チェック
+  setInterval(applyFirstHalfCooldown, 120);
+})();
+</script>
+
+
+<!-- ===== TRUE FINAL FIX: 開始トグル・ログイン暴発・死亡画面・天の裁き調整 ===== -->
+<style>
+/* 開始画面ジョイスティックトグルを押しやすく */
+#startScreen label:has(#joystickToggle) {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+}
+
+#startScreen #joystickToggle {
+  pointer-events: none !important;
+}
+
+#startScreen .relative:has(#joystickToggle) {
+  width: 62px !important;
+  height: 34px !important;
+  flex: 0 0 62px !important;
+  position: relative !important;
+  display: inline-block !important;
+}
+
+#startScreen #joystickToggle ~ .block {
+  width: 62px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(80,95,110,.85) !important;
+}
+
+#startScreen #joystickToggle ~ .dot {
+  width: 28px !important;
+  height: 28px !important;
+  left: 3px !important;
+  top: 3px !important;
+  transform: translateX(0) !important;
+}
+
+#startScreen #joystickToggle:checked ~ .block {
+  background: #06b6d4 !important;
+}
+
+#startScreen #joystickToggle:checked ~ .dot {
+  transform: translateX(28px) !important;
+}
+
+/* プレイ中にログイン画面が出るバグ防止 */
+body.force-hide-login #loginScreen {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* ゲームオーバー画面を必ず最前面 */
+#gameOverScreen.true-gameover-visible {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 2147483000 !important;
+}
+</style>
+
+<script>
+(function trueFinalBugFixes(){
+  let lastStartToggle = 0;
+  let finalGameOverCalled = false;
+
+  function now(){
+    return (performance && performance.now) ? performance.now() : Date.now();
+  }
+
+  /* ===== 開始画面ジョイスティックトグル修正 ===== */
+  function getJoystick(){
+    try {
+      if (typeof isJoystickEnabled !== 'undefined') return !!isJoystickEnabled;
+    } catch(e) {}
+    try {
+      const saved = localStorage.getItem('neon_joystick_enabled');
+      if (saved !== null) return saved === '1';
+    } catch(e) {}
+    return true;
+  }
+
+  function setJoystick(v){
+    const next = !!v;
+    try {
+      if (typeof isJoystickEnabled !== 'undefined') isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem('neon_joystick_enabled', next ? '1' : '0');
+    } catch(e) {}
+
+    const startT = document.getElementById('joystickToggle');
+    const pauseT = document.getElementById('pauseJoystickToggle');
+    if (startT) startT.checked = next;
+    if (pauseT) pauseT.checked = next;
+
+    const zone = document.getElementById('joystickZone');
+    const playing = (typeof gameState !== 'undefined' && gameState === 'playing');
+    if (zone) {
+      if (next && playing) {
+        zone.classList.remove('hidden');
+        zone.style.display = 'flex';
+        zone.style.visibility = 'visible';
+        zone.style.opacity = '1';
+        zone.style.pointerEvents = 'auto';
+      } else if (!next) {
+        zone.classList.add('hidden');
+        zone.style.display = 'none';
+        zone.style.visibility = 'hidden';
+        zone.style.opacity = '0';
+        zone.style.pointerEvents = 'none';
+      }
+    }
+  }
+
+  function bindStartJoystickToggle(){
+    const input = document.getElementById('joystickToggle');
+    const label = input ? input.closest('label') : null;
+    if (!label || label.dataset.trueFinalToggleFixed === '1') return;
+    label.dataset.trueFinalToggleFixed = '1';
+
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      const t = now();
+      if (t - lastStartToggle < 220) return false;
+      lastStartToggle = t;
+      setJoystick(!getJoystick());
+      return false;
+    }
+
+    label.addEventListener('pointerdown', handler, {passive:false, capture:true});
+    label.addEventListener('touchstart', handler, {passive:false, capture:true});
+    label.addEventListener('click', function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      return false;
+    }, {passive:false, capture:true});
+  }
+
+  /* ===== プレイ途中でログイン画面が勝手に出るバグ防止 ===== */
+  function hideLoginIfNotLoginState(){
+    try {
+      const login = document.getElementById('loginScreen');
+      const input = document.getElementById('loginCodeInput');
+      const st = (typeof gameState !== 'undefined') ? gameState : 'start';
+
+      const shouldHide = (st === 'playing' || st === 'paused' || st === 'levelup' || st === 'gameover');
+
+      if (shouldHide) {
+        document.body.classList.add('force-hide-login');
+        if (login) {
+          login.style.display = 'none';
+          login.style.opacity = '0';
+          login.style.pointerEvents = 'none';
+          login.style.visibility = 'hidden';
+        }
+        if (input && document.activeElement === input) {
+          input.blur();
+        }
+      } else {
+        document.body.classList.remove('force-hide-login');
+      }
+    } catch(e) {}
+  }
+
+  /* ===== 天の裁き/天帝の神罰：ダメージ2000・クールダウン10秒 ===== */
+  function patchKeraunos(){
+    try {
+      if (typeof player === 'undefined' || !player) return;
+
+      // startKeraunosを2000ダメージに変更
+      if (typeof player.startKeraunos === 'function' && !player.startKeraunos.__trueFinalPatched) {
+        const patched = function(){
+          const damage = 2000;
+          try {
+            if (typeof keraunosCharges !== 'undefined' && Array.isArray(keraunosCharges)) {
+              if (keraunosCharges.length < 4) {
+                keraunosCharges.push(new KeraunosCharge(damage, this.keraunosLevel));
+              }
+            }
+          } catch(e) {}
+        };
+        patched.__trueFinalPatched = true;
+        player.startKeraunos = patched;
+      }
+
+      // 元コードは900Fなので、600F(10秒)で発動するようにする
+      if (player.keraunosLevel > 0 && player.keraunosTimer >= 600 && player.keraunosTimer < 900) {
+        if (!player.__keraunos10sLock) {
+          player.__keraunos10sLock = true;
+          try { player.startKeraunos(); } catch(e) {}
+          player.keraunosTimer = 0;
+          setTimeout(() => { if (player) player.__keraunos10sLock = false; }, 250);
+        }
+      }
+    } catch(e) {}
+  }
+
+  /* ===== 死亡時に必ずゲームオーバー画面へ行く修正 ===== */
+  function safeGameOver(){
+    if (finalGameOverCalled) return;
+    finalGameOverCalled = true;
+
+    try {
+      if (typeof gameState !== 'undefined') gameState = 'gameover';
+      if (typeof isGameLoopScheduled !== 'undefined') isGameLoopScheduled = false;
+      if (typeof animationId !== 'undefined' && animationId) cancelAnimationFrame(animationId);
+      if (typeof Sound !== 'undefined' && Sound.stopBGM) Sound.stopBGM();
+    } catch(e) {}
+
+    try {
+      const zone = document.getElementById('joystickZone');
+      if (zone) {
+        zone.classList.add('hidden');
+        zone.style.display = 'none';
+        zone.style.opacity = '0';
+        zone.style.pointerEvents = 'none';
+      }
+    } catch(e) {}
+
+    try {
+      const finalScoreValue = (typeof score !== 'undefined') ? Math.floor(score) : 0;
+      const minutes = (typeof gameTime !== 'undefined') ? Math.floor(gameTime / 60).toString().padStart(2, '0') : '00';
+      const seconds = (typeof gameTime !== 'undefined') ? Math.floor(gameTime % 60).toString().padStart(2, '0') : '00';
+
+      // ハイスコア保存
+      if (typeof saveHighScore === 'function') {
+        try { saveHighScore(finalScoreValue); } catch(e) {}
+      }
+      if (typeof savePersistentHighScore === 'function') {
+        try { savePersistentHighScore(finalScoreValue); } catch(e) {}
+      }
+
+      let hs = finalScoreValue;
+      if (typeof loadHighScore === 'function') {
+        try { hs = loadHighScore(); } catch(e) {}
+      } else {
+        try {
+          const code = (typeof currentLoginCode !== 'undefined' && currentLoginCode) ? currentLoginCode : (localStorage.getItem('neon_last_login_code') || 'default');
+          const key = 'NEON_SURVIVOR_GLOBAL_HIGHSCORE_ACCOUNT_' + code;
+          const old = Number(localStorage.getItem(key) || 0);
+          hs = Math.max(old, finalScoreValue);
+          localStorage.setItem(key, String(hs));
+        } catch(e) {}
+      }
+
+      const finalTime = document.getElementById('finalTime');
+      const finalScore = document.getElementById('finalScore');
+      const finalHighScore = document.getElementById('finalHighScore');
+      const finalLoginCode = document.getElementById('finalLoginCode');
+
+      if (finalTime) finalTime.innerText = minutes + ':' + seconds;
+      if (finalScore) finalScore.innerText = finalScoreValue;
+      if (finalHighScore) finalHighScore.innerText = hs;
+      if (finalLoginCode) finalLoginCode.innerText = (typeof currentLoginCode !== 'undefined' && currentLoginCode) ? currentLoginCode : '未ログイン';
+    } catch(e) {}
+
+    const screen = document.getElementById('gameOverScreen');
+    if (screen) {
+      screen.classList.add('true-gameover-visible');
+      screen.classList.remove('opacity-0', 'pointer-events-none');
+      screen.classList.add('opacity-100', 'pointer-events-auto');
+      screen.style.display = 'flex';
+      screen.style.opacity = '1';
+      screen.style.visibility = 'visible';
+      screen.style.pointerEvents = 'auto';
+      screen.style.zIndex = '2147483000';
+    }
+  }
+
+  // 既存gameOverを安全版で包む
+  if (typeof window.gameOver === 'function' && !window.gameOver.__trueFinalSafePatched) {
+    const originalGameOver = window.gameOver;
+    const patchedGameOver = function(){
+      try {
+        originalGameOver.apply(this, arguments);
+      } catch(e) {
+        safeGameOver();
+        return;
+      }
+
+      // 既存処理後にも必ず画面表示を保証
+      setTimeout(safeGameOver, 50);
+    };
+    patchedGameOver.__trueFinalSafePatched = true;
+    window.gameOver = patchedGameOver;
+  }
+
+  function monitorDeath(){
+    try {
+      if (typeof gameState !== 'undefined' && gameState === 'playing' && typeof player !== 'undefined' && player && player.hp <= 0) {
+        safeGameOver();
+      }
+
+      if (typeof gameState !== 'undefined' && gameState !== 'gameover') {
+        finalGameOverCalled = false;
+        const screen = document.getElementById('gameOverScreen');
+        if (screen) screen.classList.remove('true-gameover-visible');
+      }
+    } catch(e) {}
+  }
+
+  function syncKeraunosHud(){
+    try {
+      const hud = document.getElementById('weaponTimerHud');
+      if (!hud) return;
+      hud.querySelectorAll('.weapon-timer-row').forEach(row => {
+        const text = row.textContent || '';
+        if (text.includes('天帝の神罰') || text.includes('天の裁き')) {
+          const status = row.querySelector('.weapon-timer-status');
+          const fill = row.querySelector('.weapon-timer-fill');
+          if (typeof player !== 'undefined' && player) {
+            const p = Math.max(0, Math.min(100, (player.keraunosTimer / 600) * 100));
+            const sec = Math.ceil(Math.max(0, 600 - player.keraunosTimer) / 60);
+            if (status) {
+              status.textContent = p >= 99 ? 'READY' : sec + 's';
+              status.classList.toggle('ready', p >= 99);
+            }
+            if (fill) fill.style.width = p + '%';
+          }
+        }
+      });
+    } catch(e) {}
+  }
+
+  function loop(){
+    bindStartJoystickToggle();
+    hideLoginIfNotLoginState();
+    patchKeraunos();
+    monitorDeath();
+    syncKeraunosHud();
+
+    const startT = document.getElementById('joystickToggle');
+    const pauseT = document.getElementById('pauseJoystickToggle');
+    const joy = getJoystick();
+    if (startT) startT.checked = joy;
+    if (pauseT) pauseT.checked = joy;
+  }
+
+  setInterval(loop, 120);
+})();
+</script>
+
+
+<!-- ===== STABLE WEAPON GAUGE: 特殊武器クールダウン表示を固定 ===== -->
+<style>
+#weaponTimerHud {
+  position: fixed !important;
+  left: 14px !important;
+  bottom: 92px !important;
+  width: min(340px, 44vw) !important;
+  max-height: 52vh !important;
+  overflow: hidden !important;
+  z-index: 46 !important;
+  pointer-events: none !important;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.weapon-timer-visible #weaponTimerHud {
+  display: flex !important;
+}
+
+/* 点滅を防ぐため、各行の高さと場所を固定 */
+.weapon-timer-row {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.weapon-timer-row * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* READYでも行を移動・点滅させない */
+.weapon-timer-status.ready {
+  color: #fef08a !important;
+  text-shadow: 0 0 8px #facc15 !important;
+  animation: none !important;
+}
+</style>
+
+<script>
+(function stableWeaponGaugeFinal(){
+  const fixedWeapons = [
+    {id:"hollow", label:"虚式「茈」", lv:"hollowMurasakiLevel", timer:"hollowMurasakiTimer", cd:function(){ return Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)); }},
+    {id:"kamehameha", label:"かめはめ波", lv:"kamehamehaLevel", timer:"kamehamehaTimer", cd:function(){ return Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)); }},
+    {id:"blade", label:"無限の剣陣", lv:"infiniteBladeLevel", timer:"infiniteBladeTimer", cd:function(){ return Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)); }},
+    {id:"snap", label:"インフィニティ・スナップ", lv:"infinitySnapLevel", timer:"infinitySnapTimer", cd:function(){ return Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30)); }},
+    {id:"orbital", label:"衛星レーザー", lv:"orbitalStrikeLevel", timer:"orbitalStrikeTimer", cd:function(){ return Math.max(90, 240 - (player.orbitalStrikeLevel * 30)); }},
+    {id:"shield", label:"シールド投擲", lv:"shieldLevel", timer:"shieldTimer", cd:function(){ return 900; }},
+    {id:"keraunos", label:"天の裁き", lv:"keraunosLevel", timer:"keraunosTimer", cd:function(){ return 600; }},
+    {id:"funnel", label:"機動兵装", lv:"funnelLevel", timer:"funnelTimer", cd:function(){ return 900; }},
+    {id:"vader", label:"暗黒卿", lv:"vaderLevel", timer:"vaderTimer", cd:function(){ return 900; }},
+    {id:"thor", label:"雷神の力", lv:"thorLevel", timer:"thorTimer", cd:function(){ return 900; }},
+    {id:"disney", label:"ディズニー・マジック", lv:"disneyMagicLevel", timer:"disneyMagicTimer", cd:function(){ return 3600; }},
+    {id:"muryoku", label:"領域展開", lv:"muryokuLevel", timer:"muryokuTimer", cd:function(){ return 1200; }}
+  ];
+
+  function getBoost(){
+    try {
+      if (typeof player !== "undefined" && player && player.__cooldownBoost) return player.__cooldownBoost;
+    } catch(e) {}
+    return 1;
+  }
+
+  function ensureHudStructure(activeWeapons){
+    const hud = document.getElementById("weaponTimerHud");
+    if (!hud) return;
+
+    if (hud.dataset.stableBuilt === "1") return;
+
+    hud.dataset.stableBuilt = "1";
+    hud.innerHTML = '<div class="weapon-timer-title">WEAPON CHARGE</div>';
+
+    fixedWeapons.forEach(w => {
+      const row = document.createElement("div");
+      row.className = "weapon-timer-row";
+      row.dataset.weaponId = w.id;
+      row.style.display = "none";
+      row.innerHTML = `
+        <div class="weapon-timer-top">
+          <span class="weapon-timer-name">${w.label}</span>
+          <span class="weapon-timer-status">--</span>
+        </div>
+        <div class="weapon-timer-bar">
+          <div class="weapon-timer-fill" style="width:0%"></div>
+        </div>
+      `;
+      hud.appendChild(row);
+    });
+  }
+
+  function updateStableWeaponGauge(){
+    const hud = document.getElementById("weaponTimerHud");
+    if (!hud) return;
+
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+    if (!playing || typeof player === "undefined" || !player) {
+      document.body.classList.remove("weapon-timer-visible");
+      return;
+    }
+
+    ensureHudStructure();
+
+    let anyVisible = false;
+    const boost = getBoost();
+
+    fixedWeapons.forEach(w => {
+      const row = hud.querySelector('[data-weapon-id="' + w.id + '"]');
+      if (!row) return;
+
+      const lv = Number(player[w.lv] || 0);
+
+      if (lv <= 0) {
+        row.style.display = "none";
+        return;
+      }
+
+      anyVisible = true;
+      row.style.display = "block";
+
+      let timer = Number(player[w.timer] || 0);
+      let cd = Number(w.cd() || 1) * boost;
+
+      // ソーは投げ始めたらREADY表示
+      if (w.id === "thor" && (player.thorThrowsLeft > 0 || player.thorIsActive)) {
+        timer = cd;
+      }
+
+      const percent = Math.max(0, Math.min(100, (timer / cd) * 100));
+      const remainSec = Math.ceil(Math.max(0, cd - timer) / 60);
+
+      const status = row.querySelector(".weapon-timer-status");
+      const fill = row.querySelector(".weapon-timer-fill");
+
+      if (status) {
+        if (percent >= 99) {
+          status.textContent = "READY";
+          status.classList.add("ready");
+        } else {
+          status.textContent = remainSec + "s";
+          status.classList.remove("ready");
+        }
+      }
+
+      if (fill) {
+        fill.style.width = percent + "%";
+      }
+    });
+
+    if (anyVisible) {
+      document.body.classList.add("weapon-timer-visible");
+    } else {
+      document.body.classList.remove("weapon-timer-visible");
+    }
+  }
+
+  // 既存のタイマーHTMLが毎回作り直されても、この処理で固定構造に戻す
+  setInterval(() => {
+    const hud = document.getElementById("weaponTimerHud");
+    if (hud && hud.dataset.stableBuilt !== "1") {
+      ensureHudStructure();
+    }
+    updateStableWeaponGauge();
+  }, 100);
+})();
+</script>
+
+
+<!-- ===== PERFECT STABLE EDITION FINAL GUARD ===== -->
+<style>
+body.perfect-stable-playing::before,
+body.perfect-stable-playing::after {
+  display: none !important;
+}
+body.perfect-stable-playing canvas {
+  filter: none !important;
+}
+body.perfect-stable-hide-login #loginScreen {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#gameOverScreen.perfect-stable-gameover {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 2147483600 !important;
+}
+body.perfect-stable-joystick #joystickZone {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2147482000 !important;
+}
+input[name="gameSpeed"],
+.speed-btn {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+</style>
+
+<script>
+(function perfectStableEditionFinal(){
+  const LIMITS = {
+    particles: 80,
+    floatingTexts: 30,
+    bullets: 120,
+    enemies: 110,
+    gems: 120,
+    effects: 28,
+    lightningBolts: 8,
+    voidTempests: 1,
+    stormbreakers: 2,
+    keraunosCharges: 2
+  };
+
+  let gameOverLock = false;
+
+  function getState(){
+    try {
+      if (typeof gameState !== "undefined") return gameState;
+    } catch(e) {}
+    return "unknown";
+  }
+
+  function isPlaying(){
+    return getState() === "playing";
+  }
+
+  function trimArray(name, limit){
+    try {
+      const arr = eval("typeof " + name + " !== 'undefined' ? " + name + " : null");
+      if (Array.isArray(arr) && arr.length > limit) {
+        arr.splice(0, arr.length - limit);
+      }
+    } catch(e) {}
+  }
+
+  function performanceGuard(){
+    const playing = isPlaying();
+
+    if (playing) {
+      document.body.classList.add("perfect-stable-playing");
+    } else {
+      document.body.classList.remove("perfect-stable-playing");
+    }
+
+    Object.keys(LIMITS).forEach(name => trimArray(name, LIMITS[name]));
+
+    try {
+      if (typeof gameSpeed !== "undefined") gameSpeed = 1;
+      window.gameSpeed = 1;
+    } catch(e) {}
+
+    try {
+      if (typeof gameSpeedMultiplier !== "undefined") gameSpeedMultiplier = 1;
+    } catch(e) {}
+  }
+
+  function getLoginCode(){
+    try {
+      if (typeof currentLoginCode !== "undefined" && currentLoginCode) {
+        localStorage.setItem("neon_last_login_code", String(currentLoginCode));
+        localStorage.setItem("neon_last_login_code_global", String(currentLoginCode));
+        return String(currentLoginCode);
+      }
+
+      const input = document.getElementById("loginCodeInput");
+      if (input && /^\d{4}$/.test(String(input.value || "").trim())) {
+        const code = String(input.value).trim();
+        localStorage.setItem("neon_last_login_code", code);
+        localStorage.setItem("neon_last_login_code_global", code);
+        return code;
+      }
+
+      return localStorage.getItem("neon_last_login_code_global") || localStorage.getItem("neon_last_login_code") || "default";
+    } catch(e) {
+      return "default";
+    }
+  }
+
+  function highScoreKey(){
+    return "NEON_SURVIVOR_GLOBAL_HIGHSCORE_ACCOUNT_" + getLoginCode();
+  }
+
+  function saveHighScoreStable(value){
+    const s = Math.floor(Number(value || 0));
+    try {
+      const old = Number(localStorage.getItem(highScoreKey()) || 0);
+      const best = Math.max(old, s);
+      localStorage.setItem(highScoreKey(), String(best));
+      localStorage.setItem("neon_highscore_" + getLoginCode(), String(best));
+      return best;
+    } catch(e) {
+      return s;
+    }
+  }
+
+  function loadHighScoreStable(){
+    try {
+      return Number(localStorage.getItem(highScoreKey()) || 0);
+    } catch(e) {
+      return 0;
+    }
+  }
+
+  window.saveHighScore = saveHighScoreStable;
+  window.loadHighScore = loadHighScoreStable;
+
+  function hideLoginDuringGame(){
+    const st = getState();
+    const shouldHide = st === "playing" || st === "paused" || st === "levelup" || st === "gameover";
+    const login = document.getElementById("loginScreen");
+    const input = document.getElementById("loginCodeInput");
+
+    if (shouldHide) {
+      document.body.classList.add("perfect-stable-hide-login");
+      if (login) {
+        login.style.display = "none";
+        login.style.opacity = "0";
+        login.style.visibility = "hidden";
+        login.style.pointerEvents = "none";
+      }
+      if (input && document.activeElement === input) {
+        input.blur();
+      }
+    } else {
+      document.body.classList.remove("perfect-stable-hide-login");
+    }
+  }
+
+  function getJoystickOn(){
+    try {
+      if (typeof isJoystickEnabled !== "undefined") return !!isJoystickEnabled;
+    } catch(e) {}
+
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+
+    return true;
+  }
+
+  function setJoystickOn(v){
+    const next = !!v;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    const a = document.getElementById("joystickToggle");
+    const b = document.getElementById("pauseJoystickToggle");
+    if (a) a.checked = next;
+    if (b) b.checked = next;
+
+    updateJoystickDisplay();
+  }
+
+  function updateJoystickDisplay(){
+    const zone = document.getElementById("joystickZone");
+    if (!zone) return;
+
+    const joy = getJoystickOn();
+
+    if (joy && isPlaying()) {
+      document.body.classList.add("perfect-stable-joystick");
+      zone.classList.remove("hidden");
+      zone.style.display = "flex";
+      zone.style.visibility = "visible";
+      zone.style.opacity = "1";
+      zone.style.pointerEvents = "auto";
+    } else {
+      document.body.classList.remove("perfect-stable-joystick");
+      if (!joy) {
+        zone.classList.add("hidden");
+        zone.style.display = "none";
+        zone.style.visibility = "hidden";
+        zone.style.opacity = "0";
+        zone.style.pointerEvents = "none";
+      }
+    }
+  }
+
+  function bindJoystickToggle(inputId){
+    const input = document.getElementById(inputId);
+    const label = input ? input.closest("label") : null;
+    if (!label || label.dataset.perfectStableBound === "1") return;
+
+    label.dataset.perfectStableBound = "1";
+    if (input) input.style.pointerEvents = "none";
+
+    let last = 0;
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+
+      const t = performance.now ? performance.now() : Date.now();
+      if (t - last < 220) return false;
+      last = t;
+
+      setJoystickOn(!getJoystickOn());
+      return false;
+    }
+
+    label.addEventListener("pointerdown", handler, {passive:false, capture:true});
+    label.addEventListener("touchstart", handler, {passive:false, capture:true});
+    label.addEventListener("click", function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      return false;
+    }, {passive:false, capture:true});
+  }
+
+  function patchKeraunos(){
+    try {
+      if (typeof player === "undefined" || !player) return;
+
+      if (typeof player.startKeraunos === "function" && !player.startKeraunos.__perfectStablePatched) {
+        const patched = function(){
+          const damage = 2000;
+          try {
+            if (typeof keraunosCharges !== "undefined" && Array.isArray(keraunosCharges)) {
+              if (keraunosCharges.length < 2) {
+                keraunosCharges.push(new KeraunosCharge(damage, this.keraunosLevel));
+              }
+            }
+          } catch(e) {}
+        };
+        patched.__perfectStablePatched = true;
+        player.startKeraunos = patched;
+      }
+
+      if (player.keraunosLevel > 0 && player.keraunosTimer >= 600 && player.keraunosTimer < 900) {
+        if (!player.__perfectKeraunosLock) {
+          player.__perfectKeraunosLock = true;
+          try { player.startKeraunos(); } catch(e) {}
+          player.keraunosTimer = 0;
+          setTimeout(() => {
+            if (player) player.__perfectKeraunosLock = false;
+          }, 280);
+        }
+      }
+    } catch(e) {}
+  }
+
+  function stableGameOver(){
+    if (gameOverLock) return;
+    gameOverLock = true;
+
+    try {
+      if (typeof gameState !== "undefined") gameState = "gameover";
+      if (typeof isGameLoopScheduled !== "undefined") isGameLoopScheduled = false;
+      if (typeof animationId !== "undefined" && animationId) cancelAnimationFrame(animationId);
+      if (typeof Sound !== "undefined" && Sound.stopBGM) Sound.stopBGM();
+    } catch(e) {}
+
+    const scoreValue = (() => {
+      try { return Math.floor(Number(score || 0)); } catch(e) { return 0; }
+    })();
+
+    const timeValue = (() => {
+      try { return Number(gameTime || 0); } catch(e) { return 0; }
+    })();
+
+    const best = saveHighScoreStable(scoreValue);
+
+    const mm = Math.floor(timeValue / 60).toString().padStart(2, "0");
+    const ss = Math.floor(timeValue % 60).toString().padStart(2, "0");
+
+    const finalTime = document.getElementById("finalTime");
+    const finalScore = document.getElementById("finalScore");
+    const finalHighScore = document.getElementById("finalHighScore");
+    const finalLoginCode = document.getElementById("finalLoginCode");
+
+    if (finalTime) finalTime.textContent = mm + ":" + ss;
+    if (finalScore) finalScore.textContent = scoreValue;
+    if (finalHighScore) finalHighScore.textContent = best;
+    if (finalLoginCode) finalLoginCode.textContent = getLoginCode();
+
+    const screen = document.getElementById("gameOverScreen");
+    if (screen) {
+      screen.classList.add("perfect-stable-gameover");
+      screen.classList.remove("opacity-0", "pointer-events-none");
+      screen.classList.add("opacity-100", "pointer-events-auto");
+      screen.style.display = "flex";
+      screen.style.opacity = "1";
+      screen.style.visibility = "visible";
+      screen.style.pointerEvents = "auto";
+      screen.style.zIndex = "2147483600";
+    }
+  }
+
+  if (typeof window.gameOver === "function" && !window.gameOver.__perfectStableFinal) {
+    const old = window.gameOver;
+    window.gameOver = function(){
+      try { old.apply(this, arguments); } catch(e) {}
+      setTimeout(stableGameOver, 30);
+    };
+    window.gameOver.__perfectStableFinal = true;
+  }
+
+  function deathGuard(){
+    try {
+      if (isPlaying() && typeof player !== "undefined" && player && player.hp <= 0) {
+        stableGameOver();
+      }
+
+      if (getState() !== "gameover") {
+        gameOverLock = false;
+        const screen = document.getElementById("gameOverScreen");
+        if (screen) screen.classList.remove("perfect-stable-gameover");
+      }
+    } catch(e) {}
+  }
+
+  function removeSpeedControls(){
+    document.querySelectorAll('input[name="gameSpeed"], .speed-btn').forEach(el => {
+      el.style.display = "none";
+      el.style.visibility = "hidden";
+      el.style.pointerEvents = "none";
+      if ("disabled" in el) el.disabled = true;
+    });
+
+    document.querySelectorAll("#pauseScreen span").forEach(span => {
+      if ((span.textContent || "").trim().toUpperCase() === "GAME SPEED") {
+        const box = span.closest("div");
+        if (box) {
+          box.style.display = "none";
+          box.style.visibility = "hidden";
+          box.style.pointerEvents = "none";
+        }
+      }
+    });
+  }
+
+  function tick(){
+    performanceGuard();
+    hideLoginDuringGame();
+    updateJoystickDisplay();
+    bindJoystickToggle("joystickToggle");
+    bindJoystickToggle("pauseJoystickToggle");
+    patchKeraunos();
+    deathGuard();
+    removeSpeedControls();
+
+    const joy = getJoystickOn();
+    const a = document.getElementById("joystickToggle");
+    const b = document.getElementById("pauseJoystickToggle");
+    if (a) a.checked = joy;
+    if (b) b.checked = joy;
+  }
+
+  setInterval(tick, 120);
+
+  window.setGameSpeed = function(){ return 1; };
+})();
+</script>
+
+
+<!-- ===== FINAL FIX: クールダウン点滅完全防止＋ゲームオーバーにNEON LAB表示 ===== -->
+<style>
+/* 既存の点滅しやすいHUDは完全に消す */
+#weaponTimerHud,
+#skillCooldownHud {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 新しい固定クールダウンHUD */
+#stableCooldownHudFinal {
+  position: fixed !important;
+  left: 14px !important;
+  bottom: 92px !important;
+  width: min(340px, 44vw) !important;
+  max-height: 52vh !important;
+  overflow: hidden !important;
+  z-index: 46 !important;
+  pointer-events: none !important;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.stable-cooldown-visible #stableCooldownHudFinal {
+  display: flex !important;
+}
+
+.stable-cool-title {
+  height: 16px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #a5f3fc;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 8px #00ffff;
+  opacity: 0.95;
+}
+
+.stable-cool-row {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  box-sizing: border-box !important;
+  background: rgba(0, 12, 24, 0.72);
+  border: 1px solid rgba(0, 255, 255, 0.45);
+  border-radius: 11px;
+  padding: 6px 8px;
+  box-shadow: 0 0 10px rgba(0,255,255,0.18), inset 0 0 8px rgba(0,255,255,0.10);
+  backdrop-filter: blur(6px);
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  display: none;
+}
+
+.stable-cool-row * {
+  transition: none !important;
+  animation: none !important;
+}
+
+.stable-cool-top {
+  height: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 6px #00ffff;
+  margin-bottom: 4px;
+  line-height: 14px;
+}
+
+.stable-cool-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stable-cool-status.ready {
+  color: #fef08a !important;
+  text-shadow: 0 0 8px #facc15 !important;
+}
+
+.stable-cool-bar {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.14);
+}
+
+.stable-cool-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #00ffff, #8b5cf6, #facc15);
+  box-shadow: 0 0 8px #00ffff;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ゲームオーバー時のNEON LABボタン */
+#gameOverNeonLabBtn {
+  width: 220px !important;
+  min-height: 54px !important;
+  margin-top: 10px !important;
+  margin-bottom: 12px !important;
+  border-radius: 16px !important;
+  border: 2px solid #00f6ff !important;
+  background: rgba(0, 20, 35, 0.82) !important;
+  color: white !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  box-shadow:
+    0 0 16px rgba(0,255,255,.7),
+    inset 0 0 12px rgba(0,255,255,.25) !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  display: none;
+}
+
+#gameOverNeonLabBtn:active {
+  transform: scale(0.96);
+}
+
+#gameOverScreen.perfect-stable-gameover #gameOverNeonLabBtn,
+#gameOverScreen.opacity-100 #gameOverNeonLabBtn {
+  display: block !important;
+}
+</style>
+
+<div id="stableCooldownHudFinal">
+  <div class="stable-cool-title">WEAPON CHARGE</div>
+  <div class="stable-cool-row" data-stable-weapon="hollow">
+    <div class="stable-cool-top"><span class="stable-cool-name">虚式「茈」</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="kamehameha">
+    <div class="stable-cool-top"><span class="stable-cool-name">かめはめ波</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="blade">
+    <div class="stable-cool-top"><span class="stable-cool-name">無限の剣陣</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="snap">
+    <div class="stable-cool-top"><span class="stable-cool-name">インフィニティ・スナップ</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="orbital">
+    <div class="stable-cool-top"><span class="stable-cool-name">衛星レーザー</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="shield">
+    <div class="stable-cool-top"><span class="stable-cool-name">シールド投擲</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="keraunos">
+    <div class="stable-cool-top"><span class="stable-cool-name">天の裁き</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="funnel">
+    <div class="stable-cool-top"><span class="stable-cool-name">機動兵装</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="vader">
+    <div class="stable-cool-top"><span class="stable-cool-name">暗黒卿</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="thor">
+    <div class="stable-cool-top"><span class="stable-cool-name">雷神の力</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="disney">
+    <div class="stable-cool-top"><span class="stable-cool-name">ディズニー・マジック</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+  <div class="stable-cool-row" data-stable-weapon="muryoku">
+    <div class="stable-cool-top"><span class="stable-cool-name">領域展開</span><span class="stable-cool-status">--</span></div>
+    <div class="stable-cool-bar"><div class="stable-cool-fill"></div></div>
+  </div>
+</div>
+
+<script>
+(function finalCooldownAndCoreButtonFix(){
+  const weapons = [
+    {id:"hollow", lv:"hollowMurasakiLevel", timer:"hollowMurasakiTimer", cd:() => Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60))},
+    {id:"kamehameha", lv:"kamehamehaLevel", timer:"kamehamehaTimer", cd:() => Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60))},
+    {id:"blade", lv:"infiniteBladeLevel", timer:"infiniteBladeTimer", cd:() => Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30))},
+    {id:"snap", lv:"infinitySnapLevel", timer:"infinitySnapTimer", cd:() => Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30))},
+    {id:"orbital", lv:"orbitalStrikeLevel", timer:"orbitalStrikeTimer", cd:() => Math.max(90, 240 - (player.orbitalStrikeLevel * 30))},
+    {id:"shield", lv:"shieldLevel", timer:"shieldTimer", cd:() => 900},
+    {id:"keraunos", lv:"keraunosLevel", timer:"keraunosTimer", cd:() => 600},
+    {id:"funnel", lv:"funnelLevel", timer:"funnelTimer", cd:() => 900},
+    {id:"vader", lv:"vaderLevel", timer:"vaderTimer", cd:() => 900},
+    {id:"thor", lv:"thorLevel", timer:"thorTimer", cd:() => 900},
+    {id:"disney", lv:"disneyMagicLevel", timer:"disneyMagicTimer", cd:() => 3600},
+    {id:"muryoku", lv:"muryokuLevel", timer:"muryokuTimer", cd:() => 1200}
+  ];
+
+  function boost(){
+    try {
+      if (typeof player !== "undefined" && player && player.__cooldownBoost) return player.__cooldownBoost;
+    } catch(e) {}
+    return 1;
+  }
+
+  function updateStableCooldownHud(){
+    const hud = document.getElementById("stableCooldownHudFinal");
+    if (!hud) return;
+
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+    if (!playing || typeof player === "undefined" || !player) {
+      document.body.classList.remove("stable-cooldown-visible");
+      return;
+    }
+
+    let visibleCount = 0;
+    const b = boost();
+
+    weapons.forEach(w => {
+      const row = hud.querySelector('[data-stable-weapon="' + w.id + '"]');
+      if (!row) return;
+
+      const lv = Number(player[w.lv] || 0);
+
+      if (lv <= 0) {
+        row.style.display = "none";
+        return;
+      }
+
+      row.style.display = "block";
+      visibleCount++;
+
+      let cd = Number(w.cd() || 1) * b;
+      let timer = Number(player[w.timer] || 0);
+
+      if (w.id === "thor" && (player.thorThrowsLeft > 0 || player.thorIsActive)) {
+        timer = cd;
+      }
+
+      const percent = Math.max(0, Math.min(100, (timer / cd) * 100));
+      const sec = Math.ceil(Math.max(0, cd - timer) / 60);
+
+      const status = row.querySelector(".stable-cool-status");
+      const fill = row.querySelector(".stable-cool-fill");
+
+      if (status) {
+        if (percent >= 99) {
+          if (status.textContent !== "READY") status.textContent = "READY";
+          status.classList.add("ready");
+        } else {
+          const text = sec + "s";
+          if (status.textContent !== text) status.textContent = text;
+          status.classList.remove("ready");
+        }
+      }
+
+      if (fill) {
+        const width = percent.toFixed(1) + "%";
+        if (fill.style.width !== width) fill.style.width = width;
+      }
+    });
+
+    if (visibleCount > 0) {
+      document.body.classList.add("stable-cooldown-visible");
+    } else {
+      document.body.classList.remove("stable-cooldown-visible");
+    }
+  }
+
+  function ensureGameOverNeonLabButton(){
+    const gameOver = document.getElementById("gameOverScreen");
+    if (!gameOver) return;
+
+    let btn = document.getElementById("gameOverNeonLabBtn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "gameOverNeonLabBtn";
+      btn.type = "button";
+      btn.textContent = "NEON LAB";
+
+      const retry = document.getElementById("restartBtn");
+      if (retry && retry.parentNode) {
+        retry.parentNode.insertBefore(btn, retry);
+      } else {
+        gameOver.appendChild(btn);
+      }
+
+      function openLab(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+
+        const shop = document.getElementById("neonPermanentShop");
+        if (shop) {
+          if (typeof renderShop === "function") {
+            try { renderShop(); } catch(err) {}
+          }
+          shop.classList.add("open");
+          shop.style.display = "flex";
+        }
+
+        return false;
+      }
+
+      btn.addEventListener("click", openLab, {passive:false, capture:true});
+      btn.addEventListener("pointerup", openLab, {passive:false, capture:true});
+      btn.addEventListener("touchend", openLab, {passive:false, capture:true});
+    }
+
+    const st = (typeof gameState !== "undefined") ? gameState : "";
+    if (st === "gameover") {
+      btn.style.display = "block";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+
+  setInterval(() => {
+    updateStableCooldownHud();
+    ensureGameOverNeonLabButton();
+  }, 120);
+})();
+</script>
+
+
+<!-- ===== FINAL UI FIX: 開始トグル・ゲームオーバー赤背景・NEON LAB最前面・CLOSE修正 ===== -->
+<style>
+/* ===== 1. 最初のジョイスティックトグルを押せるようにする ===== */
+#startScreen label:has(#joystickToggle) {
+  position: relative !important;
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+}
+
+#startScreen label:has(#joystickToggle) * {
+  pointer-events: none !important;
+}
+
+#startScreen .relative:has(#joystickToggle) {
+  width: 62px !important;
+  height: 34px !important;
+  flex: 0 0 62px !important;
+  position: relative !important;
+  display: inline-block !important;
+}
+
+#startScreen #joystickToggle {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 62px !important;
+  height: 34px !important;
+  opacity: 0 !important;
+}
+
+#startScreen #joystickToggle ~ .block {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 62px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(80,95,110,.85) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.45), 0 0 12px rgba(0,255,255,.35) !important;
+}
+
+#startScreen #joystickToggle ~ .dot {
+  position: absolute !important;
+  width: 28px !important;
+  height: 28px !important;
+  left: 3px !important;
+  top: 3px !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  transform: translateX(0) !important;
+  transition: transform .18s ease !important;
+  box-shadow: 0 0 10px rgba(255,255,255,.9), 0 0 18px rgba(0,255,255,.45) !important;
+}
+
+#startScreen #joystickToggle:checked ~ .block {
+  background: #06b6d4 !important;
+}
+
+#startScreen #joystickToggle:checked ~ .dot {
+  transform: translateX(28px) !important;
+}
+
+/* ===== 2. ゲームオーバー画面を赤くする ===== */
+#gameOverScreen,
+#gameOverScreen.perfect-stable-gameover,
+#gameOverScreen.true-gameover-visible,
+#gameOverScreen.opacity-100 {
+  background:
+    radial-gradient(circle at center, rgba(255,80,80,0.34), transparent 34%),
+    radial-gradient(circle at top, rgba(255,0,0,0.42), transparent 42%),
+    linear-gradient(135deg, rgba(80,0,0,0.96), rgba(12,0,0,0.96)) !important;
+  box-shadow: inset 0 0 120px rgba(255,0,0,0.85) !important;
+}
+
+#gameOverScreen h2 {
+  color: #fff !important;
+  text-shadow:
+    0 0 8px #fff,
+    0 0 22px #ff0000,
+    0 0 48px #ff0000,
+    0 0 90px #7f0000 !important;
+  animation: gameOverPulseFinal 1.15s infinite alternate !important;
+}
+
+@keyframes gameOverPulseFinal {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.04); filter: brightness(1.25); }
+}
+
+/* ===== 3. NEON LABを必ず最前面にする ===== */
+#neonPermanentShop,
+#neonPermanentShop.open {
+  z-index: 2147483640 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+  background: rgba(0,0,0,0.82) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+#neonPermanentShop.open {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#neonShopPanel {
+  position: relative !important;
+  z-index: 2147483641 !important;
+  pointer-events: auto !important;
+}
+
+/* ===== 4. CLOSEボタンを必ず押せるようにする ===== */
+#neonCloseShop {
+  position: relative !important;
+  z-index: 2147483642 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  cursor: pointer !important;
+}
+</style>
+
+<script>
+(function finalUiBugFix(){
+  /* ===== ジョイスティック状態 ===== */
+  function getJoy(){
+    try {
+      if (typeof isJoystickEnabled !== "undefined") return !!isJoystickEnabled;
+    } catch(e) {}
+
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+
+    return true;
+  }
+
+  function setJoy(v){
+    const next = !!v;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    const startT = document.getElementById("joystickToggle");
+    const pauseT = document.getElementById("pauseJoystickToggle");
+
+    if (startT) startT.checked = next;
+    if (pauseT) pauseT.checked = next;
+
+    const zone = document.getElementById("joystickZone");
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+
+    if (zone) {
+      if (next && playing) {
+        zone.classList.remove("hidden");
+        zone.style.display = "flex";
+        zone.style.visibility = "visible";
+        zone.style.opacity = "1";
+        zone.style.pointerEvents = "auto";
+      } else if (!next) {
+        zone.classList.add("hidden");
+        zone.style.display = "none";
+        zone.style.visibility = "hidden";
+        zone.style.opacity = "0";
+        zone.style.pointerEvents = "none";
+      }
+    }
+  }
+
+  function bindStartJoystickToggle(){
+    const input = document.getElementById("joystickToggle");
+    const label = input ? input.closest("label") : null;
+
+    if (!label || label.dataset.finalStartJoyFixed === "1") return;
+    label.dataset.finalStartJoyFixed = "1";
+
+    let last = 0;
+
+    function handler(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+
+      const now = performance.now ? performance.now() : Date.now();
+      if (now - last < 250) return false;
+      last = now;
+
+      setJoy(!getJoy());
+      return false;
+    }
+
+    label.addEventListener("pointerdown", handler, {passive:false, capture:true});
+    label.addEventListener("touchstart", handler, {passive:false, capture:true});
+    label.addEventListener("mousedown", handler, {passive:false, capture:true});
+
+    label.addEventListener("click", function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+      return false;
+    }, {passive:false, capture:true});
+  }
+
+  /* ===== NEON LABを最前面で開く ===== */
+  function openNeonLabFinal(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const shop = document.getElementById("neonPermanentShop");
+    if (!shop) return false;
+
+    try {
+      if (typeof renderShop === "function") renderShop();
+    } catch(err) {}
+
+    shop.classList.add("open");
+    shop.style.display = "flex";
+    shop.style.opacity = "1";
+    shop.style.visibility = "visible";
+    shop.style.pointerEvents = "auto";
+    shop.style.zIndex = "2147483640";
+
+    const panel = document.getElementById("neonShopPanel");
+    if (panel) {
+      panel.style.zIndex = "2147483641";
+      panel.style.pointerEvents = "auto";
+    }
+
+    return false;
+  }
+
+  /* ===== NEON LABを確実に閉じる ===== */
+  function closeNeonLabFinal(e){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+
+    const shop = document.getElementById("neonPermanentShop");
+    if (shop) {
+      shop.classList.remove("open");
+      shop.style.display = "none";
+      shop.style.opacity = "0";
+      shop.style.visibility = "hidden";
+      shop.style.pointerEvents = "none";
+    }
+
+    return false;
+  }
+
+  function bindNeonLabButtons(){
+    const gameOverBtn = document.getElementById("gameOverNeonLabBtn");
+    const closeBtn = document.getElementById("neonCloseShop");
+
+    if (gameOverBtn && gameOverBtn.dataset.finalLabOpenFixed !== "1") {
+      gameOverBtn.dataset.finalLabOpenFixed = "1";
+      ["click","pointerup","touchend"].forEach(type => {
+        gameOverBtn.addEventListener(type, openNeonLabFinal, {passive:false, capture:true});
+      });
+    }
+
+    if (closeBtn && closeBtn.dataset.finalLabCloseFixed !== "1") {
+      closeBtn.dataset.finalLabCloseFixed = "1";
+      ["click","pointerup","touchend"].forEach(type => {
+        closeBtn.addEventListener(type, closeNeonLabFinal, {passive:false, capture:true});
+      });
+    }
+
+    /* 既存のNEON LABボタンも念のため同じ処理にする */
+    const labBtn = document.getElementById("neonUpgradeBtnGameOver");
+    if (labBtn && labBtn.dataset.finalLabOpenFixed !== "1") {
+      labBtn.dataset.finalLabOpenFixed = "1";
+      ["click","pointerup","touchend"].forEach(type => {
+        labBtn.addEventListener(type, openNeonLabFinal, {passive:false, capture:true});
+      });
+    }
+  }
+
+  /* ===== ゲームオーバー時にNEON LABボタンを出す ===== */
+  function ensureGameOverNeonLab(){
+    const gameOver = document.getElementById("gameOverScreen");
+    const retry = document.getElementById("restartBtn");
+    if (!gameOver || !retry) return;
+
+    let btn = document.getElementById("gameOverNeonLabBtn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "gameOverNeonLabBtn";
+      btn.type = "button";
+      btn.textContent = "NEON LAB";
+      retry.parentNode.insertBefore(btn, retry);
+    }
+
+    const st = (typeof gameState !== "undefined") ? gameState : "";
+    if (st === "gameover") {
+      btn.style.display = "block";
+      btn.style.pointerEvents = "auto";
+      btn.style.visibility = "visible";
+      btn.style.opacity = "1";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+
+  function sync(){
+    bindStartJoystickToggle();
+    bindNeonLabButtons();
+    ensureGameOverNeonLab();
+
+    const joy = getJoy();
+    const startT = document.getElementById("joystickToggle");
+    const pauseT = document.getElementById("pauseJoystickToggle");
+    if (startT) startT.checked = joy;
+    if (pauseT) pauseT.checked = joy;
+  }
+
+  setInterval(sync, 120);
+
+  /* 外から呼べるようにする */
+  window.openNeonLabFinal = openNeonLabFinal;
+  window.closeNeonLabFinal = closeNeonLabFinal;
+})();
+</script>
+
+</body></html>
