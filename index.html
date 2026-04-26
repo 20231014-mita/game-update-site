@@ -10911,4 +10911,345 @@ body.stable-cooldown-visible #stableCooldownHudFinal {
 })();
 </script>
 
+
+<!-- ===== ABSOLUTE FIX: 古い開始画面トグルを全削除し、新しいボタン式だけ使う ===== -->
+<style>
+/* 古い開始画面トグル系は全部消す */
+#startScreen label:has(#joystickToggle),
+#startScreen #joystickToggle,
+#startScreen #finalStartJoystickControl,
+#startScreen #ultimateStartJoystickToggle,
+#finalStartJoystickControl,
+#ultimateStartJoystickToggle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 新しい唯一のジョイスティックボタン */
+#trueOnlyStartJoystickButton {
+  width: 270px !important;
+  min-height: 60px !important;
+  margin: 8px auto 18px auto !important;
+  padding: 8px 14px !important;
+  border-radius: 18px !important;
+  border: 2px solid #00f6ff !important;
+  background: rgba(0, 20, 35, 0.84) !important;
+  color: white !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  position: relative !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  box-shadow:
+    0 0 16px rgba(0,255,255,.75),
+    inset 0 0 12px rgba(0,255,255,.25) !important;
+}
+
+#trueOnlyStartJoystickButton:active {
+  transform: scale(0.97) !important;
+}
+
+#trueOnlyStartJoystickSwitch {
+  width: 64px !important;
+  height: 36px !important;
+  border-radius: 999px !important;
+  position: relative !important;
+  flex: 0 0 64px !important;
+  background: rgba(80,95,110,.92) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.45), 0 0 12px rgba(0,255,255,.35) !important;
+  pointer-events: none !important;
+}
+
+#trueOnlyStartJoystickSwitch::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  left: 3px;
+  top: 3px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 0 10px rgba(255,255,255,.95), 0 0 18px rgba(0,255,255,.5);
+  transform: translateX(0);
+  transition: transform .18s ease;
+}
+
+#trueOnlyStartJoystickButton.on #trueOnlyStartJoystickSwitch {
+  background: #06b6d4 !important;
+  box-shadow: inset 0 0 12px rgba(255,255,255,.25), 0 0 16px rgba(0,255,255,.85) !important;
+}
+
+#trueOnlyStartJoystickButton.on #trueOnlyStartJoystickSwitch::after {
+  transform: translateX(28px);
+}
+
+#trueOnlyStartJoystickText {
+  pointer-events: none !important;
+  text-shadow: 0 0 8px #00ffff !important;
+  white-space: nowrap !important;
+}
+</style>
+
+<script>
+(function trueOnlyStartJoystickFix(){
+  function getJoy(){
+    try {
+      const saved = localStorage.getItem("neon_joystick_enabled");
+      if (saved !== null) return saved === "1";
+    } catch(e) {}
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") return !!isJoystickEnabled;
+    } catch(e) {}
+
+    return true;
+  }
+
+  function setJoy(value){
+    const next = !!value;
+
+    try {
+      if (typeof isJoystickEnabled !== "undefined") isJoystickEnabled = next;
+      window.isJoystickEnabled = next;
+      localStorage.setItem("neon_joystick_enabled", next ? "1" : "0");
+    } catch(e) {}
+
+    // pause側だけ同期。start側の古いinputは使わない。
+    const pauseToggle = document.getElementById("pauseJoystickToggle");
+    if (pauseToggle) pauseToggle.checked = next;
+
+    const btn = document.getElementById("trueOnlyStartJoystickButton");
+    const txt = document.getElementById("trueOnlyStartJoystickText");
+
+    if (btn) btn.classList.toggle("on", next);
+    if (txt) txt.textContent = next ? "ジョイスティック ON" : "ジョイスティック OFF";
+
+    const zone = document.getElementById("joystickZone");
+    const playing = (typeof gameState !== "undefined" && gameState === "playing");
+
+    if (zone) {
+      if (next && playing) {
+        zone.classList.remove("hidden");
+        zone.style.display = "flex";
+        zone.style.visibility = "visible";
+        zone.style.opacity = "1";
+        zone.style.pointerEvents = "auto";
+      } else if (!next) {
+        zone.classList.add("hidden");
+        zone.style.display = "none";
+        zone.style.visibility = "hidden";
+        zone.style.opacity = "0";
+        zone.style.pointerEvents = "none";
+      }
+    }
+  }
+
+  function removeOldStartToggles(){
+    const startScreen = document.getElementById("startScreen");
+    if (!startScreen) return;
+
+    // 元のcheckboxラベルを物理的に削除
+    const oldInput = document.getElementById("joystickToggle");
+    if (oldInput) {
+      const oldLabel = oldInput.closest("label");
+      if (oldLabel) oldLabel.remove();
+      else oldInput.remove();
+    }
+
+    // 過去に追加したトグルを物理的に削除
+    ["finalStartJoystickControl", "ultimateStartJoystickToggle"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }
+
+  function createOnlyNewButton(){
+    const startScreen = document.getElementById("startScreen");
+    if (!startScreen) return;
+
+    removeOldStartToggles();
+
+    let btn = document.getElementById("trueOnlyStartJoystickButton");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "trueOnlyStartJoystickButton";
+      btn.type = "button";
+      btn.innerHTML = `
+        <div id="trueOnlyStartJoystickSwitch"></div>
+        <span id="trueOnlyStartJoystickText">ジョイスティック ON</span>
+      `;
+
+      const startBtn = document.getElementById("startBtn");
+      if (startBtn && startBtn.parentNode) {
+        startBtn.parentNode.insertBefore(btn, startBtn);
+      } else {
+        startScreen.appendChild(btn);
+      }
+    }
+
+    if (btn.dataset.trueOnlyBound !== "1") {
+      btn.dataset.trueOnlyBound = "1";
+      let last = 0;
+
+      function toggle(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+
+        const now = performance.now ? performance.now() : Date.now();
+        if (now - last < 220) return false;
+        last = now;
+
+        setJoy(!getJoy());
+        return false;
+      }
+
+      btn.addEventListener("pointerdown", toggle, {passive:false, capture:true});
+      btn.addEventListener("touchstart", toggle, {passive:false, capture:true});
+      btn.addEventListener("mousedown", toggle, {passive:false, capture:true});
+      btn.addEventListener("click", function(e){
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+        return false;
+      }, {passive:false, capture:true});
+    }
+
+    setJoy(getJoy());
+  }
+
+  // startGame直前にも設定を確実に反映
+  if (typeof window.startGame === "function" && !window.startGame.__trueOnlyJoyPatch) {
+    const oldStart = window.startGame;
+    window.startGame = function(){
+      setJoy(getJoy());
+      return oldStart.apply(this, arguments);
+    };
+    window.startGame.__trueOnlyJoyPatch = true;
+  }
+
+  createOnlyNewButton();
+
+  // 過去のパッチが古いトグルを復活させても削除し続ける
+  setInterval(() => {
+    createOnlyNewButton();
+    setJoy(getJoy());
+  }, 200);
+
+  window.trueOnlySetJoystick = setJoy;
+})();
+</script>
+
+
+<!-- ===== START SCREEN TOP LAYER FIX: 最初のトグルとGAME STARTを最前面へ ===== -->
+<style>
+/* 最初の画面自体をかなり上のレイヤーにする */
+#startScreen {
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+}
+
+/* スタート画面内の操作エリアを最前面に固定 */
+#trueOnlyStartJoystickButton,
+#startBtn {
+  position: relative !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* トグルとスタートボタンの周りに透明な邪魔レイヤーが来ないようにする */
+#startScreen * {
+  pointer-events: auto;
+}
+
+#startScreen::before,
+#startScreen::after {
+  pointer-events: none !important;
+}
+
+/* 古いトグルは引き続き完全削除 */
+#startScreen label:has(#joystickToggle),
+#startScreen #joystickToggle,
+#startScreen #finalStartJoystickControl,
+#startScreen #ultimateStartJoystickToggle,
+#finalStartJoystickControl,
+#ultimateStartJoystickToggle {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* トグルを見やすく、押しやすく */
+#trueOnlyStartJoystickButton {
+  width: 280px !important;
+  min-height: 62px !important;
+  margin: 8px auto 18px auto !important;
+}
+
+/* GAME STARTも押しやすく */
+#startBtn {
+  min-width: 250px !important;
+  min-height: 64px !important;
+  font-size: 22px !important;
+  margin-top: 4px !important;
+}
+</style>
+
+<script>
+(function moveStartControlsToTopLayer(){
+  function bringToFront(){
+    const startScreen = document.getElementById("startScreen");
+    const joyBtn = document.getElementById("trueOnlyStartJoystickButton");
+    const startBtn = document.getElementById("startBtn");
+
+    if (startScreen) {
+      startScreen.style.zIndex = "2147483000";
+      startScreen.style.pointerEvents = "auto";
+    }
+
+    if (joyBtn) {
+      joyBtn.style.position = "relative";
+      joyBtn.style.zIndex = "2147483646";
+      joyBtn.style.pointerEvents = "auto";
+    }
+
+    if (startBtn) {
+      startBtn.style.position = "relative";
+      startBtn.style.zIndex = "2147483646";
+      startBtn.style.pointerEvents = "auto";
+    }
+
+    // 念のため、スタート画面中ではこの2つを最後の方に並べる
+    // ただし表示位置は変えすぎない
+    if (startScreen && joyBtn && startBtn && joyBtn.parentNode && startBtn.parentNode) {
+      const parent = startBtn.parentNode;
+      if (joyBtn.nextElementSibling !== startBtn) {
+        parent.insertBefore(joyBtn, startBtn);
+      }
+    }
+  }
+
+  bringToFront();
+  setInterval(bringToFront, 300);
+})();
+</script>
+
 </body></html>
