@@ -82,12 +82,12 @@
     <div id="pauseScreen" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center pointer-events-none opacity-0 backdrop-blur-md transition-opacity duration-300 z-50">
         <h2 class="text-6xl font-bold mb-8 text-white tracking-widest neon-text" style="font-family: 'Orbitron', sans-serif;">PAUSED</h2>
         
-        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4">
+        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4 pointer-events-auto">
             <span class="text-cyan-300 font-bold text-lg tracking-wider">SOUND</span>
             <button id="pauseMuteBtn" class="btn-neon px-6 py-2 text-xl font-bold rounded cursor-pointer flex items-center gap-2">🔊 SOUND: ON</button>
         </div>
 
-        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4">
+        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4 pointer-events-auto">
             <span class="text-cyan-300 font-bold text-lg tracking-wider">GAME SPEED</span>
             <div class="flex flex-wrap justify-center gap-4 max-w-lg">
                 <label class="cursor-pointer"><input type="radio" name="gameSpeed" value="1.0" class="sr-only" onchange="setGameSpeed(1.0)" checked><div class="speed-btn px-4 py-2 border border-cyan-500 rounded text-cyan-500 hover:bg-cyan-500 hover:text-black transition">x1.0</div></label>
@@ -96,7 +96,7 @@
             </div>
         </div>
 
-        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-3">
+        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-3 pointer-events-auto">
             <span class="text-cyan-300 font-bold text-lg tracking-wider">CONTROLS</span>
             <label class="flex items-center cursor-pointer gap-3">
                 <div class="relative">
@@ -108,7 +108,7 @@
             </label>
         </div>
 
-        <button id="resumeBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer">RESUME</button>
+        <button id="resumeBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer pointer-events-auto">RESUME</button>
     </div>
 
     <!-- Cutins -->
@@ -129,7 +129,7 @@
             <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] px-8 py-4 text-xl font-bold rounded cursor-pointer transition-all">UPGRADE</button>
         </div>
 
-        <div class="bg-gray-900/80 p-4 rounded-lg border border-gray-500 flex flex-col items-center gap-3 mb-6">
+        <div class="bg-gray-900/80 p-4 rounded-lg border border-gray-500 flex flex-col items-center gap-3 mb-6 pointer-events-auto">
             <span class="text-cyan-300 font-bold text-sm tracking-wider">操作設定</span>
             <label class="flex items-center cursor-pointer gap-3">
                 <div class="relative">
@@ -141,7 +141,7 @@
             </label>
         </div>
 
-        <div class="bg-gray-900/80 p-4 rounded-lg border border-gray-500 flex flex-col items-center gap-3">
+        <div class="bg-gray-900/80 p-4 rounded-lg border border-gray-500 flex flex-col items-center gap-3 pointer-events-auto">
             <span class="text-gray-300 font-bold text-sm tracking-wider">データの引き継ぎ (パスワード方式)</span>
             <div class="flex gap-2">
                 <button id="exportBtn" class="bg-blue-900 border border-blue-500 text-blue-200 px-4 py-2 rounded hover:bg-blue-700 text-sm">セーブコードを発行 (EXPORT)</button>
@@ -154,14 +154,14 @@
     <div id="upgradeScreen" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center pointer-events-none opacity-0 backdrop-blur-md transition-opacity duration-300 z-[55]">
         <h2 class="text-5xl font-bold mb-2 text-yellow-300 shadow-[0_0_15px_yellow]" style="font-family: 'Orbitron', sans-serif;">PERMANENT UPGRADES</h2>
         <p class="text-2xl text-white mb-8 font-bold">COINS: <span id="metaCoinsDisplay" class="text-yellow-400 text-3xl">0</span></p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl px-4 overflow-y-auto max-h-[60vh] pb-4" id="upgradeListContainer"></div>
-        <button id="closeUpgradeBtn" class="btn-neon mt-8 px-8 py-3 text-xl font-bold rounded cursor-pointer">BACK TO MENU</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl px-4 overflow-y-auto max-h-[60vh] pb-4 pointer-events-auto" id="upgradeListContainer"></div>
+        <button id="closeUpgradeBtn" class="btn-neon mt-8 px-8 py-3 text-xl font-bold rounded cursor-pointer pointer-events-auto">BACK TO MENU</button>
     </div>
 
     <div id="levelUpScreen" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center pointer-events-none opacity-0 backdrop-blur-md transition-opacity duration-300 z-50">
         <h2 class="text-5xl font-bold mb-8 text-yellow-300 shadow-[0_0_15px_yellow] animate-pulse" style="font-family: 'Orbitron', sans-serif;">LEVEL UP!</h2>
         <p class="mb-6 text-2xl font-bold">スキルを1つ選んでください</p>
-        <div id="upgradesContainer" class="flex flex-wrap justify-center gap-6 max-w-4xl px-4"></div>
+        <div id="upgradesContainer" class="flex flex-wrap justify-center gap-6 max-w-4xl px-4 pointer-events-auto"></div>
     </div>
 
     <div id="gameOverScreen" class="absolute inset-0 bg-red-900/80 flex flex-col items-center justify-center pointer-events-none opacity-0 backdrop-blur-sm transition-opacity duration-500 z-50">
@@ -176,7 +176,7 @@
             <p class="text-lg text-yellow-200">獲得コイン: <span id="earnedCoinsDisplay" class="font-bold text-2xl text-yellow-400">+0</span></p>
             <p id="newRecordText" class="text-yellow-400 font-bold mt-2 animate-bounce hidden">★ NEW RECORD ★</p>
         </div>
-        <button id="restartBtn" class="btn-neon px-10 py-4 text-2xl font-bold rounded cursor-pointer">TITLE MENU</button>
+        <button id="restartBtn" class="btn-neon px-10 py-4 text-2xl font-bold rounded cursor-pointer pointer-events-auto">TITLE MENU</button>
     </div>
 
     <script>
@@ -511,14 +511,39 @@
         class CaptainShield {
             constructor(x, y, damage, bounces) {
                 this.x = x; this.y = y; this.damage = damage; this.bounces = bounces;
-                this.markedForDeletion = false; this.target = null; this.speed = 20;
+                this.markedForDeletion = false; this.target = null; this.speed = 25;
                 this.trail = []; this.rotAngle = 0;
+                this.returning = false;
+                this.radius = 54; // サイズを3倍に (元は18)
             }
             update() {
-                if (this.bounces <= 0) { this.markedForDeletion = true; return; }
                 this.rotAngle += 0.5;
                 this.trail.push({x: this.x, y: this.y});
                 if(this.trail.length > 8) this.trail.shift();
+
+                // 跳ね返り回数が終わったらプレイヤーの元へ戻る
+                if (this.bounces <= 0 && !this.returning) {
+                    this.returning = true;
+                    this.target = player;
+                }
+
+                if (this.returning) {
+                    this.target = player; // 常にプレイヤーを追従
+                    let angle = MathUtils.angle(this.x, this.y, this.target.x, this.target.y);
+                    this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
+                    // プレイヤーに当たったら消える
+                    if (MathUtils.distance(this.x, this.y, this.target.x, this.target.y) < this.radius + player.radius) {
+                        this.markedForDeletion = true; 
+                    }
+                    // 戻る途中でも敵にダメージを与える
+                    for (let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < t.radius + this.radius) {
+                            t.takeDamage(this.damage);
+                            createParticles(this.x, this.y, 5, '#3b82f6', 4);
+                        }
+                    }
+                    return;
+                }
 
                 if (!this.target || this.target.markedForDeletion) {
                     let bestDist = Infinity;
@@ -528,11 +553,12 @@
                             if (d < bestDist) { bestDist = d; this.target = t; }
                         }
                     }
-                    if (!this.target) { this.markedForDeletion = true; return; }
+                    if (!this.target) { this.returning = true; this.target = player; return; }
                 }
+                
                 let angle = MathUtils.angle(this.x, this.y, this.target.x, this.target.y);
                 this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
-                if (MathUtils.distance(this.x, this.y, this.target.x, this.target.y) < this.target.radius + 15) {
+                if (MathUtils.distance(this.x, this.y, this.target.x, this.target.y) < this.target.radius + this.radius) {
                     this.target.takeDamage(this.damage);
                     createParticles(this.x, this.y, 10, '#3b82f6', 4);
                     effects.push(new Shockwave(this.x, this.y, '#3b82f6', 5, 100)); 
@@ -544,13 +570,39 @@
                 if(this.trail.length > 1) {
                     ctx.beginPath(); ctx.moveTo(safe(this.trail[0].x), safe(this.trail[0].y));
                     for(let i=1; i<this.trail.length; i++) ctx.lineTo(safe(this.trail[i].x), safe(this.trail[i].y));
-                    ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.stroke();
+                    ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)'; ctx.lineWidth = this.radius * 2; ctx.lineCap = 'round'; ctx.stroke();
                 }
                 ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.rotAngle);
-                ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2);
-                ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = '#3b82f6'; ctx.fill(); 
-                ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
-                ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fillStyle = '#3b82f6'; ctx.fill();
+                
+                // キャプテンアメリカの盾のカラーリング (外側から 赤, 白, 赤, 青)
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#dc2626'; ctx.shadowBlur = 15; ctx.shadowColor = '#dc2626'; ctx.fill(); 
+                
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.75, 0, Math.PI * 2); 
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 0; ctx.fill();
+                
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2); 
+                ctx.fillStyle = '#dc2626'; ctx.fill();
+                
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.25, 0, Math.PI * 2); 
+                ctx.fillStyle = '#1d4ed8'; ctx.fill();
+                
+                // 中央の星
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                for(let i=0; i<5; i++) {
+                    let a = (Math.PI*2/5)*i - Math.PI/2;
+                    let bx = Math.cos(a) * (this.radius * 0.25);
+                    let by = Math.sin(a) * (this.radius * 0.25);
+                    if(i===0) ctx.moveTo(bx, by); else ctx.lineTo(bx, by);
+                    a += Math.PI*2/10;
+                    bx = Math.cos(a) * (this.radius * 0.1);
+                    by = Math.sin(a) * (this.radius * 0.1);
+                    ctx.lineTo(bx, by);
+                }
+                ctx.closePath();
+                ctx.fill();
+
                 ctx.restore();
             }
         }
@@ -870,10 +922,10 @@
                     this.vx += Math.cos(angleToPlayer) * 4; this.vy += Math.sin(angleToPlayer) * 4;
                     let speed = Math.hypot(this.vx, this.vy);
                     if (speed > 45) { this.vx = (this.vx / speed) * 45; this.vy = (this.vy / speed) * 45; }
-                    if (MathUtils.distance(this.x, this.y, player.x, player.y) < 40) { this.markedForDeletion = true; player.thorIsActive = false; }
+                    if (MathUtils.distance(this.x, this.y, player.x, player.y) < 80) { this.markedForDeletion = true; player.thorIsActive = false; }
                 }
                 for (let t of enemies) {
-                    if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < 100) {
+                    if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < 200) {
                         t.takeDamage(this.damage);
                         if (Math.random() < 0.4) effects.push(new LightningStrikeEffect(t.x, t.y));
                     }
@@ -884,10 +936,10 @@
                 if (this.trail.length > 1) {
                     ctx.beginPath(); ctx.moveTo(safe(this.trail[0].x), safe(this.trail[0].y));
                     for(let i = 1; i < this.trail.length; i++) ctx.lineTo(safe(this.trail[i].x), safe(this.trail[i].y));
-                    ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; ctx.lineWidth = 6; ctx.stroke();
+                    ctx.strokeStyle = 'rgba(6, 182, 212, 0.6)'; ctx.lineWidth = 40; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; ctx.lineWidth = 12; ctx.stroke();
                 }
-                ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(safe(this.timer * 0.5)); ctx.scale(2.5, 2.5); 
+                ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(safe(this.timer * 0.5)); ctx.scale(5.0, 5.0); 
                 ctx.fillStyle = '#06b6d4'; ctx.shadowBlur = 20; ctx.shadowColor = '#06b6d4'; ctx.fillRect(-15, -5, 30, 10); 
                 ctx.fillStyle = '#8B4513'; ctx.shadowBlur = 0; ctx.fillRect(-5, -20, 10, 40); 
                 ctx.restore();
@@ -1219,37 +1271,6 @@
             draw(ctx) { if (this.timer < 10) { ctx.save(); ctx.fillStyle = 'rgba(255, 255, 0, 0.8)'; ctx.fillRect(camera.x, camera.y, width, height); ctx.restore(); } }
         }
 
-        class ElectricEffect {
-            constructor(x, y, radius) { this.x = x; this.y = y; this.radius = radius; this.life = 1.0; this.markedForDeletion = false; this.timer = 0; }
-            update() { this.life -= 0.05; this.timer++; if (this.life <= 0) this.markedForDeletion = true; }
-            draw(ctx) {
-                ctx.save(); ctx.fillStyle = `rgba(0, 0, 0, 0.5)`; ctx.fillRect(camera.x, camera.y, width, height); ctx.globalCompositeOperation = 'screen';
-                let cx = safe(this.x), cy = safe(this.y);
-                
-                for(let i = 0; i < 30; i++) {
-                    let a = Math.random() * Math.PI * 2; let d = Math.random() * this.radius;
-                    let px = cx + Math.cos(a) * d; let py = cy + Math.sin(a) * d;
-                    
-                    ctx.beginPath(); ctx.moveTo(cx, cy); 
-                    let steps = 4;
-                    let curX = cx, curY = cy;
-                    for(let j=0; j<steps; j++){
-                        curX += (px - cx)/steps + MathUtils.random(-30, 30);
-                        curY += (py - cy)/steps + MathUtils.random(-30, 30);
-                        ctx.lineTo(curX, curY);
-                    }
-                    ctx.lineTo(px, py);
-                    ctx.strokeStyle = Math.random() > 0.5 ? '#ffffff' : '#0ff'; ctx.lineWidth = MathUtils.random(2, 6); 
-                    ctx.shadowBlur = 10; ctx.shadowColor = '#0ff';
-                    ctx.stroke();
-                }
-                ctx.beginPath(); ctx.arc(cx, cy, safeR(this.radius), 0, Math.PI*2);
-                let grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, safeR(this.radius));
-                grad.addColorStop(0, 'rgba(0,255,255,0.6)'); grad.addColorStop(0.8, 'rgba(0,255,255,0.2)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = grad; ctx.fill(); ctx.restore();
-            }
-        }
-
         // --- Player ---
         class Player {
             constructor(x, y) {
@@ -1396,7 +1417,7 @@
                 }
             }
 
-            startShield() { if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 2)); }
+            startShield() { if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 3)); }
             startHollowMurasakiCharge() { if (hollowMurasakiCharges.length < 10) hollowMurasakiCharges.push(new HollowMurasakiCharge(this.x, this.y, this.faceAngle, 999999999, this.hollowMurasakiLevel)); }
             startKamehameha() { if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel)); }
             startInfiniteBlade() { if (infiniteBladeCharges.length < 10) infiniteBladeCharges.push(new InfiniteBladeCharge(this.x, this.y, this.faceAngle, 999999999, this.infiniteBladeLevel)); }
@@ -2002,7 +2023,6 @@
             } else if (gameState === 'paused') {
                 gameState = 'playing'; document.getElementById('pauseScreen').classList.add('opacity-0', 'pointer-events-none'); document.getElementById('pauseScreen').classList.remove('opacity-100', 'pointer-events-auto');
                 lastTime = performance.now(); Sound.startBGM(); 
-                // ループの多重起動を防ぐために必ずIDを管理して再開
                 if (animationId) cancelAnimationFrame(animationId);
                 animationId = requestAnimationFrame(gameLoop);
             }
@@ -2063,213 +2083,6 @@
                 resetJoystick(); 
             }
         };
-
-        // === 領域展開関連 ===
-        function triggerMonkeyDomain() {
-            Sound.bossSpawn();
-            showCustomCutin("領域展開", "焦熱溶岩海", '#ff4500');
-            setTimeout(() => {
-                isLavaDomainActive = true;
-                lavaDomainTimer = LAVA_DOMAIN_MAX_TIME;
-                document.getElementById('lavaOverlay').classList.add('active');
-                document.getElementById('domainTimerContainer').classList.remove('hidden');
-                triggerShake(30);
-                floatingTexts.push(new FloatingText(player.x, player.y - 100, "最強武器 封印！", '#ff0000', 50));
-            }, 3000);
-        }
-
-        function triggerDomainCollapse() {
-            if (!isLavaDomainActive) return;
-            isLavaDomainActive = false;
-            lavaDomainTimer = 0;
-            
-            document.getElementById('lavaOverlay').classList.remove('active');
-            document.getElementById('domainTimerContainer').classList.add('hidden');
-            
-            const shatter = document.getElementById('shatterEffect');
-            shatter.classList.remove('hidden');
-            shatter.style.animation = 'none';
-            shatter.offsetHeight; 
-            shatter.style.animation = null;
-            
-            Sound.playNoise(1.5, 0.5);
-            triggerShake(50);
-            floatingTexts.push(new FloatingText(player.x, player.y - 100, "領域崩壊 - 封印解除", '#0ff', 50));
-
-            setTimeout(() => { shatter.classList.add('hidden'); }, 1500);
-        }
-
-        function showCustomCutin(title, sub, color) {
-            const cutin = document.getElementById('generalCutin');
-            const bg = document.getElementById('cutinBg');
-            document.getElementById('cutinTitle').innerText = title;
-            document.getElementById('cutinSub').innerText = sub;
-            document.getElementById('cutinSub').style.color = color;
-            
-            cutin.classList.remove('opacity-0');
-            bg.style.animation = 'none';
-            bg.offsetHeight; 
-            bg.style.animation = null;
-            
-            setTimeout(() => cutin.classList.add('opacity-0'), 3000);
-        }
-
-        function triggerPurpleCutin() { showCustomCutin("虚式", "茈", "#a855f7"); }
-        function triggerKamehamehaCutin() { showCustomCutin("龍星", "崩 命 破", "#3b82f6"); }
-        function triggerBladeCutin() { showCustomCutin("王の財宝", "Gate of Babylon", "#facc15"); }
-        function triggerIronCutin() { showCustomCutin("機神", "創世の光芒", "#ef4444"); }
-        function triggerLightningCutin() { showCustomCutin("天帝の裁界", "霹 靂", "#06b6d4"); }
-        function triggerFunnelCutin() { showCustomCutin("星砕き", "流 星 群", "#22c55e"); }
-        function triggerVaderCutin() { showCustomCutin("深淵の重力刃", "DARK LORD", "#dc2626"); }
-        function triggerThorCutin() { showCustomCutin("雷霆砕破", "轟", "#06b6d4"); }
-        function triggerDisneyCutin() { showCustomCutin("星夢の", "輪 舞 曲", "#ec4899"); }
-        function triggerMuryokuCutin() { showCustomCutin("領域展開", "無 量 空 処", "#e2e8f0"); }
-        function triggerSnapCutin() { showCustomCutin("神威", "終焉の指弾", "#facc15"); }
-
-        function triggerLevelUpScreen() {
-            gameState = 'levelup';
-            const screen = document.getElementById('levelUpScreen');
-            const container = document.getElementById('upgradesContainer');
-            container.innerHTML = ''; 
-
-            let pool = [];
-            pool.push({ name: '攻撃力UP', desc: '基本弾のダメージが1.5倍', color: '#ff4444', icon: '⚔️', apply: () => { player.damage *= 1.5; } });
-            pool.push({ name: '連射速度UP', desc: '弾の発射間隔が短縮', color: '#44ff44', icon: '⚡', apply: () => { player.fireRate = Math.max(5, player.fireRate * 0.7); } });
-            pool.push({ name: '移動速度UP', desc: '移動速度がアップ', color: '#ffff44', icon: '💨', apply: () => { player.speed += 1.0; } });
-            const healSkill = { name: '最大HPUP & 回復', desc: '最大HP+20、全回復する', color: '#ff44aa', icon: '❤️', apply: () => { player.maxHp += 20; player.hp = player.maxHp; updateUI(); } };
-
-            if (player.bladeRingLevel === 0) pool.push({ name: '【剣域】円環の刃界', desc: '周囲を回る刃で敵を切り裂く', color: '#ff00ff', icon: '🌀', apply: () => { player.bladeRingLevel = 1; } });
-            else pool.push({ name: '円環の刃界 強化', desc: '刃の数・サイズ・ダメージが増加', color: '#ff00ff', icon: '🌀', apply: () => { player.bladeRingLevel += 1; } });
-
-            if (player.electricFieldLevel === 0) pool.push({ name: '【雷鳴】破滅の雷域', desc: '一定間隔で周囲の敵を感電させる', color: '#00ffff', icon: '🌩️', apply: () => { player.electricFieldLevel = 1; } });
-            else pool.push({ name: '破滅の雷域 強化', desc: '範囲拡大、発動間隔短縮、威力UP', color: '#00ffff', icon: '🌩️', apply: () => { player.electricFieldLevel += 1; } });
-
-            if (player.voidTempestLevel === 0) pool.push({ name: '【絶技】虚空次元の暴風', desc: '巨大竜巻で敵を切り裂き、経験値を激しく吸い寄せる', color: '#10b981', icon: '🌪️', apply: () => { player.voidTempestLevel = 1; } });
-            else pool.push({ name: '虚空次元の暴風 強化', desc: '竜巻の範囲・持続時間・吸引力がUP', color: '#10b981', icon: '🌪️', apply: () => { player.voidTempestLevel += 1; } });
-
-            let ultimateSkills = []; 
-            const ultChance = 0.05; // 最強クラスのスキルの出現率(5%)
-            const highChance = 0.10; // 準最強クラスのスキルの出現率(10%)
-
-            if (player.orbitalStrikeLevel === 0) {
-                if (Math.random() < highChance) ultimateSkills.push({ name: '【神技】天穹の裁き・極光', desc: '極太レーザーで敵密集地を焼き尽くす', color: '#fbbf24', icon: '✨', apply: () => { player.orbitalStrikeLevel = 1; } });
-            } else {
-                pool.push({ name: '天穹の裁き・極光 強化', desc: 'レーザーの攻撃範囲、威力、発動頻度がUP', color: '#fbbf24', icon: '✨', apply: () => { player.orbitalStrikeLevel += 1; } });
-            }
-
-            if (player.ironmanSuitLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【機神】創世の光芒', desc: 'ブラスター高速連射、10秒毎に極太ユニビーム', color: '#ef4444', icon: '🤖', apply: () => { player.ironmanSuitLevel = 1; player.speed *= 2; player.unibeamTimer = 9999; triggerIronCutin(); } });
-            }
-            
-            if (player.vaderLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【暗黒】深淵の重力刃', desc: 'フォースで全敵を吸い寄せ、巨大な光刃で全てをぶった斬る', color: '#dc2626', icon: '⚔️', apply: () => { player.vaderLevel = 1; player.vaderTimer = 9999; triggerVaderCutin(); } });
-            } else {
-                pool.push({ name: '深淵の重力刃 強化', desc: '吸い寄せ力と斬撃ダメージが増加', color: '#dc2626', icon: '⚔️', apply: () => { player.vaderLevel += 1; } });
-            }
-            
-            if (player.funnelLevel === 0) {
-                if (Math.random() < highChance) ultimateSkills.push({ name: '【機動】星砕きの流星群', desc: '敵を自動追尾し連続爆破', color: '#22c55e', icon: '🛰️', apply: () => { player.funnelLevel = 1; player.funnelTimer = 9999; triggerFunnelCutin(); } });
-            } else {
-                pool.push({ name: '星砕きの流星群 強化', desc: '爆発範囲が拡大', color: '#22c55e', icon: '🛰️', apply: () => { player.funnelLevel += 1; } });
-            }
-
-            if (player.thorLevel === 0) {
-                if (Math.random() < highChance) ultimateSkills.push({ name: '【神斧】雷霆砕破・轟', desc: '雷神の斧を投擲し画面上を粉砕', color: '#06b6d4', icon: '🪓', apply: () => { player.thorLevel = 1; player.thorTimer = 9999; triggerThorCutin(); } });
-            } else {
-                pool.push({ name: '雷霆砕破・轟 強化', desc: '斧のサイズと雷の威力が増加', color: '#06b6d4', icon: '🪓', apply: () => { player.thorLevel += 1; } });
-            }
-
-            if (player.disneyMagicLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【幻奏】星夢の輪舞曲', desc: '敵を味方にしてHPと攻撃力4倍', color: '#fbcfe8', icon: '🪄', apply: () => { player.disneyMagicLevel = 1; player.disneyMagicTimer = 9999; triggerDisneyCutin(); } });
-            } else {
-                pool.push({ name: '星夢の輪舞曲 強化', desc: '魅了した敵の移動速度アップ', color: '#fbcfe8', icon: '🪄', apply: () => { player.disneyMagicLevel += 1; } });
-            }
-
-            if (player.muryokuLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【領域】無量空処', desc: '領域展開。全敵を強制停止し大ダメージ', color: '#e2e8f0', icon: '♾️', apply: () => { player.muryokuLevel = 1; player.muryokuTimer = 9999; triggerMuryokuCutin(); } });
-            } else {
-                pool.push({ name: '無量空処 強化', desc: '継続ダメージと終了時ダメージが増加', color: '#e2e8f0', icon: '♾️', apply: () => { player.muryokuLevel += 1; } });
-            }
-
-            if (player.shieldLevel === 0) {
-                if (Math.random() < highChance) ultimateSkills.push({ name: '【不壊】絶対防壁の反響', desc: '盾を投擲し敵の間を跳ね返る', color: '#3b82f6', icon: '🛡️', apply: () => { player.shieldLevel = 1; player.shieldTimer = 9999; } });
-            } else {
-                pool.push({ name: '絶対防壁の反響 強化', desc: 'ダメージと跳ね返る回数が増加', color: '#3b82f6', icon: '🛡️', apply: () => { player.shieldLevel += 1; } });
-            }
-
-            if (player.hollowMurasakiLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【究極】虚式「茈」', desc: '全てを消し飛ばす超巨大な「茈」', color: '#a855f7', icon: '🟣', apply: () => { player.hollowMurasakiLevel = 1; player.hollowMurasakiTimer = 9999; triggerPurpleCutin(); } });
-            } else {
-                pool.push({ name: '虚式「茈」強化', desc: '「茈」のサイズがアップ', color: '#a855f7', icon: '🟣', apply: () => { player.hollowMurasakiLevel += 1; } });
-            }
-
-            if (player.kamehamehaLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【気功】龍星・崩命破', desc: '極太のビームを照射（マウスで操作）', color: '#60a5fa', icon: '🌊', apply: () => { player.kamehamehaLevel = 1; player.kamehamehaTimer = 9999; triggerKamehamehaCutin(); } });
-            } else {
-                pool.push({ name: '龍星・崩命破 強化', desc: 'ビームの太さがアップ', color: '#60a5fa', icon: '🌊', apply: () => { player.kamehamehaLevel += 1; } });
-            }
-
-            if (player.infinitySnapLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【神威】終焉の指弾', desc: 'ランダムな敵の半分を塵に変える', color: '#facc15', icon: '🫰', apply: () => { player.infinitySnapLevel = 1; player.infinitySnapTimer = 9999; triggerSnapCutin(); } });
-            } else {
-                pool.push({ name: '終焉の指弾 強化', desc: '衝撃波がアップ', color: '#facc15', icon: '🫰', apply: () => { player.infinitySnapLevel += 1; } });
-            }
-
-            if (player.infiniteBladeLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【王の財宝】無限の剣陣', desc: '無数の黄金の剣を一斉射出する', color: '#facc15', icon: '🗡️', apply: () => { player.infiniteBladeLevel = 1; player.infiniteBladeTimer = 9999; triggerBladeCutin(); } });
-            } else {
-                pool.push({ name: '無限の剣陣 強化', desc: '黄金の剣の数が増加', color: '#facc15', icon: '🗡️', apply: () => { player.infiniteBladeLevel += 1; } });
-            }
-
-            if (player.keraunosLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【神雷】天帝の裁界・霹靂', desc: '画面全体に破壊的な雷の嵐', color: '#06b6d4', icon: '⚡', apply: () => { player.keraunosLevel = 1; player.keraunosTimer = 9999; triggerLightningCutin(); } });
-            } else {
-                pool.push({ name: '天帝の裁界・霹靂 強化', desc: '落雷の数とダメージが増加', color: '#06b6d4', icon: '⚡', apply: () => { player.keraunosLevel += 1; } });
-            }
-
-            let isLowHp = (player.hp / player.maxHp) <= 0.3; 
-            if (player.recoveryMasteryLevel === 0) {
-                if (Math.random() < (isLowHp ? 0.5 : 0.1)) ultimateSkills.push({ name: '【秘伝】回復の極意', desc: '自動回復のスピードが3倍になる', color: '#10b981', icon: '💖', apply: () => { player.recoveryMasteryLevel = 1; player.regenRate = Math.floor(player.regenRate / 3); } });
-            } else {
-                pool.push({ name: '回復の極意 強化', desc: '自動回復量がアップ', color: '#10b981', icon: '💖', apply: () => { player.regenAmount += 1; } });
-            }
-
-            let selected = [];
-            if (isLowHp && Math.random() < 0.8) selected.push(healSkill); else pool.push(healSkill);
-
-            let shuffledUlts = ultimateSkills.sort(() => 0.5 - Math.random());
-            while(selected.length < 3 && shuffledUlts.length > 0) selected.push(shuffledUlts.shift());
-
-            let shuffled = pool.sort(() => 0.5 - Math.random());
-            while (selected.length < 3 && shuffled.length > 0) selected.push(shuffled.shift());
-
-            selected.sort(() => 0.5 - Math.random()).forEach(upgrade => {
-                const card = document.createElement('div');
-                card.className = 'upgrade-card p-6 rounded-lg w-64 text-center cursor-pointer flex flex-col items-center justify-between';
-                card.innerHTML = `
-                    <div class="text-4xl mb-3">${upgrade.icon}</div>
-                    <h3 class="text-xl font-bold mb-2" style="color: ${upgrade.color}">${upgrade.name}</h3>
-                    <p class="text-sm text-gray-300 leading-relaxed">${upgrade.desc}</p>
-                `;
-                card.addEventListener('click', (e) => {
-                    e.preventDefault(); e.stopPropagation(); upgrade.apply();
-                    floatingTexts.push(new FloatingText(player.x, player.y, upgrade.name, upgrade.color, 16));
-                    closeLevelUpScreen();
-                });
-                container.appendChild(card);
-            });
-
-            screen.classList.remove('opacity-0', 'pointer-events-none');
-            screen.classList.add('opacity-100', 'pointer-events-auto');
-        }
-
-        function closeLevelUpScreen() {
-            document.getElementById('levelUpScreen').classList.add('opacity-0', 'pointer-events-none'); document.getElementById('levelUpScreen').classList.remove('opacity-100', 'pointer-events-auto');
-            gameState = 'playing'; lastTime = performance.now(); 
-            // ループの多重起動を防ぐために必ずIDを管理して再開
-            if (animationId) cancelAnimationFrame(animationId);
-            animationId = requestAnimationFrame(gameLoop);
-        }
 
         function renderUpgradeScreen() {
             document.getElementById('metaCoinsDisplay').innerText = userData.coins;
