@@ -353,7 +353,8 @@
         window.addEventListener('touchcancel', handleTouchEnd);
 
         const safe = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
-        const safeR = (v, fallback = 0.1) => (Number.isFinite(v) && v > 0.01) ? v : fallback;
+        // 半径などをマイナスにしないための安全装置を強化
+        const safeR = (v, fallback = 0.1) => (Number.isFinite(v) && v > 0) ? Math.max(fallback, v) : fallback;
         const MathUtils = {
             distance: (x1, y1, x2, y2) => safe(Math.hypot(safe(x2 - x1), safe(y2 - y1))),
             angle: (x1, y1, x2, y2) => safe(Math.atan2(safe(y2 - y1), safe(x2 - x1))),
@@ -1209,7 +1210,8 @@
                     ctx.ellipse(0, 0, 60, 200, 0, 0, Math.PI * 2);
                     ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 5; ctx.stroke();
                 } else {
-                    let slashProgress = (this.timer - (this.maxTime - 20)) / 20;
+                    // エラー防止のため進行度を安全な範囲に制限
+                    let slashProgress = Math.max(0, Math.min(1, (this.timer - (this.maxTime - 20)) / 20));
                     ctx.globalCompositeOperation = 'screen';
                     ctx.rotate(safe(player.faceAngle));
                     
@@ -1304,10 +1306,17 @@
                 
                 this.regenTimer = 0; this.regenAmount = 1; this.regenRate = 60; this.recoveryMasteryLevel = 0; 
                 this.pendingBossSpawn = false; this.pendingMidBossSpawn = false; this.pendingMonkeyBoss = false;
+
+                // 軌跡（トレイル）用の配列
+                this.trail = [];
             }
 
             update() {
                 if (this.invincibleTimer > 0) this.invincibleTimer--;
+
+                // 軌跡の記録
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 15) this.trail.shift();
 
                 if (isJoystickEnabled) {
                     if (joystickData.active) {
@@ -1493,6 +1502,36 @@
 
             draw(ctx) {
                 ctx.save(); let px = safe(this.x), py = safe(this.y);
+
+                // --- トレイル（軌跡）の描画 ---
+                if (this.trail.length > 1) {
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.beginPath();
+                    ctx.moveTo(safe(this.trail[0].x), safe(this.trail[0].y));
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(safe(this.trail[i].x), safe(this.trail[i].y));
+                    }
+                    
+                    // トレイルのカラー（状態によって変化）
+                    let trailColor = this.ironmanSuitLevel > 0 ? 'rgba(239, 68, 68, 0.5)' : 'rgba(0, 255, 255, 0.4)';
+                    if (this.invincibleTimer > 0) trailColor = 'rgba(250, 204, 21, 0.6)';
+                    
+                    ctx.strokeStyle = trailColor;
+                    ctx.lineWidth = this.radius * 1.5;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = trailColor;
+                    ctx.stroke();
+                    
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.lineWidth = this.radius * 0.5;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // --- プレイヤー本体の描画 ---
                 if (this.ironmanSuitLevel > 0) {
                     ctx.beginPath(); ctx.arc(px, py, safeR(this.radius), 0, Math.PI * 2);
                     ctx.fillStyle = '#991b1b'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#facc15'; ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444'; ctx.stroke();
@@ -1960,13 +1999,24 @@
             });
         }
 
+        // どんなエラーが起きても絶対にゲームをフリーズさせない安全設計
         function gameLoop(currentTime) {
             if (gameState !== 'playing') return; 
-            let deltaTime = currentTime - lastTime; lastTime = currentTime; if (deltaTime > 100) deltaTime = 100; 
-            timeAccumulator += deltaTime * gameSpeedMultiplier;
-            let steps = 0;
-            while (timeAccumulator >= frameTime) { updateLogic(); timeAccumulator -= frameTime; steps++; if (steps > 5) { timeAccumulator = 0; break; } }
-            drawAll();
+            try {
+                let deltaTime = currentTime - lastTime; lastTime = currentTime; if (deltaTime > 100) deltaTime = 100; 
+                timeAccumulator += deltaTime * gameSpeedMultiplier;
+                let steps = 0;
+                while (timeAccumulator >= frameTime) { 
+                    updateLogic(); 
+                    timeAccumulator -= frameTime; 
+                    steps++; 
+                    if (steps > 5) { timeAccumulator = 0; break; } 
+                }
+                drawAll();
+            } catch (e) {
+                console.error("Game System Error Intercepted: ", e);
+                // エラーが発生しても握りつぶして次フレームの処理を継続する
+            }
             if (gameState === 'playing') animationId = requestAnimationFrame(gameLoop);
         }
 
