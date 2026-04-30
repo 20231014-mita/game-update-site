@@ -137,37 +137,41 @@
         </div>
     </div>
 
-    <div id="startScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center backdrop-blur-sm z-50">
-        <h1 class="text-7xl font-bold mb-2 neon-text tracking-wider text-center">NEON<br>SURVIVOR</h1>
-        <p class="mb-6 text-yellow-300 font-bold text-xl drop-shadow-[0_0_10px_yellow]">自己ベスト: <span id="currentBestDisplay">0</span> SCORE</p>
-        
-        <!-- NICKNAME INPUT -->
-        <div class="mb-6 w-full max-w-[280px]">
-            <label for="nicknameInput" class="block text-cyan-300 font-bold mb-2 text-sm tracking-widest text-center" style="font-family: 'Orbitron', sans-serif;">PLAYER NAME</label>
-            <input type="text" id="nicknameInput" maxlength="12" placeholder="Enter Nickname" class="nickname-input w-full rounded px-4 py-3 text-xl font-bold transition-colors">
-            <p id="nicknameError" class="text-red-500 text-xs font-bold mt-2 text-center hidden animate-pulse">※ニックネームを入力してください</p>
-        </div>
+    <div id="startScreen" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-start md:justify-center backdrop-blur-sm z-50 overflow-y-auto py-8">
+        <div class="flex flex-col items-center w-full max-w-sm px-4 m-auto">
+            <h1 class="text-5xl md:text-7xl font-bold mb-2 neon-text tracking-wider text-center leading-tight">NEON<br>SURVIVOR</h1>
+            <p class="mb-4 text-yellow-300 font-bold text-lg drop-shadow-[0_0_10px_yellow]">自己ベスト: <span id="currentBestDisplay">0</span> SCORE</p>
+            
+            <!-- NICKNAME INPUT -->
+            <div class="mb-5 w-full">
+                <label for="nicknameInput" class="block text-cyan-300 font-bold mb-1 text-xs tracking-widest text-center" style="font-family: 'Orbitron', sans-serif;">PLAYER NAME</label>
+                <input type="text" id="nicknameInput" maxlength="12" placeholder="Enter Nickname" class="nickname-input w-full rounded px-4 py-2 text-lg font-bold transition-colors">
+                <p id="nicknameError" class="text-red-500 text-xs font-bold mt-1 text-center hidden animate-pulse">※ニックネームを入力してください</p>
+            </div>
 
-        <div class="flex flex-col gap-4 mb-6">
-            <button id="startBtn" class="btn-neon px-10 py-4 text-2xl font-bold rounded cursor-pointer">SOLO PLAY</button>
-            <button id="startOnlineBtn" class="btn-neon-red px-10 py-4 text-2xl font-bold rounded cursor-pointer flex flex-col items-center">
-                <span>ONLINE BATTLE</span>
-                <span class="text-xs font-normal text-pink-200 mt-1">※ボスなし・プレイヤー同士で戦うモード</span>
-            </button>
-            <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] px-8 py-3 text-xl font-bold rounded cursor-pointer transition-all mt-2">UPGRADE</button>
-            <button id="openTransferBtn" class="btn-neon-purple px-8 py-3 text-lg font-bold rounded cursor-pointer mt-2">DATA TRANSFER</button>
-        </div>
+            <div class="flex flex-col gap-3 w-full mb-4">
+                <button id="startBtn" class="btn-neon w-full py-3 text-xl font-bold rounded cursor-pointer">SOLO PLAY</button>
+                <button id="startOnlineBtn" class="btn-neon-red w-full py-3 text-xl font-bold rounded cursor-pointer flex flex-col items-center justify-center leading-tight">
+                    <span>ONLINE BATTLE</span>
+                    <span class="text-[10px] font-normal text-pink-200 mt-1">※ボスなし・プレイヤー同士で戦うモード</span>
+                </button>
+            </div>
 
-        <div class="bg-gray-900/80 p-4 rounded-lg border border-gray-500 flex flex-col items-center gap-3 mb-6">
-            <span class="text-cyan-300 font-bold text-sm tracking-wider">操作設定</span>
-            <label class="flex items-center cursor-pointer gap-3">
-                <div class="relative">
-                    <input type="checkbox" id="joystickToggle" class="sr-only" checked onchange="window.toggleJoystickFromPause(this.checked)">
-                    <div class="block bg-gray-600 w-14 h-8 rounded-full transition-colors duration-300"></div>
-                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow"></div>
-                </div>
-                <span class="text-white select-none font-bold text-sm">ジョイスティックを使う</span>
-            </label>
+            <div class="grid grid-cols-2 gap-3 w-full mb-5">
+                <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] w-full py-2 text-sm font-bold rounded cursor-pointer transition-all">UPGRADE</button>
+                <button id="openTransferBtn" class="btn-neon-purple w-full py-2 text-sm font-bold rounded cursor-pointer">TRANSFER</button>
+            </div>
+
+            <div class="bg-gray-900/80 p-3 rounded-lg border border-gray-500 w-full flex justify-between items-center">
+                <span class="text-cyan-300 font-bold text-xs tracking-wider">ジョイスティック操作</span>
+                <label class="flex items-center cursor-pointer gap-2">
+                    <div class="relative">
+                        <input type="checkbox" id="joystickToggle" class="sr-only" checked onchange="window.toggleJoystickFromPause(this.checked)">
+                        <div class="block bg-gray-600 w-10 h-6 rounded-full transition-colors duration-300"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow"></div>
+                    </div>
+                </label>
+            </div>
         </div>
     </div>
 
@@ -1232,7 +1236,15 @@
             if (pjt) pjt.checked = isJoystickEnabled;
             syncJoystickVisibility();
 
-            player = new Player(width / 2, height / 2);
+            let startX = width / 2;
+            let startY = height / 2;
+            if (online) {
+                // オンライン時は広大なマップ(最大10000)内のランダムな位置にスポーン
+                startX = MathUtils.random(-8000, 8000);
+                startY = MathUtils.random(-8000, 8000);
+            }
+            player = new Player(startX, startY);
+
             particles = []; floatingTexts = []; bullets = []; enemyBullets = []; enemies = []; gems = []; effects = [];
             bgStars = []; 
             
