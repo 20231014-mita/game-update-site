@@ -244,6 +244,11 @@
         let kamehamehas = [], infinitySnaps = [], infiniteBladeSwords = [], unibeams = [], keraunosStorms = [];
         let funnels = [], vaderSkills = [], stormbreakers = [], disneyMagics = [], muryokushos = [];
         let hollowMurasakiCharges = [], infiniteBladeCharges = [], keraunosCharges = [];
+        
+        // --- 新規追加のグローバル配列 ---
+        let bounceBombs = [], poisonClouds = [], blackholes = [], divineSwords = [];
+        let sniperBullets = [];
+
         let player = null;
         let isMuryokushoActive = false;
         let whiteFlash = 0, purpleFlash = 0, blueFlash = 0, redFlash = 0;
@@ -761,10 +766,35 @@
             pool.push({ name:'ブーストステップ', desc:'移動速度+0.4', color:'#facc15', icon:'💨', apply:()=>{ player.speed += 0.4; }});
             pool.push({ name:'バトルHP強化', desc:'最大HP+35して回復', color:'#fb7185', icon:'❤️', apply:()=>{ player.maxHp += 35; player.hp = player.maxHp; updateUI(); }});
             pool.push({ name:'マグネット回収', desc:'経験値ジェムの吸引範囲アップ', color:'#c084fc', icon:'⭐', apply:()=>{ for (const g of gems) g.pickupRange += 80; }});
-            if (Math.random() < 0.05) {
-                pool.push({ name: player.onlineShieldLevel > 0 ? '蒼盾アイギス・改' : '蒼盾アイギス', desc:'受けるダメージを軽減。強化ごとにさらに10%軽減', color:'#60a5fa', icon:'🛡️', apply:()=>{ player.onlineShieldLevel = (player.onlineShieldLevel || 0) + 1; }});
+            
+            if ((player.onlineShieldLevel || 0) === 0) {
+                pool.push({ name: '蒼盾アイギス', desc:'受けるダメージを軽減', color:'#60a5fa', icon:'🛡️', apply:()=>{ player.onlineShieldLevel = 1; }});
+            } else if (player.onlineShieldLevel < 3) {
+                pool.push({ name: '蒼盾アイギス強化', desc:'ダメージ軽減率がさらにUP', color:'#60a5fa', icon:'🛡️', apply:()=>{ player.onlineShieldLevel += 1; }});
             }
+            
+            // --- オンライン限定武器 ---
+            if ((player.onlineSniperLevel || 0) === 0) pool.push({ name:'【狙撃】スナイパーライフル', desc:'たまに超高速・高威力の貫通弾を撃つ', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel = 1; }});
+            else if (player.onlineSniperLevel < 3) pool.push({ name:'スナイパーライフル強化', desc:'狙撃弾のダメージと発射頻度がUP', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel += 1; }});
+            
+            if ((player.onlineBounceBombLevel || 0) === 0) pool.push({ name:'【反射】バウンスボム', desc:'画面端で反射する爆弾を放つ', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel = 1; }});
+            else if (player.onlineBounceBombLevel < 3) pool.push({ name:'バウンスボム強化', desc:'反射爆弾の威力とサイズがUP', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel += 1; }});
+            
+            if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'足元に敵にダメージを与える毒沼を定期設置', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
+            else if (player.onlinePoisonLevel < 3) pool.push({ name:'トキシックトラップ強化', desc:'毒沼のサイズとダメージがUP', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel += 1; }});
+
+            let ultimateSkills = [];
+            if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
+                ultimateSkills.push({ name: '【進化】跳弾スナイパー', desc: '狙撃と反射爆弾が融合。狙撃弾が壁で反射し敵を貫通しまくる', color: '#f43f5e', icon: '🎯💫', apply: () => { player.evoRicochetSniper = true; }});
+            }
+            if (player.onlineShieldLevel >= 2 && player.onlinePoisonLevel >= 3 && !player.evoToxicAegis) {
+                ultimateSkills.push({ name: '【進化】猛毒アイギス', desc: '盾と毒が融合。ダメージを軽減しつつ周囲に猛毒を撒き散らす', color: '#84cc16', icon: '🛡️☣️', apply: () => { player.evoToxicAegis = true; }});
+            }
+
             let selected = [];
+            let shuffledUlts = ultimateSkills.sort(() => 0.5 - Math.random());
+            while(selected.length < 3 && shuffledUlts.length > 0) selected.push(shuffledUlts.shift());
+
             const shuffled = pool.sort(() => 0.5 - Math.random());
             while (selected.length < 3 && shuffled.length) selected.push(shuffled.shift());
             selected.forEach(upgrade => {
@@ -1122,6 +1152,22 @@
                 pool.push({ name: '回復の極意 強化', desc: '自動回復量がアップ', color: '#10b981', icon: '💖', apply: () => { player.regenAmount += 1; } });
             }
 
+            // --- 進化スキルの判定と追加 ---
+            if (player) {
+                if (player.voidTempestLevel >= 3 && player.hollowMurasakiLevel >= 3 && !player.evoBlackhole) {
+                    ultimateSkills.push({ name: '【進化】ブラックホール・ノヴァ', desc: '暴風と茈が融合。全てを吸い込み消滅させる', color: '#000000', icon: '🌌', apply: () => { player.evoBlackhole = true; triggerPurpleCutin(); } });
+                }
+                if (player.orbitalStrikeLevel >= 3 && player.infiniteBladeLevel >= 3 && !player.evoDivineSword) {
+                    ultimateSkills.push({ name: '【進化】神罰の剣雨', desc: '裁きの光と王の財宝が融合。無数の光剣が降り注ぐ', color: '#ffea00', icon: '⚔️✨', apply: () => { player.evoDivineSword = true; triggerBladeCutin(); } });
+                }
+                if (player.vaderLevel >= 3 && player.kamehamehaLevel >= 3 && !player.evoGravityBeam) {
+                    ultimateSkills.push({ name: '【進化】超重力・崩命破', desc: '深淵と龍星が融合。敵を中心線に吸い寄せる極太ビーム', color: '#818cf8', icon: '🌌🌊', apply: () => { player.evoGravityBeam = true; triggerKamehamehaCutin(); } });
+                }
+                if (player.bladeRingLevel >= 3 && player.electricFieldLevel >= 3 && !player.evoThunderBlade) {
+                    ultimateSkills.push({ name: '【進化】雷鳴の剣域', desc: '円環と雷域が融合。高速回転する剣が常に雷を放つ', color: '#2dd4bf', icon: '⚡🌀', apply: () => { player.evoThunderBlade = true; } });
+                }
+            }
+
             let selected = [];
             if (isLowHp && Math.random() < 0.8) selected.push(healSkill); else pool.push(healSkill);
 
@@ -1155,7 +1201,7 @@
             gameState = 'playing'; 
             lastTime = performance.now(); 
             
-            let isCharging = hollowMurasakiCharges.length > 0 || infiniteBladeCharges.length > 0 || keraunosCharges.length > 0;
+            let isCharging = hollowMurasakiCharges.length > 0 || infiniteBladeCharges.length > 0 || keraunosCharges.length > 0 || blackholes.length > 0;
             if (!isCharging && player && !player.pendingMonkeyBoss && !player.pendingBossSpawn && !player.pendingMidBossSpawn) {
                 isTimeStopped = false;
             }
@@ -1165,7 +1211,7 @@
         }
 
         function spawnEnemy() {
-            if(enemies.length >= 200 || !player) return;
+            if(enemies.length >= 800 || !player) return; // スポーン上限を800に解放！
             let angle = Math.random() * Math.PI * 2; let dist = Math.hypot(width, height) / 2 + 100; 
             let ex = player.x + Math.cos(angle) * dist; let ey = player.y + Math.sin(angle) * dist;
             let type = 0; let r = Math.random();
@@ -1288,6 +1334,35 @@
             }
         }
 
+        class RicochetSniperBullet extends Bullet {
+            constructor(x, y, angle, damage) {
+                super(x, y, angle, damage, 35, 6, 999, '#fb7185', '#e11d48');
+                this.bounces = 6;
+                this.lifeTimer = 0;
+            }
+            update() {
+                this.lifeTimer++;
+                if (this.lifeTimer > 180) { this.markedForDeletion = true; return; }
+                
+                super.update();
+                
+                if (this.markedForDeletion && this.bounces > 0 && this.lifeTimer <= 180) {
+                    let w = (Number.isFinite(width) && width > 1) ? width : 800;
+                    let h = (Number.isFinite(height) && height > 1) ? height : 600;
+                    let bounced = false;
+                    if (this.x <= camera.x || this.x >= camera.x + w) { this.vx *= -1; bounced = true; this.x = Math.max(camera.x, Math.min(this.x, camera.x + w)); }
+                    if (this.y <= camera.y || this.y >= camera.y + h) { this.vy *= -1; bounced = true; this.y = Math.max(camera.y, Math.min(this.y, camera.y + h)); }
+                    
+                    if (bounced) {
+                        this.markedForDeletion = false;
+                        this.bounces--;
+                        this.hitEnemies.clear();
+                        createParticles(this.x, this.y, 8, '#fb7185', 3);
+                        Sound.hit();
+                    }
+                }
+            }
+        }
 
         class RocketBullet extends Bullet {
             constructor(x, y, angle, damage, speed, radius, pierce = 1, color = '#4ade80', shadow = '#22c55e') {
@@ -1559,13 +1634,14 @@
         }
 
         class Kamehameha {
-            constructor(x, y, angle, damage, level) {
+            constructor(x, y, angle, damage, level, isEvo = false) {
                 this.timer = 0;
                 this.maxTime = 120;
                 this.markedForDeletion = false;
                 this.level = level;
                 this.length = 2400;
                 this.width = 70 + level * 22;
+                this.isEvo = isEvo;
             }
             update() {
                 this.timer++;
@@ -1580,9 +1656,16 @@
                     const dy = t.y - player.y;
                     const forward = dx * cos + dy * sin;
                     const side = Math.abs(-dx * sin + dy * cos);
-                    if (forward > -t.radius && forward < this.length && side < halfWidth + t.radius) {
-                        t.takeDamage(Math.max(999999, t.hp + t.maxHp + 1000));
-                        if (effects.length < 80) effects.push(new Shockwave(t.x, t.y, '#93c5fd', 6, 90));
+                    if (forward > -t.radius && forward < this.length && side < halfWidth * 2.5 + t.radius) {
+                        if (this.isEvo && side > halfWidth * 0.2) {
+                            let pullForce = 15;
+                            t.x += (-dx * sin + dy * cos) > 0 ? -sin * pullForce : sin * pullForce;
+                            t.y += (-dx * sin + dy * cos) > 0 ? cos * pullForce : -cos * pullForce;
+                        }
+                        if (side < halfWidth + t.radius) {
+                            t.takeDamage(Math.max(999999, t.hp + t.maxHp + 1000));
+                            if (effects.length < 80) effects.push(new Shockwave(t.x, t.y, this.isEvo ? '#818cf8' : '#93c5fd', 6, 90));
+                        }
                     }
                 }
                 if (this.timer >= this.maxTime) this.markedForDeletion = true;
@@ -1596,17 +1679,20 @@
                 const w = this.width;
                 const len = this.length;
                 const pulse = 0.85 + Math.sin(this.timer * 0.35) * 0.15;
+                const cMain = this.isEvo ? '129, 140, 248' : '59, 130, 246';
+                const cLight = this.isEvo ? '165, 180, 252' : '147, 197, 253';
+                const cHalo = this.isEvo ? '199, 210, 254' : '219, 234, 254';
 
                 try {
                     const beamGrad = ctx.createLinearGradient(0, 0, len, 0);
                     beamGrad.addColorStop(0, `rgba(255, 255, 255, ${0.95 * pulse})`);
-                    beamGrad.addColorStop(0.15, `rgba(147, 197, 253, ${0.75 * pulse})`);
-                    beamGrad.addColorStop(0.65, `rgba(59, 130, 246, ${0.42 * pulse})`);
-                    beamGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+                    beamGrad.addColorStop(0.15, `rgba(${cLight}, ${0.75 * pulse})`);
+                    beamGrad.addColorStop(0.65, `rgba(${cMain}, ${0.42 * pulse})`);
+                    beamGrad.addColorStop(1, `rgba(${cMain}, 0)`);
 
                     ctx.shadowBlur = 35;
-                    ctx.shadowColor = '#60a5fa';
-                    ctx.fillStyle = 'rgba(59, 130, 246, 0.22)';
+                    ctx.shadowColor = `rgb(${cMain})`;
+                    ctx.fillStyle = `rgba(${cMain}, 0.22)`;
                     ctx.fillRect(0, -w * 0.82, len, w * 1.64);
                     ctx.fillStyle = beamGrad;
                     ctx.fillRect(0, -w * 0.42, len, w * 0.84);
@@ -1624,7 +1710,7 @@
                             if (x === 0) ctx.moveTo(x, y);
                             else ctx.lineTo(x, y);
                         }
-                        ctx.strokeStyle = `rgba(219, 234, 254, ${0.55 - i * 0.04})`;
+                        ctx.strokeStyle = `rgba(${cHalo}, ${0.55 - i * 0.04})`;
                         ctx.lineWidth = 3;
                         ctx.stroke();
                     }
@@ -1637,11 +1723,11 @@
                 ctx.arc(0, 0, safeR(w * 1.15), 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * pulse})`;
                 ctx.shadowBlur = 45;
-                ctx.shadowColor = '#bfdbfe';
+                ctx.shadowColor = `rgb(${cHalo})`;
                 ctx.fill();
                 ctx.beginPath();
                 ctx.arc(0, 0, safeR(w * 0.55), 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(96, 165, 250, ${0.55 * pulse})`;
+                ctx.fillStyle = `rgba(${cLight}, ${0.55 * pulse})`;
                 ctx.fill();
                 ctx.restore();
             }
@@ -2290,6 +2376,168 @@
             }
         }
 
+        // --- 進化スキル＆オンライン武器のクラス追加 ---
+        class BlackholeNova {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.timer = 0; this.maxTime = 300; this.markedForDeletion = false;
+                this.radius = 10; this.maxRadius = 300; this.damage = 100;
+                isTimeStopped = true;
+            }
+            update() {
+                this.timer++;
+                let progress = this.timer / this.maxTime;
+                this.radius = 10 + this.maxRadius * Math.pow(progress, 0.5);
+                
+                triggerShake(progress * 15);
+                
+                if (this.timer < this.maxTime - 30) {
+                    for (let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && !t.isMonkey) {
+                            let d = MathUtils.distance(this.x, this.y, t.x, t.y);
+                            if (d < this.radius * 2) {
+                                let angle = MathUtils.angle(t.x, t.y, this.x, this.y);
+                                t.x += Math.cos(angle) * 15; t.y += Math.sin(angle) * 15;
+                                if (d < this.radius * 0.5) t.takeDamage(this.damage);
+                            }
+                        }
+                    }
+                    if (this.timer % 5 === 0) {
+                        let a = Math.random() * Math.PI * 2; let r = this.radius * 1.5;
+                        createParticles(this.x + Math.cos(a)*r, this.y + Math.sin(a)*r, 5, '#8b5cf6', 4);
+                    }
+                } else if (this.timer === this.maxTime - 30) {
+                    Sound.playNoise(1.0, 0.5); triggerShake(80); whiteFlash = 1.0;
+                    for (let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius * 3) {
+                            t.takeDamage(999999);
+                        }
+                    }
+                    effects.push(new Shockwave(this.x, this.y, '#000', 30, 1000));
+                }
+
+                if (this.timer >= this.maxTime) { this.markedForDeletion = true; isTimeStopped = false; }
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+                if (this.timer < this.maxTime - 30) {
+                    ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius), 0, Math.PI*2);
+                    ctx.fillStyle = '#000'; ctx.shadowBlur = 50; ctx.shadowColor = '#8b5cf6'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * 1.1), 0, Math.PI*2);
+                    ctx.strokeStyle = `rgba(139, 92, 246, ${Math.random()})`; ctx.lineWidth = 5; ctx.stroke();
+                    ctx.rotate(this.timer * 0.1);
+                    for(let i=0; i<4; i++){
+                        ctx.beginPath(); ctx.ellipse(0, 0, safeR(this.radius*1.5), safeR(this.radius*0.2), 0, 0, Math.PI*2);
+                        ctx.strokeStyle = `rgba(167, 139, 250, 0.5)`; ctx.stroke(); ctx.rotate(Math.PI/4);
+                    }
+                } else {
+                    let p = (this.timer - (this.maxTime - 30)) / 30;
+                    ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * 3 * p), 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${1 - p})`; ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        class DivineSwordRain {
+            constructor() {
+                this.timer = 0; this.maxTime = 180; this.markedForDeletion = false; this.damage = 800;
+            }
+            update() {
+                this.timer++;
+                if (this.timer % 4 === 0) {
+                    let w = (Number.isFinite(width) && width > 1) ? width : 800;
+                    let h = (Number.isFinite(height) && height > 1) ? height : 600;
+                    let targetX = player.x + MathUtils.random(-w, w); let targetY = player.y + MathUtils.random(-h, h);
+                    
+                    effects.push(new LightningStrikeEffect(targetX, targetY)); 
+                    infiniteBladeSwords.push(new InfiniteBladeSword(targetX - 300, targetY - 500, Math.PI/2.5, this.damage));
+                    
+                    for(let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(targetX, targetY, t.x, t.y) < 200) t.takeDamage(this.damage * 2);
+                    }
+                    triggerShake(8); Sound.playTone(800, 'square', 0.1, 0.05);
+                }
+                if (this.timer >= this.maxTime) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                if(this.timer % 10 === 0) {
+                    let w = (Number.isFinite(width) && width > 1) ? width : 800;
+                    let h = (Number.isFinite(height) && height > 1) ? height : 600;
+                    ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(250, 204, 21, 0.1)'; ctx.fillRect(camera.x, camera.y, w, h); ctx.restore();
+                }
+            }
+        }
+
+        class BounceBomb {
+            constructor(x, y, angle, damage, level) {
+                this.x = x; this.y = y; this.vx = Math.cos(angle) * 8; this.vy = Math.sin(angle) * 8;
+                this.damage = damage; this.radius = 12 + level * 3; this.life = 300; this.markedForDeletion = false;
+                this.trail = [];
+            }
+            update() {
+                this.life--; this.trail.push({x: this.x, y: this.y}); if (this.trail.length > 5) this.trail.shift();
+                this.x += this.vx; this.y += this.vy;
+                
+                // 画面端の反射ロジック (カメラの範囲内を壁とする)
+                let w = (Number.isFinite(width) && width > 1) ? width : 800;
+                let h = (Number.isFinite(height) && height > 1) ? height : 600;
+                if (this.x < camera.x || this.x > camera.x + w) { this.vx *= -1; this.x = Math.max(camera.x, Math.min(this.x, camera.x + w)); }
+                if (this.y < camera.y || this.y > camera.y + h) { this.vy *= -1; this.y = Math.max(camera.y, Math.min(this.y, camera.y + h)); }
+
+                if (this.life <= 0) this.explode();
+            }
+            explode() {
+                this.markedForDeletion = true;
+                effects.push(new Shockwave(this.x, this.y, '#fbbf24', 10, this.radius * 6));
+                createParticles(this.x, this.y, 15, '#f59e0b', 5); Sound.playNoise(0.2, 0.3);
+                for (let t of enemies) {
+                    if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius * 6) t.takeDamage(this.damage * 3);
+                }
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius * 6) sendOnlineHit(r.id, this.damage * 2);
+                    });
+                }
+            }
+            draw(ctx) {
+                ctx.save(); ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI*2);
+                ctx.fillStyle = '#fbbf24'; ctx.shadowBlur = 15; ctx.shadowColor = '#d97706'; ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+            }
+        }
+
+        class PoisonCloud {
+            constructor(x, y, damage, level) {
+                this.x = x; this.y = y; this.damage = damage; this.radius = 60 + level * 15;
+                this.timer = 0; this.maxTime = 400; this.markedForDeletion = false;
+            }
+            update() {
+                this.timer++;
+                if (this.timer % 30 === 0) {
+                    for (let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius) t.takeDamage(this.damage);
+                    }
+                    if (isOnlineMode) {
+                        remotePlayers.forEach(r => {
+                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius) sendOnlineHit(r.id, this.damage * 0.5);
+                        });
+                    }
+                }
+                if (this.timer >= this.maxTime) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.globalAlpha = Math.max(0, 1 - this.timer / this.maxTime) * 0.6;
+                ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI*2);
+                ctx.fillStyle = '#84cc16'; ctx.shadowBlur = 20; ctx.shadowColor = '#65a30d'; ctx.fill();
+                
+                for(let i=0; i<3; i++) {
+                    let bx = this.x + Math.sin(this.timer*0.05 + i)*this.radius*0.5; let by = this.y + Math.cos(this.timer*0.04 + i)*this.radius*0.5;
+                    ctx.beginPath(); ctx.arc(safe(bx), safe(by), 10, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
         class ElectricEffect {
             constructor(x, y, radius) { this.x = x; this.y = y; this.radius = radius; this.life = 1.0; this.markedForDeletion = false; this.timer = 0; }
             update() { this.life -= 0.05; this.timer++; if (this.life <= 0) this.markedForDeletion = true; }
@@ -2370,6 +2618,15 @@
                 this.muryokuLevel = 0; this.muryokuTimer = 0;
                 this.shieldLevel = 0; this.shieldTimer = 0; 
                 this.onlineShieldLevel = 0;
+                
+                // --- オンライン＆進化用フラグ ---
+                this.onlineSniperLevel = 0; this.onlineSniperTimer = 0;
+                this.onlineBounceBombLevel = 0; this.onlineBounceTimer = 0;
+                this.onlinePoisonLevel = 0; this.onlinePoisonTimer = 0;
+                this.evoBlackhole = false; this.evoDivineSword = false;
+                this.evoRicochetSniper = false; this.evoToxicAegis = false;
+                this.evoGravityBeam = false; this.evoThunderBlade = false;
+
                 this.invincibleTimer = 60; 
                 
                 this.regenTimer = 0; this.regenAmount = 1; this.regenRate = 60; this.recoveryMasteryLevel = 0; 
@@ -2456,11 +2713,19 @@
                     }
                     if (this.hollowMurasakiLevel > 0) { 
                         this.hollowMurasakiTimer++; 
-                        if (this.hollowMurasakiTimer >= Math.max(900, 1200 - ((this.hollowMurasakiLevel - 1) * 60))) { this.startHollowMurasakiCharge(); this.hollowMurasakiTimer = 0; } 
+                        if (this.hollowMurasakiTimer >= Math.max(900, 1200 - ((this.hollowMurasakiLevel - 1) * 60))) { 
+                            if (this.evoBlackhole) { if(blackholes.length < 1) blackholes.push(new BlackholeNova(this.x, this.y)); }
+                            else this.startHollowMurasakiCharge(); 
+                            this.hollowMurasakiTimer = 0; 
+                        } 
                     }
                     if (this.orbitalStrikeLevel > 0) { 
                         this.orbitalStrikeTimer++; 
-                        if (this.orbitalStrikeTimer >= Math.max(90, 240 - (this.orbitalStrikeLevel * 30))) { this.fireOrbitalStrike(); this.orbitalStrikeTimer = 0; } 
+                        if (this.orbitalStrikeTimer >= Math.max(90, 240 - (this.orbitalStrikeLevel * 30))) { 
+                            if (this.evoDivineSword && Math.random() < 0.3) { if(divineSwords.length < 2) divineSwords.push(new DivineSwordRain()); }
+                            else this.fireOrbitalStrike(); 
+                            this.orbitalStrikeTimer = 0; 
+                        } 
                     }
                     if (this.kamehamehaLevel > 0) { 
                         this.kamehamehaTimer++; 
@@ -2491,11 +2756,68 @@
                         if (this.muryokuTimer >= 1200) { this.startMuryoku(); this.muryokuTimer = 0; } 
                     }
                 }
+
+                // --- オンライン限定武器の発動ロジック ---
+                if (isOnlineMode) {
+                    if (this.evoToxicAegis && frameCount % 15 === 0) {
+                        let r = 80;
+                        createParticles(this.x + MathUtils.random(-r, r), this.y + MathUtils.random(-r, r), 2, '#84cc16', 4);
+                        for (let t of enemies) {
+                            if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < r) t.takeDamage(10);
+                        }
+                        remotePlayers.forEach(remote => {
+                            if (remote && Number(remote.hp || 0) > 0 && MathUtils.distance(this.x, this.y, remote.x, remote.y) < r) sendOnlineHit(remote.id, 5);
+                        });
+                    }
+
+                    if (this.onlineSniperLevel > 0) {
+                        this.onlineSniperTimer++;
+                        if (this.onlineSniperTimer >= Math.max(60, 120 - this.onlineSniperLevel * 15)) {
+                            this.fireOnlineSniper(); this.onlineSniperTimer = 0;
+                        }
+                    }
+                    if (this.onlineBounceBombLevel > 0) {
+                        this.onlineBounceTimer++;
+                        if (this.onlineBounceTimer >= Math.max(120, 240 - this.onlineBounceBombLevel * 20)) {
+                            if(bounceBombs.length < 20) bounceBombs.push(new BounceBomb(this.x, this.y, this.faceAngle, 40 * this.onlineBounceBombLevel, this.onlineBounceBombLevel));
+                            this.onlineBounceTimer = 0;
+                        }
+                    }
+                    if (this.onlinePoisonLevel > 0) {
+                        this.onlinePoisonTimer++;
+                        if (this.onlinePoisonTimer >= 180) {
+                            if(poisonClouds.length < 10) poisonClouds.push(new PoisonCloud(this.x, this.y, 5 * this.onlinePoisonLevel, this.onlinePoisonLevel));
+                            this.onlinePoisonTimer = 0;
+                        }
+                    }
+                }
+            }
+
+            // --- 新規スキル発動関数 ---
+            fireOnlineSniper() {
+                let target = null; let minDist = 1500;
+                remotePlayers.forEach(r => {
+                    if (r && Number(r.hp || 0) > 0) {
+                        const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (dist < minDist) { minDist = dist; target = r; }
+                    }
+                });
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                if (target) {
+                    const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                    let dmg = 80 + this.onlineSniperLevel * 20;
+                    let b = this.evoRicochetSniper 
+                        ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
+                        : new Bullet(this.x, this.y, angle, dmg, 25, 4, 3, '#f87171', '#ef4444');
+                    if(target.id) b.onlineAimId = target.id;
+                    if(sniperBullets.length < 50) sniperBullets.push(b);
+                    Sound.shoot(); triggerShake(3);
+                }
             }
 
             startShield() { if (isOnlineMode) return; if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 3)); }
             startHollowMurasakiCharge() { if (isOnlineMode) return; if (hollowMurasakiCharges.length < 10) hollowMurasakiCharges.push(new HollowMurasakiCharge(this.x, this.y, this.faceAngle, 999999999, this.hollowMurasakiLevel)); }
-            startKamehameha() { if (isOnlineMode) return; if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel)); }
+            startKamehameha() { if (isOnlineMode) return; if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel, this.evoGravityBeam)); }
             startInfiniteBlade() { if (isOnlineMode) return; if (infiniteBladeCharges.length < 10) infiniteBladeCharges.push(new InfiniteBladeCharge(this.x, this.y, this.faceAngle, 999999999, this.infiniteBladeLevel)); }
             startKeraunos() { if (isOnlineMode) return; if (keraunosCharges.length < 10) keraunosCharges.push(new KeraunosCharge(1000 * this.keraunosLevel, this.keraunosLevel)); }
             startFunnel() { if (isOnlineMode) return; for (let i = 0; i < 10; i++) if (funnels.length < 50) funnels.push(new FunnelItem(this.x, this.y, 1000)); }
@@ -2633,9 +2955,16 @@
                     ctx.globalCompositeOperation = 'screen';
                     const rr = this.radius + 20 + Math.sin(Date.now()/120)*2;
                     ctx.beginPath(); ctx.arc(px, py, safeR(rr), 0, Math.PI*2);
-                    ctx.strokeStyle = 'rgba(96, 165, 250, .9)'; ctx.lineWidth = 4; ctx.shadowBlur = 16; ctx.shadowColor = '#60a5fa'; ctx.stroke();
-                    ctx.fillStyle = 'rgba(59, 130, 246, .08)'; ctx.fill();
-                    ctx.fillStyle = '#bfdbfe'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.shadowBlur = 0; ctx.fillText('AEGIS', px, py + this.radius + 34);
+                    
+                    if (this.evoToxicAegis) {
+                        ctx.strokeStyle = 'rgba(132, 204, 22, .9)'; ctx.lineWidth = 4; ctx.shadowBlur = 16; ctx.shadowColor = '#65a30d'; ctx.stroke();
+                        ctx.fillStyle = 'rgba(132, 204, 22, .08)'; ctx.fill();
+                        ctx.fillStyle = '#d9f99d'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.shadowBlur = 0; ctx.fillText('TOXIC AEGIS', px, py + this.radius + 34);
+                    } else {
+                        ctx.strokeStyle = 'rgba(96, 165, 250, .9)'; ctx.lineWidth = 4; ctx.shadowBlur = 16; ctx.shadowColor = '#60a5fa'; ctx.stroke();
+                        ctx.fillStyle = 'rgba(59, 130, 246, .08)'; ctx.fill();
+                        ctx.fillStyle = '#bfdbfe'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.shadowBlur = 0; ctx.fillText('AEGIS', px, py + this.radius + 34);
+                    }
                     ctx.restore();
                 }
 
@@ -2668,11 +2997,16 @@
 
                 if (this.bladeRingLevel > 0) {
                     let count = this.bladeRingLevel * 2; let dist = 60 + (this.bladeRingLevel * 5); let r = 8 + (this.bladeRingLevel * 2);
-                    ctx.fillStyle = '#f0f'; ctx.shadowBlur = 10; ctx.shadowColor = '#f0f';
+                    ctx.fillStyle = this.evoThunderBlade ? '#2dd4bf' : '#f0f'; 
+                    ctx.shadowBlur = 10; ctx.shadowColor = this.evoThunderBlade ? '#0d9488' : '#f0f';
                     for (let i = 0; i < count; i++) {
                         let angle = this.bladeRingAngle + (Math.PI * 2 / count) * i;
                         let bx = px + Math.cos(angle) * dist; let by = py + Math.sin(angle) * dist;
                         ctx.beginPath(); ctx.arc(safe(bx), safe(by), safeR(r), 0, Math.PI * 2); ctx.fill();
+                        if (this.evoThunderBlade && Math.random() < 0.2) {
+                            ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + MathUtils.random(-15,15), by + MathUtils.random(-15,15));
+                            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                        }
                     }
                 }
 
@@ -2734,6 +3068,7 @@
             constructor(x, y, type) {
                 this.x = x; this.y = y; this.type = type; this.markedForDeletion = false; this.invincibleTimer = 0; 
                 this.isBoss = false; this.isMidBoss = false; this.isMonkey = false; this.isCharmed = false; 
+                this.danmakuTimer = 0; this.danmakuAngle = 0; // 弾幕ボス用
                 const timeMultiplier = 1 + (gameTime / 60); 
 
                 switch(type) {
@@ -2789,6 +3124,23 @@
                 if (this.invincibleTimer > 0) this.invincibleTimer--;
                 if (isMuryokushoActive && !this.isCharmed && !this.isMonkey) { 
                     if (Math.random() < 0.2) createParticles(this.x, this.y, 1, '#ffffff', 2); return; 
+                }
+
+                // --- 弾幕ボスのロジック ---
+                if ((this.isBoss || this.isMidBoss) && !this.isCharmed) {
+                    this.danmakuTimer++;
+                    if (this.danmakuTimer % 180 > 90) { // 一定間隔で発狂モード
+                        if (this.danmakuTimer % 6 === 0) {
+                            let numBullets = this.isBoss ? 16 : 8;
+                            this.danmakuAngle += 0.15;
+                            for (let i = 0; i < numBullets; i++) {
+                                let angle = this.danmakuAngle + (Math.PI * 2 / numBullets) * i;
+                                if (enemyBullets.length < 500) {
+                                    enemyBullets.push(new Bullet(this.x, this.y, angle, this.damage * 0.5, 4, 6, 1, '#ff0055', '#ff0000', true));
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (this.isCharmed) {
@@ -2875,7 +3227,14 @@
                 } else if (this.type === 6) { ctx.arc(px, py, r, 0, Math.PI * 2); }
                 
                 ctx.lineWidth = 2; ctx.strokeStyle = this.color; ctx.fillStyle = this.hp < this.maxHp && Math.random() > 0.8 ? '#fff' : 'rgba(0,0,0,0.8)';
-                if (this.type !== 3 && this.type !== 4) { ctx.shadowBlur = 10; ctx.shadowColor = this.color; }
+                
+                // --- 描画の軽量化：ザコ敵は shadowBlur を切る ---
+                if (this.type === 3 || this.type === 4 || this.type === 7) { 
+                    ctx.shadowBlur = 10; ctx.shadowColor = this.color; 
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                
                 ctx.fill(); ctx.stroke();
                 
                 if (this.type === 3) { ctx.beginPath(); ctx.arc(px, py, safeR(r * 0.3), 0, Math.PI * 2); ctx.fillStyle = this.isCharmed ? '#fbcfe8' : '#ff0000'; ctx.fill(); }
@@ -2929,8 +3288,9 @@
                 gameTime += 1 / 60; frameCount++;
                 if (frameCount % 60 === 0) document.getElementById('timeDisplay').innerText = `${Math.floor(gameTime / 60).toString().padStart(2, '0')}:${Math.floor(gameTime % 60).toString().padStart(2, '0')}`;
                 
-                let spawnInterval = Math.max(10, 80 - Math.floor(gameTime));
-                if (frameCount % spawnInterval === 0 && enemies.length < 200) spawnEnemy();
+                // スポーン間隔の調整と最大数の解放
+                let spawnInterval = Math.max(5, 40 - Math.floor(gameTime * 0.5));
+                if (frameCount % spawnInterval === 0 && enemies.length < 800) spawnEnemy();
                 
                 if (isLavaDomainActive) {
                     lavaDomainTimer--;
@@ -2943,12 +3303,13 @@
 
             if (!isTimeStopped) {
                 const groups = [
-                    {a:gems, l:300}, {a:particles, l:400}, {a:bullets, l:200}, {a:enemyBullets, l:200},
-                    {a:ironBlasters, l:100}, {a:shields, l:20}, {a:floatingTexts, l:150}, {a:effects, l:50},
+                    {a:gems, l:300}, {a:particles, l:400}, {a:bullets, l:300}, {a:sniperBullets, l:100}, {a:enemyBullets, l:500},
+                    {a:ironBlasters, l:100}, {a:shields, l:20}, {a:floatingTexts, l:150}, {a:effects, l:100},
                     {a:voidTempests, l:50}, {a:hollowMurasakis, l:50}, {a:orbitalStrikes, l:50},
-                    {a:kamehamehas, l:50}, {a:infinitySnaps, l:50}, {a:infiniteBladeSwords, l:100},
+                    {a:kamehamehas, l:50}, {a:infinitySnaps, l:50}, {a:infiniteBladeSwords, l:200},
                     {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:funnels, l:50}, {a:vaderSkills, l:50},
-                    {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10}
+                    {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
+                    {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10}
                 ];
                 
                 for (let g of groups) {
@@ -3003,6 +3364,34 @@
                     }
                 }
 
+                // スナイパー弾の処理追加
+                for (let i = sniperBullets.length - 1; i >= 0; i--) {
+                    let bullet = sniperBullets[i];
+                    if (isOnlineMode && remotePlayers && remotePlayers.size > 0 && !bullet.markedForDeletion) {
+                        const remoteList = Array.from(remotePlayers.values());
+                        if (bullet.onlineAimId) remoteList.sort((a, b) => (a.id === bullet.onlineAimId ? -1 : 0) - (b.id === bullet.onlineAimId ? -1 : 0));
+                        for (const remote of remoteList) {
+                            if (!remote || Number(remote.hp || 0) <= 0) continue;
+                            if (damageRemotePlayerWithBullet(remote, bullet)) {
+                                if (bullet.pierce <= 0) { bullet.markedForDeletion = true; break; }
+                            }
+                        }
+                    }
+                    if (bullet.markedForDeletion) continue;
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        let target = enemies[j];
+                        if (target.markedForDeletion || target.isCharmed) continue;
+                        if (!bullet.hitEnemies.has(target)) {
+                            let rSum = bullet.radius + target.radius;
+                            if (distSq(bullet.x, bullet.y, target.x, target.y) < rSum * rSum) {
+                                target.takeDamage(bullet.damage); bullet.hitEnemies.add(target); bullet.pierce--; 
+                                createParticles(bullet.x, bullet.y, 5, '#f87171', 3);
+                                if (bullet.pierce <= 0) { bullet.markedForDeletion = true; break; }
+                            }
+                        }
+                    }
+                }
+
                 for (let i = ironBlasters.length - 1; i >= 0; i--) {
                     let blaster = ironBlasters[i];
                     if ((frameCount + i) % 2 === 0) continue; 
@@ -3032,8 +3421,15 @@
                             let bx = player.x + Math.cos(angle) * dist; let by = player.y + Math.sin(angle) * dist;
                             let rSum = enemy.radius + brRadius;
                             if (distSq(enemy.x, enemy.y, bx, by) < rSum * rSum && enemy.invincibleTimer <= 0 && !enemy.isCharmed) { 
-                                enemy.takeDamage(brDamage); enemy.invincibleTimer = 15; 
-                                if (Math.random() > 0.5) createParticles(bx, by, 3, '#f0f', 2);
+                                enemy.takeDamage(player.evoThunderBlade ? brDamage * 2 : brDamage); 
+                                enemy.invincibleTimer = 15; 
+                                if (player.evoThunderBlade) {
+                                    if (Math.random() > 0.5) effects.push(new LightningStrikeEffect(enemy.x, enemy.y));
+                                    let kbAngle = MathUtils.angle(player.x, player.y, enemy.x, enemy.y);
+                                    enemy.x += Math.cos(kbAngle) * 30; enemy.y += Math.sin(kbAngle) * 30;
+                                } else {
+                                    if (Math.random() > 0.5) createParticles(bx, by, 3, '#f0f', 2);
+                                }
                             }
                         }
                     }
@@ -3182,7 +3578,7 @@
             for (let y = startY; y <= camera.y + h + gridSize; y += gridSize) { ctx.moveTo(safe(camera.x - gridSize), safe(y)); ctx.lineTo(safe(camera.x + w + gridSize), safe(y)); }
             ctx.stroke();
 
-            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, funnels, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, bullets, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
+            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, funnels, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
             
             for (let group of drawGroups) {
                 for (let obj of group) {
@@ -3302,14 +3698,21 @@
                     hollowMurasakiLevel: 0, kamehamehaLevel: 0, muryokuLevel: 0,
                     infinitySnapLevel: 0, infiniteBladeLevel: 0, keraunosLevel: 0,
                     orbitalStrikeLevel: 0, ironmanSuitLevel: 0, disneyMagicLevel: 0,
-                    funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0
+                    funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0,
+                    evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false
                 });
+            } else {
+                player.evoRicochetSniper = false; player.evoToxicAegis = false;
             }
             particles = []; floatingTexts = []; bullets = []; enemyBullets = []; enemies = []; gems = []; effects = [];
             ironBlasters = []; shields = []; voidTempests = []; hollowMurasakis = []; orbitalStrikes = [];
             kamehamehas = []; infinitySnaps = []; infiniteBladeSwords = []; unibeams = []; keraunosStorms = [];
             funnels = []; vaderSkills = []; stormbreakers = []; disneyMagics = []; muryokushos = [];
             hollowMurasakiCharges = []; infiniteBladeCharges = []; keraunosCharges = [];
+            
+            // --- 配列の初期化 ---
+            bounceBombs = []; poisonClouds = []; blackholes = []; divineSwords = []; sniperBullets = [];
+            
             bgStars = []; 
             
             frameCount = 0; gameTime = 0; score = 0; isTimeStopped = false; isMuryokushoActive = false;
