@@ -276,9 +276,9 @@
         }
 
         function triggerShake(power = 10) {
-            const p = safe(power, 10);
-            shakeTime = Math.max(shakeTime, Math.min(60, Math.floor(8 + p * 0.6)));
-            shakeIntensity = Math.max(shakeIntensity, Math.min(40, p));
+            // 画面の揺れを完全に無効化（演出の呼び出しは残して安全に無視）
+            shakeTime = 0;
+            shakeIntensity = 0;
         }
 
         function createParticles(x, y, count = 8, color = '#0ff', size = 3) {
@@ -673,7 +673,7 @@
             }
 
             if (player.disneyMagicLevel === 0) {
-                if (Math.random() < ultChance) ultimateSkills.push({ name: '【幻奏】星夢の輪舞曲', desc: '敵を味方にしてHPと攻撃力4倍', color: '#fbcfe8', icon: '🪄', apply: () => { player.disneyMagicLevel = 1; player.disneyMagicTimer = 9999; triggerDisneyCutin(); } });
+                if (Math.random() < 0.01) ultimateSkills.push({ name: '【幻奏】星夢の輪舞曲', desc: '敵を味方にしてHPと攻撃力4倍', color: '#fbcfe8', icon: '🪄', apply: () => { player.disneyMagicLevel = 1; player.disneyMagicTimer = 9999; triggerDisneyCutin(); } });
             } else {
                 pool.push({ name: '星夢の輪舞曲 強化', desc: '魅了した敵の移動速度アップ', color: '#fbcfe8', icon: '🪄', apply: () => { player.disneyMagicLevel += 1; } });
             }
@@ -883,6 +883,71 @@
                 ctx.globalAlpha = 1.0;
                 ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI*2);
                 ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = this.shadow; ctx.fill(); 
+                ctx.restore();
+            }
+        }
+
+
+        class RocketBullet extends Bullet {
+            constructor(x, y, angle, damage, speed, radius, pierce = 1, color = '#4ade80', shadow = '#22c55e') {
+                super(x, y, angle, damage, speed, radius, pierce, color, shadow, false);
+                this.angle = angle;
+            }
+            update() {
+                super.update();
+                this.angle = Math.atan2(this.vy, this.vx);
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(safe(this.x), safe(this.y));
+                ctx.rotate(safe(this.angle));
+                ctx.globalCompositeOperation = 'screen';
+
+                ctx.beginPath();
+                ctx.moveTo(-20, 0);
+                ctx.lineTo(-34 - Math.random() * 8, -6);
+                ctx.lineTo(-34 - Math.random() * 8, 6);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(255, 120, 0, 0.75)';
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#f97316';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(22, 0);
+                ctx.lineTo(8, -9);
+                ctx.lineTo(-16, -7);
+                ctx.lineTo(-22, 0);
+                ctx.lineTo(-16, 7);
+                ctx.lineTo(8, 9);
+                ctx.closePath();
+                ctx.fillStyle = '#e5e7eb';
+                ctx.shadowBlur = 16;
+                ctx.shadowColor = this.shadow;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(24, 0);
+                ctx.lineTo(7, -8);
+                ctx.lineTo(7, 8);
+                ctx.closePath();
+                ctx.fillStyle = '#22c55e';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(-10, -7);
+                ctx.lineTo(-22, -17);
+                ctx.lineTo(-17, -3);
+                ctx.closePath();
+                ctx.fillStyle = '#16a34a';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(-10, 7);
+                ctx.lineTo(-22, 17);
+                ctx.lineTo(-17, 3);
+                ctx.closePath();
+                ctx.fill();
+
                 ctx.restore();
             }
         }
@@ -1141,7 +1206,7 @@
         class HollowMurasakiCharge {
             constructor(x, y, angle, damage, level) {
                 this.angle = angle; this.damage = damage; this.level = level; this.timer = 0; this.maxTime = 45; 
-                this.markedForDeletion = false; isTimeStopped = true; 
+                this.markedForDeletion = false; isTimeStopped = false; 
             }
             update() {
                 this.timer++; this.angle = player.faceAngle; let progress = this.timer / this.maxTime;
@@ -1427,7 +1492,7 @@
         class InfiniteBladeCharge {
             constructor(x, y, angle, damage, level) {
                 this.x = x; this.y = y;
-                this.timer = 0; this.maxTime = 90; this.markedForDeletion = false; this.level = level; isTimeStopped = true;
+                this.timer = 0; this.maxTime = 90; this.markedForDeletion = false; this.level = level; isTimeStopped = false;
             }
             update() {
                 this.timer++; this.x = player.x; this.y = player.y; 
@@ -1496,7 +1561,7 @@
         }
 
         class KeraunosCharge {
-            constructor(damage, level) { this.timer = 0; this.maxTime = 60; this.markedForDeletion = false; this.level = level; isTimeStopped = true; }
+            constructor(damage, level) { this.timer = 0; this.maxTime = 60; this.markedForDeletion = false; this.level = level; isTimeStopped = false; }
             update() {
                 this.timer++;
                 if (this.timer >= this.maxTime) { this.markedForDeletion = true; isTimeStopped = false; keraunosStorms.push(new KeraunosStorm(1000 * this.level, this.level)); }
@@ -1563,7 +1628,7 @@
                 if (this.target) {
                     let angle = MathUtils.angle(this.x, this.y, this.target.x, this.target.y);
                     this.x += Math.cos(angle) * 8; this.y += Math.sin(angle) * 8;
-                    if (this.timer % 20 === 0) bullets.push(new Bullet(this.x, this.y, angle, this.damage, 20, 8, 2, '#4ade80', '#22c55e'));
+                    if (this.timer % 20 === 0) bullets.push(new RocketBullet(this.x, this.y, angle, this.damage, 22, 8, 2, '#4ade80', '#22c55e'));
                 } else {
                     let angle = MathUtils.angle(this.x, this.y, player.x, player.y);
                     this.x += Math.cos(angle) * 5; this.y += Math.sin(angle) * 5;
@@ -1584,26 +1649,25 @@
 
         class DarkLordSkill {
             constructor(x, y, level) {
-                this.x = player.x; this.y = player.y; 
-                this.timer = 0; this.maxTime = 240; 
-                this.markedForDeletion = false; 
+                this.x = player.x; this.y = player.y;
+                this.timer = 0; this.maxTime = 240;
+                this.markedForDeletion = false;
                 this.level = level;
-                this.pullRadius = 1200; 
+                this.pullRadius = 1200;
             }
             update() {
-                this.timer++; 
+                this.timer++;
                 this.x = player.x; this.y = player.y;
                 let progress = this.timer / this.maxTime;
 
                 if (this.timer < this.maxTime - 20) {
-                    triggerShake(2);
                     for (let t of enemies) {
                         if (!t.isCharmed && !t.markedForDeletion && !t.isMonkey) {
                             let d = MathUtils.distance(this.x, this.y, t.x, t.y);
                             if (d < this.pullRadius) {
                                 let angle = MathUtils.angle(t.x, t.y, this.x, this.y);
                                 let pullSpeed = 8 + progress * 20;
-                                t.x += Math.cos(angle) * pullSpeed; 
+                                t.x += Math.cos(angle) * pullSpeed;
                                 t.y += Math.sin(angle) * pullSpeed;
                                 if (MathUtils.distance(this.x, this.y, t.x, t.y) < 50) {
                                     t.takeDamage(10 * this.level);
@@ -1611,24 +1675,27 @@
                             }
                         }
                     }
-                    if (this.timer % 2 === 0) {
+
+                    if (this.timer % 12 === 0 && particles.length < 380) {
                         let a = MathUtils.random(0, Math.PI * 2);
-                        let r = MathUtils.random(200, 600);
-                        let p = new Particle(this.x + Math.cos(a)*r, this.y + Math.sin(a)*r, '#f00', 6);
-                        p.vx = -Math.cos(a) * 20; p.vy = -Math.sin(a) * 20;
+                        let r = MathUtils.random(90, 150);
+                        let p = new Particle(this.x + Math.cos(a) * r, this.y + Math.sin(a) * r, 'rgba(255, 40, 40, 0.75)', 3);
+                        p.vx = -Math.cos(a) * 4;
+                        p.vy = -Math.sin(a) * 4;
+                        p.life = 0.7;
+                        p.decay = 0.06;
                         particles.push(p);
                     }
                 }
 
                 if (this.timer === this.maxTime - 10) {
-                    triggerShake(50);
                     Sound.playTone(200, 'square', 0.5, 0.3);
-                    redFlash = 1.0;
+                    redFlash = 0.45;
                     for (let t of enemies) {
                         if (!t.isCharmed && !t.markedForDeletion) {
                             let d = MathUtils.distance(this.x, this.y, t.x, t.y);
                             if (d < 800) {
-                                t.takeDamage(99999 * this.level); 
+                                t.takeDamage(99999 * this.level);
                             }
                         }
                     }
@@ -1639,59 +1706,59 @@
                 }
             }
             draw(ctx) {
-                ctx.save(); 
+                ctx.save();
                 ctx.translate(safe(this.x), safe(this.y));
                 let progress = this.timer / this.maxTime;
 
                 if (this.timer < this.maxTime - 20) {
                     ctx.globalCompositeOperation = 'screen';
-                    ctx.beginPath(); 
-                    ctx.arc(0, 0, safeR(200 * progress), 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(220, 38, 38, 0.2)'; 
-                    ctx.shadowBlur = 50; ctx.shadowColor = '#f00'; 
-                    ctx.fill();
-                    
-                    ctx.globalCompositeOperation = 'source-over';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, safeR(60 * progress), 0, Math.PI * 2);
-                    ctx.fillStyle = '#000';
-                    ctx.shadowBlur = 20; ctx.shadowColor = '#dc2626';
-                    ctx.fill();
+                    const pulse = Math.sin(this.timer * 0.18) * 6;
+                    const mainR = 105 + pulse;
+                    const outerR = 150 + progress * 55;
 
-                    ctx.rotate(progress * 20);
                     ctx.beginPath();
-                    ctx.ellipse(0, 0, 200, 60, 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 5; ctx.stroke();
-                    
+                    ctx.arc(0, 0, safeR(mainR), 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 40, 40, 0.9)';
+                    ctx.lineWidth = 5;
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.stroke();
+
                     ctx.beginPath();
-                    ctx.ellipse(0, 0, 60, 200, 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#991b1b'; ctx.lineWidth = 5; ctx.stroke();
+                    ctx.arc(0, 0, safeR(outerR), 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(220, 38, 38, 0.28)';
+                    ctx.lineWidth = 10;
+                    ctx.shadowBlur = 35;
+                    ctx.shadowColor = '#991b1b';
+                    ctx.stroke();
+
+                    try {
+                        const grad = ctx.createRadialGradient(0, 0, 20, 0, 0, safeR(outerR));
+                        grad.addColorStop(0, 'rgba(255, 0, 0, 0.10)');
+                        grad.addColorStop(0.45, 'rgba(220, 38, 38, 0.06)');
+                        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        ctx.beginPath();
+                        ctx.arc(0, 0, safeR(outerR), 0, Math.PI * 2);
+                        ctx.fillStyle = grad;
+                        ctx.fill();
+                    } catch(e) {}
                 } else {
                     let slashProgress = Math.max(0, Math.min(1, (this.timer - (this.maxTime - 20)) / 20));
                     ctx.globalCompositeOperation = 'screen';
                     ctx.rotate(safe(player.faceAngle));
-                    
+
                     try {
                         ctx.beginPath();
-                        ctx.ellipse(0, 0, safeR(1000 * slashProgress), safeR(30 * (1 - slashProgress)), 0, 0, Math.PI * 2);
-                        ctx.fillStyle = '#fff';
-                        ctx.shadowBlur = 50; ctx.shadowColor = '#f00';
+                        ctx.ellipse(0, 0, safeR(1000 * slashProgress), safeR(24 * (1 - slashProgress)), 0, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                        ctx.shadowBlur = 40;
+                        ctx.shadowColor = '#f00';
                         ctx.fill();
-                        
+
                         ctx.beginPath();
-                        ctx.ellipse(0, 0, safeR(1000 * slashProgress), safeR(60 * (1 - slashProgress)), 0, 0, Math.PI * 2);
-                        ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                        ctx.ellipse(0, 0, safeR(1000 * slashProgress), safeR(48 * (1 - slashProgress)), 0, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.65)';
                         ctx.fill();
-                        
-                        ctx.rotate(Math.PI / 4);
-                        ctx.beginPath();
-                        ctx.ellipse(0, 0, safeR(800 * slashProgress), safeR(15 * (1 - slashProgress)), 0, 0, Math.PI * 2);
-                        ctx.fillStyle = '#fff'; ctx.shadowBlur = 30; ctx.fill();
-                        
-                        ctx.rotate(-Math.PI / 2);
-                        ctx.beginPath();
-                        ctx.ellipse(0, 0, safeR(800 * slashProgress), safeR(15 * (1 - slashProgress)), 0, 0, Math.PI * 2);
-                        ctx.fillStyle = '#fff'; ctx.fill();
                     } catch(e) {}
                 }
                 ctx.restore();
@@ -1709,7 +1776,7 @@
 
         class MuryokushoEffect {
             constructor(level) {
-                this.timer = 0; this.maxTime = 360; this.markedForDeletion = false; this.level = level; isMuryokushoActive = true;
+                this.timer = 0; this.maxTime = 360; this.markedForDeletion = false; this.level = level; isMuryokushoActive = false;
             }
             update() {
                 this.timer++;
@@ -2146,7 +2213,7 @@
                         this.radius = 6; this.color = '#d946ef'; this.speed = MathUtils.random(3.5, 4.5); 
                         this.hp = 1 * 1.5; this.damage = 5 * 1.5; this.expValue = 0.5; break;
                     case 7: 
-                        this.radius = 60; this.color = '#8B4513'; this.speed = 1.8 + (timeMultiplier * 0.05); 
+                        this.radius = 60; this.color = '#8B4513'; this.speed = (1.8 + (timeMultiplier * 0.05)) * 2; 
                         this.hp = 5000 * Math.max(1, Math.floor(player.level / 5)) * 1.5 * 2;
                         this.damage = 100 * 1.5; 
                         this.expValue = 100; this.isMonkey = true; 
