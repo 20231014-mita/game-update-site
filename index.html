@@ -101,7 +101,7 @@
             <button id="pauseMuteBtn" class="btn-neon px-6 py-2 text-xl font-bold rounded cursor-pointer flex items-center gap-2">🔊 SOUND: ON</button>
         </div>
 
-        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4">
+        <div id="speedSettingContainer" class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-4">
             <span class="text-cyan-300 font-bold text-lg tracking-wider">GAME SPEED</span>
             <div class="flex flex-wrap justify-center gap-4 max-w-lg">
                 <label class="cursor-pointer"><input type="radio" name="gameSpeed" value="1.0" class="sr-only" onchange="window.setGameSpeed(1.0)" checked><div class="speed-btn px-4 py-2 border border-cyan-500 rounded text-cyan-500 hover:bg-cyan-500 hover:text-black transition">x1.0</div></label>
@@ -247,7 +247,7 @@
         
         // --- 新規追加のグローバル配列 ---
         let bounceBombs = [], poisonClouds = [], blackholes = [], divineSwords = [];
-        let sniperBullets = [];
+        let sniperBullets = [], phantomDaggers = [], gravityPulsars = [];
 
         let player = null;
         let isMuryokushoActive = false;
@@ -783,12 +783,27 @@
             if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'足元に敵にダメージを与える毒沼を定期設置', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
             else if (player.onlinePoisonLevel < 3) pool.push({ name:'トキシックトラップ強化', desc:'毒沼のサイズとダメージがUP', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel += 1; }});
 
+            // --- 新規オンライン武器 ---
+            if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'相手を執拗に追いかける短剣を放つ', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
+            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'短剣の威力と発射頻度がUP', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
+
+            if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に継続ダメージの重力場を生成', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
+            else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場のサイズとダメージがUP', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
+
             let ultimateSkills = [];
             if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
                 ultimateSkills.push({ name: '【進化】跳弾スナイパー', desc: '狙撃と反射爆弾が融合。狙撃弾が壁で反射し敵を貫通しまくる', color: '#f43f5e', icon: '🎯💫', apply: () => { player.evoRicochetSniper = true; }});
             }
             if (player.onlineShieldLevel >= 2 && player.onlinePoisonLevel >= 3 && !player.evoToxicAegis) {
                 ultimateSkills.push({ name: '【進化】猛毒アイギス', desc: '盾と毒が融合。ダメージを軽減しつつ周囲に猛毒を撒き散らす', color: '#84cc16', icon: '🛡️☣️', apply: () => { player.evoToxicAegis = true; }});
+            }
+            
+            // --- 新規追加のオンライン進化武器 ---
+            if (player.onlinePhantomLevel >= 3 && player.onlineGravityLevel >= 3 && !player.evoGravitonDagger) {
+                ultimateSkills.push({ name: '【進化】重力追尾刃グラビトン・ダガー', desc: '追尾刃と重力場が融合。命中時に相手を拘束する重力場を発生', color: '#9333ea', icon: '🗡️🌌', apply: () => { player.evoGravitonDagger = true; }});
+            }
+            if (player.onlineBounceBombLevel >= 3 && player.onlineGravityLevel >= 3 && !player.evoSingularityBomb) {
+                ultimateSkills.push({ name: '【進化】特異点ボム・メテオ', desc: '反射爆弾と重力場が融合。爆発時に広範囲を巻き込む特大の重力場を残す', color: '#f59e0b', icon: '💣🌌', apply: () => { player.evoSingularityBomb = true; }});
             }
 
             let selected = [];
@@ -1317,7 +1332,7 @@
                 this.trail.push({x: this.x, y: this.y});
                 if(this.trail.length > 5) this.trail.shift();
                 this.x += this.vx; this.y += this.vy;
-                if (this.x < camera.x - 100 || this.x > camera.x + width + 100 || this.y < camera.y - 100 || this.y > camera.y + height + 100) this.markedForDeletion = true;
+                if (this.x < camera.x - 1000 || this.x > camera.x + width + 1000 || this.y < camera.y - 1000 || this.y > camera.y + height + 1000) this.markedForDeletion = true;
             }
             draw(ctx) {
                 ctx.save(); 
@@ -1336,7 +1351,7 @@
 
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 35, 6, 999, '#fb7185', '#e11d48');
+                super(x, y, angle, damage, 35, 12, 999, '#fb7185', '#e11d48');
                 this.bounces = 6;
                 this.lifeTimer = 0;
             }
@@ -2473,6 +2488,7 @@
                 this.x = x; this.y = y; this.vx = Math.cos(angle) * 8; this.vy = Math.sin(angle) * 8;
                 this.damage = damage; this.radius = 12 + level * 3; this.life = 300; this.markedForDeletion = false;
                 this.trail = [];
+                this.isSingularity = false;
             }
             update() {
                 this.life--; this.trail.push({x: this.x, y: this.y}); if (this.trail.length > 5) this.trail.shift();
@@ -2488,21 +2504,36 @@
             }
             explode() {
                 this.markedForDeletion = true;
-                effects.push(new Shockwave(this.x, this.y, '#fbbf24', 10, this.radius * 6));
-                createParticles(this.x, this.y, 15, '#f59e0b', 5); Sound.playNoise(0.2, 0.3);
+                let blastRadius = this.radius * 12; // 爆発範囲を2倍に
+                if (this.isSingularity) blastRadius *= 1.5;
+
+                effects.push(new Shockwave(this.x, this.y, this.isSingularity ? '#9333ea' : '#fbbf24', 15, blastRadius));
+                createParticles(this.x, this.y, 25, this.isSingularity ? '#c084fc' : '#f59e0b', 6); Sound.playNoise(0.3, 0.4);
                 for (let t of enemies) {
-                    if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius * 6) t.takeDamage(this.damage * 3);
+                    if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < blastRadius) t.takeDamage(this.damage * (this.isSingularity ? 4 : 3));
                 }
                 if (isOnlineMode) {
                     remotePlayers.forEach(r => {
-                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius * 6) sendOnlineHit(r.id, this.damage * 2);
+                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < blastRadius) sendOnlineHit(r.id, this.damage * (this.isSingularity ? 3 : 2));
                     });
+                }
+                
+                if (this.isSingularity && gravityPulsars.length < 15) {
+                    gravityPulsars.push(new GravityPulsar(this.x, this.y, this.damage, 4));
                 }
             }
             draw(ctx) {
                 ctx.save(); ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI*2);
-                ctx.fillStyle = '#fbbf24'; ctx.shadowBlur = 15; ctx.shadowColor = '#d97706'; ctx.fill();
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+                if (this.isSingularity) {
+                    ctx.fillStyle = '#000'; ctx.shadowBlur = 20; ctx.shadowColor = '#d8b4fe'; ctx.fill();
+                    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius * 0.5), 0, Math.PI*2);
+                    ctx.fillStyle = '#c084fc'; ctx.fill();
+                } else {
+                    ctx.fillStyle = '#fbbf24'; ctx.shadowBlur = 15; ctx.shadowColor = '#d97706'; ctx.fill();
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                }
+                ctx.restore();
             }
         }
 
@@ -2534,6 +2565,148 @@
                     let bx = this.x + Math.sin(this.timer*0.05 + i)*this.radius*0.5; let by = this.y + Math.cos(this.timer*0.04 + i)*this.radius*0.5;
                     ctx.beginPath(); ctx.arc(safe(bx), safe(by), 10, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill();
                 }
+                ctx.restore();
+            }
+        }
+
+        // --- 新規オンライン武器クラス ---
+        class PhantomDagger {
+            constructor(x, y, angle, damage, level) {
+                this.x = x; this.y = y; this.vx = Math.cos(angle) * 2; this.vy = Math.sin(angle) * 2;
+                this.damage = damage; this.level = level; this.life = 300; this.markedForDeletion = false;
+                this.speed = 2; this.maxSpeed = 14 + level * 2;
+                this.trail = []; this.angle = angle;
+                this.isGraviton = false;
+            }
+            update() {
+                this.life--; this.trail.push({x: this.x, y: this.y}); if (this.trail.length > 8) this.trail.shift();
+                
+                let target = null; let minDist = Infinity;
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (r && Number(r.hp || 0) > 0) {
+                            let d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                            if (d < minDist) { minDist = d; target = r; }
+                        }
+                    });
+                }
+                if (!target) {
+                    for (let e of enemies) {
+                        if (!e.isCharmed && !e.markedForDeletion) {
+                            let d = MathUtils.distance(this.x, this.y, e.x, e.y);
+                            if (d < minDist) { minDist = d; target = e; }
+                        }
+                    }
+                }
+                
+                if (target) {
+                    let targetAngle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                    let diff = targetAngle - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.angle += diff * 0.08;
+                }
+                
+                if (this.speed < this.maxSpeed) this.speed += 0.2;
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.x += this.vx; this.y += this.vy;
+                
+                let hit = false;
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < 20) {
+                            sendOnlineHit(r.id, this.damage); hit = true;
+                            createParticles(this.x, this.y, 8, '#c084fc', 3);
+                        }
+                    });
+                }
+                if (!hit) {
+                    for (let e of enemies) {
+                        if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(this.x, this.y, e.x, e.y) < e.radius + 10) {
+                            e.takeDamage(this.damage); hit = true;
+                            createParticles(this.x, this.y, 5, '#c084fc', 3);
+                            break;
+                        }
+                    }
+                }
+                
+                if (hit || this.life <= 0) {
+                    this.markedForDeletion = true;
+                    if (this.isGraviton && gravityPulsars.length < 15) {
+                        gravityPulsars.push(new GravityPulsar(this.x, this.y, this.damage * 0.5, this.level));
+                    }
+                }
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.angle);
+                ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 5); ctx.lineTo(-10, -5); ctx.closePath();
+                ctx.fillStyle = '#d8b4fe'; ctx.shadowBlur = 10; ctx.shadowColor = '#a855f7'; ctx.fill();
+                ctx.strokeStyle = '#9333ea'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class GravitonDagger extends PhantomDagger {
+            constructor(x, y, angle, damage, level) {
+                super(x, y, angle, damage, level);
+                this.isGraviton = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.angle);
+                ctx.beginPath(); ctx.moveTo(25, 0); ctx.lineTo(-10, 8); ctx.lineTo(-5, 0); ctx.lineTo(-10, -8); ctx.closePath();
+                ctx.fillStyle = '#7e22ce'; ctx.shadowBlur = 15; ctx.shadowColor = '#a855f7'; ctx.fill();
+                ctx.strokeStyle = '#e9d5ff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.beginPath(); ctx.arc(5, 0, 3, 0, Math.PI*2); ctx.fillStyle = '#000'; ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class GravityPulsar {
+            constructor(x, y, damage, level) {
+                this.x = x; this.y = y; this.damage = damage; this.radius = 80 + level * 20;
+                this.timer = 0; this.maxTime = 240 + level * 60; this.markedForDeletion = false;
+            }
+            update() {
+                this.timer++;
+                if (this.timer % 15 === 0) { 
+                    for (let t of enemies) {
+                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius) {
+                            t.takeDamage(this.damage);
+                            let angle = MathUtils.angle(t.x, t.y, this.x, this.y);
+                            t.x += Math.cos(angle) * 3; t.y += Math.sin(angle) * 3;
+                        }
+                    }
+                    if (isOnlineMode) {
+                        remotePlayers.forEach(r => {
+                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius) {
+                                sendOnlineHit(r.id, this.damage * 0.4);
+                            }
+                        });
+                    }
+                }
+                if (this.timer >= this.maxTime) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.globalAlpha = Math.max(0, 1 - this.timer / this.maxTime);
+                ctx.globalCompositeOperation = 'screen';
+                
+                ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; ctx.fill();
+                
+                ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius * 0.9), 0, Math.PI*2);
+                ctx.strokeStyle = '#0284c7'; ctx.lineWidth = 3; ctx.stroke();
+                
+                for(let i=0; i<5; i++) {
+                    let a = Math.random() * Math.PI * 2;
+                    let d = this.radius * (1 - (this.timer % 30) / 30); 
+                    let px = this.x + Math.cos(a) * d; let py = this.y + Math.sin(a) * d;
+                    ctx.beginPath(); ctx.arc(safe(px), safe(py), 3, 0, Math.PI*2); ctx.fillStyle = '#bae6fd'; ctx.fill();
+                }
+                
+                ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), 10 + Math.sin(this.timer*0.2)*5, 0, Math.PI*2);
+                ctx.fillStyle = '#e0f2fe'; ctx.shadowBlur = 20; ctx.shadowColor = '#0ea5e9'; ctx.fill();
+                
                 ctx.restore();
             }
         }
@@ -2623,9 +2796,12 @@
                 this.onlineSniperLevel = 0; this.onlineSniperTimer = 0;
                 this.onlineBounceBombLevel = 0; this.onlineBounceTimer = 0;
                 this.onlinePoisonLevel = 0; this.onlinePoisonTimer = 0;
+                this.onlinePhantomLevel = 0; this.onlinePhantomTimer = 0;
+                this.onlineGravityLevel = 0; this.onlineGravityTimer = 0;
                 this.evoBlackhole = false; this.evoDivineSword = false;
                 this.evoRicochetSniper = false; this.evoToxicAegis = false;
                 this.evoGravityBeam = false; this.evoThunderBlade = false;
+                this.evoGravitonDagger = false; this.evoSingularityBomb = false;
 
                 this.invincibleTimer = 60; 
                 
@@ -2779,8 +2955,7 @@
                     if (this.onlineBounceBombLevel > 0) {
                         this.onlineBounceTimer++;
                         if (this.onlineBounceTimer >= Math.max(120, 240 - this.onlineBounceBombLevel * 20)) {
-                            if(bounceBombs.length < 20) bounceBombs.push(new BounceBomb(this.x, this.y, this.faceAngle, 40 * this.onlineBounceBombLevel, this.onlineBounceBombLevel));
-                            this.onlineBounceTimer = 0;
+                            this.fireOnlineBounceBomb(); this.onlineBounceTimer = 0;
                         }
                     }
                     if (this.onlinePoisonLevel > 0) {
@@ -2790,12 +2965,72 @@
                             this.onlinePoisonTimer = 0;
                         }
                     }
+                    if (this.onlinePhantomLevel > 0) {
+                        this.onlinePhantomTimer++;
+                        if (this.onlinePhantomTimer >= Math.max(45, 90 - this.onlinePhantomLevel * 10)) {
+                            this.fireOnlinePhantom(); this.onlinePhantomTimer = 0;
+                        }
+                    }
+                    if (this.onlineGravityLevel > 0) {
+                        this.onlineGravityTimer++;
+                        if (this.onlineGravityTimer >= 300) {
+                            this.fireOnlineGravity(); this.onlineGravityTimer = 0;
+                        }
+                    }
                 }
             }
 
             // --- 新規スキル発動関数 ---
             fireOnlineSniper() {
-                let target = null; let minDist = 1500;
+                let target = null; 
+                let minDist = 1500;
+                let w = (Number.isFinite(width) && width > 1) ? width : 800;
+                let h = (Number.isFinite(height) && height > 1) ? height : 600;
+
+                // 画面内にいるプレイヤーを最優先で探す
+                let bestRemote = null;
+                let bestRemoteDist = Infinity;
+
+                remotePlayers.forEach(r => {
+                    if (r && Number(r.hp || 0) > 0) {
+                        let screenX = r.x - camera.x;
+                        let screenY = r.y - camera.y;
+                        let inScreen = screenX >= 0 && screenX <= w && screenY >= 0 && screenY <= h;
+                        
+                        const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (inScreen && dist < bestRemoteDist) {
+                            bestRemoteDist = dist;
+                            bestRemote = r;
+                        }
+                    }
+                });
+
+                if (bestRemote) {
+                    target = bestRemote;
+                } else {
+                    remotePlayers.forEach(r => {
+                        if (r && Number(r.hp || 0) > 0) {
+                            const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
+                            if (dist < minDist) { minDist = dist; target = r; }
+                        }
+                    });
+                    if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                }
+
+                if (target) {
+                    const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                    let dmg = 80 + this.onlineSniperLevel * 20;
+                    let b = this.evoRicochetSniper 
+                        ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
+                        : new Bullet(this.x, this.y, angle, dmg, 25, 8, 3, '#f87171', '#ef4444');
+                    if(target.id) b.onlineAimId = target.id;
+                    if(sniperBullets.length < 50) sniperBullets.push(b);
+                    Sound.shoot(); triggerShake(3);
+                }
+            }
+
+            fireOnlineBounceBomb() {
+                let target = null; let minDist = 1000;
                 remotePlayers.forEach(r => {
                     if (r && Number(r.hp || 0) > 0) {
                         const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
@@ -2803,15 +3038,41 @@
                     }
                 });
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                
+                let angle = this.faceAngle;
                 if (target) {
-                    const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
-                    let dmg = 80 + this.onlineSniperLevel * 20;
-                    let b = this.evoRicochetSniper 
-                        ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
-                        : new Bullet(this.x, this.y, angle, dmg, 25, 4, 3, '#f87171', '#ef4444');
-                    if(target.id) b.onlineAimId = target.id;
-                    if(sniperBullets.length < 50) sniperBullets.push(b);
-                    Sound.shoot(); triggerShake(3);
+                    angle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                }
+
+                let bomb = new BounceBomb(this.x, this.y, angle, 40 * this.onlineBounceBombLevel, this.onlineBounceBombLevel);
+                if (this.evoSingularityBomb) bomb.isSingularity = true;
+                if(bounceBombs.length < 20) bounceBombs.push(bomb);
+            }
+
+            fireOnlinePhantom() {
+                let angle = this.faceAngle + MathUtils.random(-0.5, 0.5);
+                let damage = 30 + this.onlinePhantomLevel * 15;
+                if (this.evoGravitonDagger) {
+                    if(phantomDaggers.length < 30) phantomDaggers.push(new GravitonDagger(this.x, this.y, angle, damage * 1.5, this.onlinePhantomLevel));
+                } else {
+                    if(phantomDaggers.length < 30) phantomDaggers.push(new PhantomDagger(this.x, this.y, angle, damage, this.onlinePhantomLevel));
+                }
+            }
+
+            fireOnlineGravity() {
+                let target = null; let minDist = Infinity;
+                remotePlayers.forEach(r => {
+                    if (r && Number(r.hp || 0) > 0) {
+                        let d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (d < minDist) { minDist = d; target = r; }
+                    }
+                });
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                
+                if (target) {
+                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(target.x, target.y, 8 + this.onlineGravityLevel * 4, this.onlineGravityLevel));
+                } else {
+                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(this.x, this.y, 8 + this.onlineGravityLevel * 4, this.onlineGravityLevel));
                 }
             }
 
@@ -3309,7 +3570,8 @@
                     {a:kamehamehas, l:50}, {a:infinitySnaps, l:50}, {a:infiniteBladeSwords, l:200},
                     {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:funnels, l:50}, {a:vaderSkills, l:50},
                     {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
-                    {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10}
+                    {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10},
+                    {a:phantomDaggers, l:50}, {a:gravityPulsars, l:20}
                 ];
                 
                 for (let g of groups) {
@@ -3578,7 +3840,7 @@
             for (let y = startY; y <= camera.y + h + gridSize; y += gridSize) { ctx.moveTo(safe(camera.x - gridSize), safe(y)); ctx.lineTo(safe(camera.x + w + gridSize), safe(y)); }
             ctx.stroke();
 
-            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, funnels, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
+            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, funnels, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
             
             for (let group of drawGroups) {
                 for (let obj of group) {
@@ -3699,10 +3961,12 @@
                     infinitySnapLevel: 0, infiniteBladeLevel: 0, keraunosLevel: 0,
                     orbitalStrikeLevel: 0, ironmanSuitLevel: 0, disneyMagicLevel: 0,
                     funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0,
-                    evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false
+                    evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false,
+                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false
                 });
             } else {
                 player.evoRicochetSniper = false; player.evoToxicAegis = false;
+                player.evoGravitonDagger = false; player.evoSingularityBomb = false;
             }
             particles = []; floatingTexts = []; bullets = []; enemyBullets = []; enemies = []; gems = []; effects = [];
             ironBlasters = []; shields = []; voidTempests = []; hollowMurasakis = []; orbitalStrikes = [];
@@ -3712,6 +3976,7 @@
             
             // --- 配列の初期化 ---
             bounceBombs = []; poisonClouds = []; blackholes = []; divineSwords = []; sniperBullets = [];
+            phantomDaggers = []; gravityPulsars = [];
             
             bgStars = []; 
             
@@ -3754,6 +4019,20 @@
             if (gameState === 'playing') {
                 gameState = 'paused'; 
                 syncJoystickVisibility();
+                
+                // --- オンライン時の倍速機能無効化 ---
+                const speedContainer = document.getElementById('speedSettingContainer');
+                if (speedContainer) {
+                    if (isOnlineMode) {
+                        speedContainer.classList.add('hidden'); // オンライン時は非表示
+                        window.setGameSpeed(1.0); // 強制的に1倍速に戻す
+                        const speedRadios = document.getElementsByName('gameSpeed');
+                        for(let r of speedRadios) { if(r.value === "1.0") r.checked = true; }
+                    } else {
+                        speedContainer.classList.remove('hidden'); // オフライン時は表示
+                    }
+                }
+                
                 showScreen('pauseScreen');
                 Sound.stopBGM();
             } else if (gameState === 'paused') {
