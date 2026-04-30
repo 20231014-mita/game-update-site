@@ -1349,19 +1349,56 @@
             }
         }
 
+        // --- 新規追加：スナイパー用の銃弾クラス ---
+        class SniperBullet extends Bullet {
+            constructor(x, y, angle, damage) {
+                super(x, y, angle, damage, 35, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
+                this.angle = angle;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(safe(this.x), safe(this.y));
+                ctx.rotate(this.angle);
+                
+                // 銃弾の形を描画
+                ctx.beginPath();
+                ctx.moveTo(16, 0);
+                ctx.lineTo(4, 6);
+                ctx.lineTo(-12, 6);
+                ctx.lineTo(-12, -6);
+                ctx.lineTo(4, -6);
+                ctx.closePath();
+                
+                ctx.fillStyle = '#f87171';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 35, 12, 999, '#fb7185', '#e11d48');
+                super(x, y, angle, damage, 35, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
                 this.bounces = 6;
                 this.lifeTimer = 0;
+                this.angle = angle;
             }
             update() {
                 this.lifeTimer++;
                 if (this.lifeTimer > 180) { this.markedForDeletion = true; return; }
                 
-                super.update();
+                this.trail.push({x: this.x, y: this.y});
+                if(this.trail.length > 5) this.trail.shift();
+                this.x += this.vx; this.y += this.vy;
+                this.angle = Math.atan2(this.vy, this.vx); // 反射時に角度を更新するため
                 
-                if (this.markedForDeletion && this.bounces > 0 && this.lifeTimer <= 180) {
+                if (this.x < camera.x - 1000 || this.x > camera.x + width + 1000 || this.y < camera.y - 1000 || this.y > camera.y + height + 1000) this.markedForDeletion = true;
+                
+                if (this.bounces > 0 && this.lifeTimer <= 180) {
                     let w = (Number.isFinite(width) && width > 1) ? width : 800;
                     let h = (Number.isFinite(height) && height > 1) ? height : 600;
                     let bounced = false;
@@ -1376,6 +1413,36 @@
                         Sound.hit();
                     }
                 }
+            }
+            draw(ctx) {
+                ctx.save();
+                if(this.trail.length > 1) {
+                    ctx.beginPath(); ctx.moveTo(safe(this.trail[0].x), safe(this.trail[0].y));
+                    for(let i=1; i<this.trail.length; i++) ctx.lineTo(safe(this.trail[i].x), safe(this.trail[i].y));
+                    ctx.strokeStyle = this.color; ctx.lineWidth = this.radius; ctx.lineCap = 'round';
+                    ctx.globalAlpha = 0.5; ctx.stroke();
+                }
+                ctx.globalAlpha = 1.0;
+                ctx.translate(safe(this.x), safe(this.y));
+                ctx.rotate(this.angle);
+                
+                // 跳弾スナイパーの弾丸の形
+                ctx.beginPath();
+                ctx.moveTo(20, 0);
+                ctx.lineTo(6, 8);
+                ctx.lineTo(-16, 8);
+                ctx.lineTo(-16, -8);
+                ctx.lineTo(6, -8);
+                ctx.closePath();
+                
+                ctx.fillStyle = '#fb7185';
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#e11d48';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
             }
         }
 
@@ -2494,11 +2561,39 @@
                 this.life--; this.trail.push({x: this.x, y: this.y}); if (this.trail.length > 5) this.trail.shift();
                 this.x += this.vx; this.y += this.vy;
                 
-                // 画面端の反射ロジック (カメラの範囲内を壁とする)
+                // 画面端の反射ロジック
                 let w = (Number.isFinite(width) && width > 1) ? width : 800;
                 let h = (Number.isFinite(height) && height > 1) ? height : 600;
-                if (this.x < camera.x || this.x > camera.x + w) { this.vx *= -1; this.x = Math.max(camera.x, Math.min(this.x, camera.x + w)); }
-                if (this.y < camera.y || this.y > camera.y + h) { this.vy *= -1; this.y = Math.max(camera.y, Math.min(this.y, camera.y + h)); }
+                let bounced = false;
+                if (this.x < camera.x || this.x > camera.x + w) { this.vx *= -1; this.x = Math.max(camera.x, Math.min(this.x, camera.x + w)); bounced = true; }
+                if (this.y < camera.y || this.y > camera.y + h) { this.vy *= -1; this.y = Math.max(camera.y, Math.min(this.y, camera.y + h)); bounced = true; }
+
+                // --- ホーミング処理（壁に当たったら一番近い敵に向かって軌道修正） ---
+                if (bounced) {
+                    let target = null; let minDist = Infinity;
+                    if (isOnlineMode) {
+                        remotePlayers.forEach(r => {
+                            if (r && Number(r.hp || 0) > 0) {
+                                let d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                                if (d < minDist) { minDist = d; target = r; }
+                            }
+                        });
+                    }
+                    if (!target) {
+                        for (let e of enemies) {
+                            if (!e.isCharmed && !e.markedForDeletion) {
+                                let d = MathUtils.distance(this.x, this.y, e.x, e.y);
+                                if (d < minDist) { minDist = d; target = e; }
+                            }
+                        }
+                    }
+                    if (target) {
+                        let angleToTarget = MathUtils.angle(this.x, this.y, target.x, target.y);
+                        let speed = Math.hypot(this.vx, this.vy);
+                        this.vx = Math.cos(angleToTarget) * speed;
+                        this.vy = Math.sin(angleToTarget) * speed;
+                    }
+                }
 
                 if (this.life <= 0) this.explode();
             }
@@ -3022,7 +3117,7 @@
                     let dmg = 80 + this.onlineSniperLevel * 20;
                     let b = this.evoRicochetSniper 
                         ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
-                        : new Bullet(this.x, this.y, angle, dmg, 25, 8, 3, '#f87171', '#ef4444');
+                        : new SniperBullet(this.x, this.y, angle, dmg); // SniperBulletに変更
                     if(target.id) b.onlineAimId = target.id;
                     if(sniperBullets.length < 50) sniperBullets.push(b);
                     Sound.shoot(); triggerShake(3);
@@ -3316,7 +3411,7 @@
                     amount *= damageRate;
                 }
                 this.hp -= amount; 
-                this.invincibleTimer = isOnlineMode ? 32 : 90;
+                this.invincibleTimer = isOnlineMode ? 32 : 15; // オフライン時の無敵時間を短縮してダメージを受けやすく
                 updateUI(); 
                 triggerShake(15);
                 createParticles(this.x, this.y, 10, '#f00', 4); 
@@ -3357,10 +3452,10 @@
                         this.radius = 6; this.color = '#d946ef'; this.speed = MathUtils.random(3.5, 4.5); 
                         this.hp = 1 * 1.5; this.damage = 5 * 1.5; this.expValue = 0.5; break;
                     case 7: 
-                        this.radius = 60; this.color = '#8B4513'; this.speed = (1.8 + (timeMultiplier * 0.05)) * 2; 
-                        this.hp = 5000 * Math.max(1, Math.floor(player.level / 5)) * 1.5 * 2;
-                        this.damage = 100 * 1.5; 
-                        this.expValue = 100; this.isMonkey = true; 
+                        this.radius = 60; this.color = '#8B4513'; this.speed = (2.5 + (timeMultiplier * 0.1)) * 2; // ボスの移動速度強化
+                        this.hp = 10000 * Math.max(1, Math.floor(player.level / 5)) * 1.5 * 2; // ボスのHPをさらに倍増
+                        this.damage = 200 * 1.5; // ダメージ強化
+                        this.expValue = 200; this.isMonkey = true; 
                         this.clubAngle = 0; 
                         break;
                 }
@@ -3375,8 +3470,11 @@
 
             charm(level) {
                 if (this.isMonkey || this.isBoss) return;
-                this.isCharmed = true; this.hp *= 4; this.maxHp *= 4; this.damage *= 4; this.speed *= 3; this.color = '#fbcfe8'; 
-                if(level > 1) this.speed *= (1 + (level - 1) * 0.2); 
+                this.isCharmed = true; 
+                // 味方化のステータス上昇をマイルドに弱体化
+                this.hp *= 2; this.maxHp *= 2; this.damage *= 1.5; this.speed *= 1.5; 
+                this.color = '#fbcfe8'; 
+                if(level > 1) this.speed *= (1 + (level - 1) * 0.1); 
                 createParticles(this.x, this.y, 5, '#fbcfe8', 3);
             }
 
@@ -3385,23 +3483,6 @@
                 if (this.invincibleTimer > 0) this.invincibleTimer--;
                 if (isMuryokushoActive && !this.isCharmed && !this.isMonkey) { 
                     if (Math.random() < 0.2) createParticles(this.x, this.y, 1, '#ffffff', 2); return; 
-                }
-
-                // --- 弾幕ボスのロジック ---
-                if ((this.isBoss || this.isMidBoss) && !this.isCharmed) {
-                    this.danmakuTimer++;
-                    if (this.danmakuTimer % 180 > 90) { // 一定間隔で発狂モード
-                        if (this.danmakuTimer % 6 === 0) {
-                            let numBullets = this.isBoss ? 16 : 8;
-                            this.danmakuAngle += 0.15;
-                            for (let i = 0; i < numBullets; i++) {
-                                let angle = this.danmakuAngle + (Math.PI * 2 / numBullets) * i;
-                                if (enemyBullets.length < 500) {
-                                    enemyBullets.push(new Bullet(this.x, this.y, angle, this.damage * 0.5, 4, 6, 1, '#ff0055', '#ff0000', true));
-                                }
-                            }
-                        }
-                    }
                 }
 
                 if (this.isCharmed) {
@@ -3434,8 +3515,8 @@
                 } else if (this.type === 7) { 
                     const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
                     this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
-                    this.clubAngle += 0.15; 
-                    let clubLength = this.radius * 2.5;
+                    this.clubAngle += 0.25;  // クラブの回転速度アップ
+                    let clubLength = this.radius * 3.5; // クラブの長さを1.5倍に強化
                     let d = MathUtils.distance(this.x, this.y, player.x, player.y);
                     if (d < clubLength && !this.isCharmed) {
                         let angleToPlayer = MathUtils.angle(this.x, this.y, player.x, player.y);
@@ -3444,7 +3525,7 @@
                         let diff = Math.abs(angleToPlayer - normClubAngle);
                         if (diff > Math.PI) diff = Math.PI * 2 - diff;
                         
-                        if (diff < 0.4) {
+                        if (diff < 0.6) { // クラブの当たり判定（角度）も少し広く
                             player.takeDamage(99999); 
                         }
                     }
@@ -3469,12 +3550,12 @@
                     ctx.beginPath(); ctx.arc(r*0.3, -r*0.1, r*0.15, 0, Math.PI*2); ctx.fill();
 
                     ctx.rotate(safe(this.clubAngle));
-                    let clubLen = r * 2.5;
+                    let clubLen = r * 3.5; // 描画のクラブも長くする
                     let clubW = r * 0.6;
                     ctx.fillStyle = '#333'; ctx.fillRect(r * 0.5, -clubW/2, clubLen, clubW);
                     ctx.fillStyle = '#ddd';
-                    for (let i = 1; i <= 5; i++) {
-                        let tx = r * 0.5 + (clubLen / 6) * i;
+                    for (let i = 1; i <= 7; i++) {
+                        let tx = r * 0.5 + (clubLen / 8) * i;
                         ctx.beginPath(); ctx.moveTo(tx - 5, -clubW/2); ctx.lineTo(tx, -clubW/2 - 15); ctx.lineTo(tx + 5, -clubW/2); ctx.fill();
                         ctx.beginPath(); ctx.moveTo(tx - 5, clubW/2); ctx.lineTo(tx, clubW/2 + 15); ctx.lineTo(tx + 5, clubW/2); ctx.fill();
                     }
@@ -3697,7 +3778,8 @@
                     }
                     
                     let rSumPlayer = player.radius + enemy.radius;
-                    if (distSq(player.x, player.y, enemy.x, enemy.y) < rSumPlayer * rSumPlayer && !enemy.isCharmed) {
+                    // 当たり判定を少し大きく（+5px）して、敵に少しでも触れるとダメージを受けるようにシビア化
+                    if (distSq(player.x, player.y, enemy.x, enemy.y) < (rSumPlayer + 5) * (rSumPlayer + 5) && !enemy.isCharmed) {
                         player.takeDamage(enemy.damage); 
                     }
                 }
@@ -3722,15 +3804,8 @@
                                     createParticles(enemy.x, enemy.y, 4, '#ec4899', 3);
                                 }
                             }
-                            let dist = Math.sqrt(dSq); let overlap = minDist - dist; let angle = MathUtils.angle(other.x, other.y, enemy.x, enemy.y);
-                            if ((enemy.isBoss || enemy.isMonkey) && (!other.isBoss && !other.isMonkey)) { 
-                                other.x -= Math.cos(angle) * overlap * 0.5; other.y -= Math.sin(angle) * overlap * 0.5; 
-                            } else if ((!enemy.isBoss && !enemy.isMonkey) && (other.isBoss || other.isMonkey)) { 
-                                enemy.x += Math.cos(angle) * overlap * 0.5; enemy.y += Math.sin(angle) * overlap * 0.5; 
-                            } else { 
-                                enemy.x += Math.cos(angle) * (overlap * 0.5); enemy.y += Math.sin(angle) * (overlap * 0.5); 
-                                other.x -= Math.cos(angle) * (overlap * 0.5); other.y -= Math.sin(angle) * (overlap * 0.5); 
-                            }
+                            // 敵同士がぶつかった時の「押し出し処理（ノックバック）」を削除しました。
+                            // これにより、敵が無限に重なってプレイヤーに殺到するようになり、一瞬でも立ち止まると一気に大ダメージを受けます。
                         }
                     }
                 }
