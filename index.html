@@ -318,8 +318,11 @@
         const LAVA_DOMAIN_MAX_TIME = 45 * 60;
         const restrictedSkills = ['kamehameha', 'orbitalStrike', 'hollowMurasaki', 'unibeam', 'keraunos', 'infinitySnap', 'infiniteBlade', 'funnel', 'disneyMagic', 'muryoku'];
         const SAVE_RESET_VERSION = '2026-05-01-reset-collection-upgrades-v2';
-        const COIN_GAIN_RATE = 1 / 3;
-        const scaledCoinReward = (coins) => Math.max(0, Math.floor(Number(coins || 0) * COIN_GAIN_RATE));
+        // 今回の調整：現在のコイン量をさらに半分にする。
+        // 以前のミッション報酬倍率 1/3 → 1/6、通常プレイ報酬も後で 1/2 に調整。
+        const COIN_GAIN_RATE = 1 / 6;
+        const RUN_COIN_GAIN_RATE = 1 / 2;
+        const scaledCoinReward = (coins) => Math.max(0, Math.floor(Number(coins || 0) * COIN_GAIN_RATE * getCoinBonusMultiplier()));
 
         // --- アップグレード定義の復元 ---
         const upgradeDef = [
@@ -394,11 +397,76 @@
             { id:'thunderCrown', name:'雷冠オーラ', icon:'⚡', color:'#67e8f9', desc:'小さな雷の冠が頭上に走る' }
         );
 
+        // ==========================================
+        // スキン能力・武器図鑑・進化レシピ
+        // ==========================================
+        const SKIN_BONUS_DEFS = {
+            classic: { label:'能力なし：一番軽くて見やすい' },
+            ruby: { label:'攻撃力 +3%', damageMult:1.03 },
+            gold: { label:'コイン獲得 +5%', coinMult:1.05 },
+            void: { label:'経験値 +5%', expMult:1.05 },
+            emerald: { label:'受けるダメージ少し軽減', armorAdd:0.03 },
+            angel: { label:'HP +8% / 自動回復 +1', hpMult:1.08, regenAdd:1 },
+            obsidian: { label:'攻撃力 +5% / 移動速度 +3%', damageMult:1.05, speedMult:1.03 },
+            solar: { label:'攻撃力 +6% / コイン +3%', damageMult:1.06, coinMult:1.03 },
+            sapphire: { label:'移動速度 +5%', speedMult:1.05 },
+            phantomSkin: { label:'連射速度 +5%', fireRateMult:0.95 },
+            infernoSkin: { label:'攻撃力 +7% / HP -3%', damageMult:1.07, hpMult:0.97 },
+            galaxyKnight: { label:'HP +5% / 経験値 +5%', hpMult:1.05, expMult:1.05 },
+            monkeySlayer: { label:'攻撃力 +6%', damageMult:1.06 },
+            blackholeCore: { label:'吸引範囲 +80 / 経験値 +8%', magnetAdd:80, expMult:1.08 }
+        };
+
+        function getEquippedSkinBonus() {
+            try {
+                const id = userData && userData.equippedSkin ? userData.equippedSkin : 'classic';
+                return SKIN_BONUS_DEFS[id] || SKIN_BONUS_DEFS.classic || {};
+            } catch(e) { return {}; }
+        }
+
+        function getCoinBonusMultiplier() {
+            const b = getEquippedSkinBonus();
+            return Number(b.coinMult || 1);
+        }
+
+        function getSkinAbilityText(id) {
+            return (SKIN_BONUS_DEFS[id] && SKIN_BONUS_DEFS[id].label) || '能力なし';
+        }
+
+        const WEAPON_CODEX_DEFS = [
+            { type:'BASIC', name:'通常弾', icon:'🔹', desc:'一番基本の自動攻撃。攻撃力・連射・貫通の強化が乗る。' },
+            { type:'BASIC', name:'円環の刃界', icon:'🌀', desc:'周囲を回る刃で近くの敵を削る。' },
+            { type:'BASIC', name:'破滅の雷域', icon:'🌩️', desc:'一定間隔で周囲へ雷ダメージ。' },
+            { type:'BASIC', name:'虚空次元の暴風', icon:'🌪️', desc:'巨大竜巻で敵を巻き込み、ジェムも集めやすくなる。' },
+            { type:'ULTIMATE', name:'天穹の裁き・極光', icon:'✨', desc:'敵の密集地を狙う極太レーザー。' },
+            { type:'ULTIMATE', name:'深淵の重力刃', icon:'⚔️', desc:'敵を吸い寄せて巨大な刃で攻撃。' },
+            { type:'ULTIMATE', name:'雷霆砕破・轟', icon:'🪓', desc:'雷神の斧を投げて広範囲を攻撃。' },
+            { type:'ULTIMATE', name:'龍星・崩命破', icon:'🌊', desc:'狙った方向に強力なビームを放つ。' },
+            { type:'ONLINE', name:'スナイパー', icon:'🎯', desc:'オンライン向けの高威力・超貫通弾。' },
+            { type:'ONLINE', name:'跳弾ボム', icon:'💣', desc:'跳ねながら爆発する範囲攻撃。' },
+            { type:'ONLINE', name:'毒雲', icon:'☣️', desc:'範囲内に継続ダメージ。' },
+            { type:'ONLINE', name:'重力パルサー', icon:'🟣', desc:'敵や相手を吸い寄せる範囲攻撃。' }
+        ];
+
+        const EVOLUTION_RECIPE_DEFS = [
+            { name:'ブラックホール・ノヴァ', icon:'🌌', recipe:'虚空次元の暴風 Lv3 + 虚式系 Lv3', desc:'全てを吸い込む最上位の範囲攻撃。' },
+            { name:'神罰の剣雨', icon:'⚔️✨', recipe:'天穹の裁き Lv3 + 無限の剣陣 Lv3', desc:'光剣が広範囲に降り注ぐ。' },
+            { name:'超重力・崩命破', icon:'🌌🌊', recipe:'深淵の重力刃 Lv3 + 龍星・崩命破 Lv3', desc:'敵を中心線に吸い寄せるビーム。' },
+            { name:'雷鳴の剣域', icon:'⚡🌀', recipe:'円環の刃界 Lv3 + 破滅の雷域 Lv3', desc:'回転刃と雷が合体した常時攻撃。' },
+            { name:'星核レールバースト', icon:'🔭', recipe:'レールキャノン Lv3 + ネオンランス Lv3', desc:'超高速の貫通弾が一直線に敵を削る。' },
+            { name:'終焉ブラックホール', icon:'⚫', recipe:'ブラックホールエンペラー Lv3 + 虚空コレクター Lv3', desc:'吸引と経験値回収が同時に強化される。' }
+        ];
+
         const LEGENDARY_WEAPON_DEFS = [
-            { id:'neonLance', name:'伝説武器：ネオンランス', icon:'🔱', desc:'通常弾が黄金の貫通弾になる。ソロ専用。' },
-            { id:'phoenixCore', name:'伝説武器：フェニックスコア', icon:'🔥', desc:'1回だけ復活し、周囲に大爆発を起こす。ソロ専用。' },
-            { id:'starfallCrown', name:'伝説武器：星落としの王冠', icon:'👑', desc:'一定間隔で星の爆発を起こす。ソロ専用。' },
-            { id:'voidCollector', name:'伝説武器：虚空コレクター', icon:'🌌', desc:'経験値回収と成長速度が大きく上がる。ソロ専用。' }
+            { id:'neonLance', name:'伝説武器：ネオンランス', icon:'🔱', desc:'通常弾が黄金の貫通弾になる。ソロ専用。', hint:'KILL系ミッションで解放' },
+            { id:'phoenixCore', name:'伝説武器：フェニックスコア', icon:'🔥', desc:'1回だけ復活し、周囲に大爆発を起こす。ソロ専用。', hint:'BOSS系ミッションで解放' },
+            { id:'starfallCrown', name:'伝説武器：星落としの王冠', icon:'👑', desc:'一定間隔で星の爆発を起こす。ソロ専用。', hint:'RUN系ミッションで解放' },
+            { id:'voidCollector', name:'伝説武器：虚空コレクター', icon:'🌌', desc:'経験値回収と成長速度が大きく上がる。ソロ専用。', hint:'高難度BOSS/FINALミッションで解放' },
+            { id:'railCannon', name:'神話武器：レールキャノン', icon:'🔭', desc:'通常弾が超高速・超貫通のレール弾になる。解放は難しいが火力が高い。ソロ専用。', hint:'敵を大量討伐すると解放' },
+            { id:'blackholeEmperor', name:'神話武器：ブラックホールエンペラー', icon:'⚫', desc:'一定間隔で強力な重力核を発生させ、敵を吸い込みながら削る。ソロ専用。', hint:'長時間生存と高レベル到達で解放' },
+            { id:'thunderAegis', name:'神話武器：サンダーイージス', icon:'🛡️⚡', desc:'防御力を上げ、周囲へ雷の反撃を出す守りの神話武器。ソロ専用。', hint:'ボスを大量に倒すと解放' },
+            { id:'solarDrill', name:'神話武器：ソーラードリル', icon:'☀️', desc:'敵の密集地に太陽レーザーを落とす超火力武器。ソロ専用。', hint:'超高スコアで解放' },
+            { id:'chronoLotus', name:'神話武器：クロノロータス', icon:'🪷', desc:'一定間隔で時間波を広げ、敵に大ダメージを与える。ソロ専用。', hint:'ミッションを大量達成すると解放' }
         ];
 
         const MISSION_DEFS = [
@@ -573,6 +641,106 @@
             { id:'m166', cat:'AURA', title:'雷の王冠', desc:'ボス系の敵を合計240体倒す', metric:'totalBossLikeKills', target:240, reward:{coins:12000, aura:'thunderCrown'} }
         );
 
+        MISSION_DEFS.push(
+            { id:'m167', cat:'LEGEND', title:'神話レールキャノン', desc:'敵を合計18000体倒す', metric:'totalKills', target:18000, reward:{coins:16000, weapon:'railCannon'} },
+            { id:'m168', cat:'LEGEND', title:'星核の貫通者', desc:'1回のプレイで敵を4200体倒す', metric:'bestRunKills', target:4200, reward:{coins:22000, weapon:'railCannon', aura:'galaxyTrail'} },
+            { id:'m169', cat:'LEGEND', title:'黒穴の支配者', desc:'最高レベル70に到達する', metric:'bestLevel', target:70, reward:{coins:18000, weapon:'blackholeEmperor'} },
+            { id:'m170', cat:'LEGEND', title:'30分サバイバー', desc:'1回のプレイで1800秒生き残る', metric:'bestTime', target:1800, reward:{coins:26000, weapon:'blackholeEmperor', skin:'blackholeCore'} },
+            { id:'m171', cat:'BOSS', title:'雷盾の資格', desc:'ボス系の敵を合計320体倒す', metric:'totalBossLikeKills', target:320, reward:{coins:22000, weapon:'thunderAegis', aura:'thunderCrown'} },
+            { id:'m172', cat:'SCORE', title:'太陽を撃つ者', desc:'自己ベスト650000点を超える', metric:'bestScore', target:650000, reward:{coins:30000, weapon:'solarDrill', skin:'solar'} },
+            { id:'m173', cat:'FINAL', title:'時を咲かせる者', desc:'ミッションを90個達成する', metric:'completedMissionCount', target:90, reward:{coins:30000, weapon:'chronoLotus', cape:'galaxy'} },
+            { id:'m174', cat:'ONLINE', title:'対戦神話への道', desc:'オンラインで攻撃を合計2000回当てる', metric:'totalOnlineHits', target:2000, reward:{coins:20000, weapon:'railCannon', skin:'phantomSkin'} }
+        );
+
+        const DAILY_MISSION_VERSION = 'daily-v1';
+        const DAILY_MISSION_POOL = [
+            { id:'d_kill_80', cat:'DAILY', title:'今日の討伐', desc:'今日中に敵を80体倒す', metric:'dailyKills', target:80, reward:{coins:600} },
+            { id:'d_kill_180', cat:'DAILY', title:'今日の大討伐', desc:'今日中に敵を180体倒す', metric:'dailyKills', target:180, reward:{coins:1200} },
+            { id:'d_gem_80', cat:'DAILY', title:'今日のジェム集め', desc:'今日中にジェムを80個集める', metric:'dailyGems', target:80, reward:{coins:600} },
+            { id:'d_gem_180', cat:'DAILY', title:'今日の宝石回収', desc:'今日中にジェムを180個集める', metric:'dailyGems', target:180, reward:{coins:1300} },
+            { id:'d_time_300', cat:'DAILY', title:'今日の5分サバイバー', desc:'今日中に合計300秒生き残る', metric:'dailyPlayTime', target:300, reward:{coins:900} },
+            { id:'d_time_600', cat:'DAILY', title:'今日の10分チャレンジ', desc:'今日中に合計600秒生き残る', metric:'dailyPlayTime', target:600, reward:{coins:1600} },
+            { id:'d_level_10', cat:'DAILY', title:'今日の覚醒', desc:'今日中に最高レベル10へ到達する', metric:'dailyBestLevel', target:10, reward:{coins:1100} },
+            { id:'d_boss_1', cat:'DAILY', title:'今日のボス討伐', desc:'今日中にボス系を1体倒す', metric:'dailyBossKills', target:1, reward:{coins:1200} },
+            { id:'d_run_2', cat:'DAILY', title:'今日の出撃', desc:'今日中に2回プレイする', metric:'dailyRuns', target:2, reward:{coins:800} },
+            { id:'d_score_8000', cat:'DAILY', title:'今日のスコアアタック', desc:'今日中にスコア8000を超える', metric:'dailyBestScore', target:8000, reward:{coins:1000} },
+            { id:'d_online_5', cat:'DAILY', title:'今日のオンライン練習', desc:'今日中にオンライン攻撃を5回当てる', metric:'dailyOnlineHits', target:5, reward:{coins:1200} },
+            { id:'d_mission_1', cat:'DAILY', title:'今日のミッション回収', desc:'今日中に通常ミッションを1個達成する', metric:'dailyMissionCompletions', target:1, reward:{coins:900} }
+        ];
+
+        function getTodayKey() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function seededDailyMissionIds(dayKey) {
+            let seed = 0;
+            for (let i = 0; i < dayKey.length; i++) seed = ((seed * 31) + dayKey.charCodeAt(i)) >>> 0;
+            const pool = DAILY_MISSION_POOL.map(x => x.id);
+            for (let i = pool.length - 1; i > 0; i--) {
+                seed = (seed * 1664525 + 1013904223) >>> 0;
+                const j = seed % (i + 1);
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            return pool.slice(0, 3);
+        }
+
+        function ensureDailyMissionData() {
+            if (!userData || typeof userData !== 'object') userData = {};
+            const today = getTodayKey();
+            const baseStats = {
+                dailyKills:0, dailyBossKills:0, dailyGems:0, dailyRuns:0, dailyPlayTime:0,
+                dailyBestLevel:1, dailyBestScore:0, dailyOnlineHits:0, dailyMissionCompletions:0
+            };
+            if (!userData.daily || userData.daily.date !== today || userData.daily.version !== DAILY_MISSION_VERSION) {
+                userData.daily = { version: DAILY_MISSION_VERSION, date: today, ids: seededDailyMissionIds(today), stats: Object.assign({}, baseStats), completed:{}, claimed:{} };
+            }
+            userData.daily.stats = Object.assign({}, baseStats, userData.daily.stats || {});
+            userData.daily.completed = userData.daily.completed || {};
+            userData.daily.claimed = userData.daily.claimed || {};
+            if (!Array.isArray(userData.daily.ids) || userData.daily.ids.length !== 3) userData.daily.ids = seededDailyMissionIds(today);
+            for (const k of Object.keys(baseStats)) userData.daily.stats[k] = Number(userData.daily.stats[k] || 0);
+        }
+
+        function getDailyMissionDefs() {
+            ensureDailyMissionData();
+            return userData.daily.ids.map(id => DAILY_MISSION_POOL.find(m => m.id === id)).filter(Boolean);
+        }
+
+        function getDailyMissionProgress(m) {
+            ensureDailyMissionData();
+            if (userData.daily.completed[m.id]) return m.target;
+            return Number((userData.daily.stats || {})[m.metric] || 0);
+        }
+
+        function checkDailyMissionCompletions(showToast = false) {
+            ensureDailyMissionData();
+            let changed = false;
+            for (const m of getDailyMissionDefs()) {
+                if (!userData.daily.completed[m.id] && getDailyMissionProgress(m) >= m.target) {
+                    userData.daily.completed[m.id] = true;
+                    changed = true;
+                    if (showToast || gameState === 'playing') showMissionToast('DAILY COMPLETE!', `${m.title}｜報酬: ${rewardText(m.reward)}`);
+                }
+            }
+            if (changed) saveData();
+        }
+
+        function claimDailyMission(id) {
+            ensureDailyMissionData();
+            const m = getDailyMissionDefs().find(x => x.id === id);
+            if (!m || !userData.daily.completed[id] || userData.daily.claimed[id]) return;
+            userData.daily.claimed[id] = true;
+            grantReward(m.reward);
+            saveData();
+            renderMissionScreen();
+            renderCollectionScreen();
+            renderMissionMiniHud();
+        }
+
         function ensureProgressionData() {
             if (!userData || typeof userData !== 'object') userData = {};
             userData.score = Number(userData.score || 0);
@@ -602,13 +770,16 @@
             if (!userData.unlocks.skins[userData.equippedSkin]) userData.equippedSkin = 'classic';
             if (!userData.unlocks.auras[userData.equippedAura]) userData.equippedAura = 'none';
             if (!userData.unlocks.capes[userData.equippedCape]) userData.equippedCape = 'none';
+            ensureDailyMissionData();
         }
 
         let runStats = null;
         function startMissionRun(mode) {
             ensureProgressionData();
+            ensureDailyMissionData();
             runStats = { mode, kills:0, bossKills:0, gems:0, levelUps:0, maxLevel:1, damageTaken:0, onlineHits:0 };
             userData.stats.totalRuns++;
+            userData.daily.stats.dailyRuns++;
             if (mode === 'online') userData.stats.totalOnlineRuns++; else userData.stats.totalSoloRuns++;
             saveData();
             checkMissionCompletions(false);
@@ -619,6 +790,8 @@
             const currentRunTime = Math.floor(gameTime || 0);
             userData.stats.totalPlayTime += currentRunTime;
             userData.stats.totalCoinsEarned += Math.max(0, Math.floor(earnedCoins || 0));
+            ensureDailyMissionData();
+            userData.daily.stats.dailyPlayTime += currentRunTime;
             userData.stats.bestTime = Math.max(userData.stats.bestTime || 0, currentRunTime);
             if (runStats) {
                 userData.stats.bestRunKills = Math.max(userData.stats.bestRunKills || 0, runStats.kills || 0);
@@ -626,6 +799,7 @@
                 userData.stats.bestRunGems = Math.max(userData.stats.bestRunGems || 0, runStats.gems || 0);
                 userData.stats.bestRunLevel = Math.max(userData.stats.bestRunLevel || 1, runStats.maxLevel || 1);
                 userData.stats.bestLevel = Math.max(userData.stats.bestLevel || 1, runStats.maxLevel || 1);
+                userData.daily.stats.dailyBestLevel = Math.max(userData.daily.stats.dailyBestLevel || 1, runStats.maxLevel || 1);
             }
             checkMissionCompletions(true);
         }
@@ -634,9 +808,11 @@
             ensureProgressionData();
             if (!enemy) return;
             userData.stats.totalKills++;
+            ensureDailyMissionData();
+            userData.daily.stats.dailyKills++;
             if (runStats) runStats.kills++;
             const bossLike = !!(enemy.isBoss || enemy.isMidBoss || enemy.isMonkey);
-            if (bossLike) { userData.stats.totalBossLikeKills++; if (runStats) runStats.bossKills++; }
+            if (bossLike) { userData.stats.totalBossLikeKills++; userData.daily.stats.dailyBossKills++; if (runStats) runStats.bossKills++; }
             if (enemy.isBoss) userData.stats.totalBossKills++;
             if (enemy.isMidBoss) userData.stats.totalMidBossKills++;
             if (enemy.isMonkey) userData.stats.totalMonkeyKills++;
@@ -646,6 +822,8 @@
         function recordGemPickup(value = 1) {
             ensureProgressionData();
             userData.stats.totalGems++;
+            ensureDailyMissionData();
+            userData.daily.stats.dailyGems++;
             if (runStats) runStats.gems++;
             if ((userData.stats.totalGems % 20) === 0) checkMissionCompletions(false);
         }
@@ -654,6 +832,8 @@
             ensureProgressionData();
             userData.stats.totalLevelUps++;
             userData.stats.bestLevel = Math.max(userData.stats.bestLevel || 1, level || 1);
+            ensureDailyMissionData();
+            userData.daily.stats.dailyBestLevel = Math.max(userData.daily.stats.dailyBestLevel || 1, level || 1);
             if (runStats) { runStats.levelUps++; runStats.maxLevel = Math.max(runStats.maxLevel || 1, level || 1); }
             checkMissionCompletions(false);
         }
@@ -668,6 +848,8 @@
         function recordOnlineHit(amount = 1) {
             ensureProgressionData();
             userData.stats.totalOnlineHits++;
+            ensureDailyMissionData();
+            userData.daily.stats.dailyOnlineHits++;
             if (runStats) runStats.onlineHits++;
             checkMissionCompletions(false);
         }
@@ -731,7 +913,12 @@
                     if (showToast || gameState === 'playing') showMissionToast('MISSION COMPLETE!', `${m.title}｜報酬: ${rewardText(m.reward)}`);
                 }
             }
-            if (changed) saveData();
+            if (changed) {
+                ensureDailyMissionData();
+                userData.daily.stats.dailyMissionCompletions += 1;
+                saveData();
+            }
+            checkDailyMissionCompletions(showToast);
             renderMissionMiniHud();
         }
 
@@ -757,6 +944,14 @@
                     count++;
                 }
             }
+            ensureDailyMissionData();
+            for (const m of getDailyMissionDefs()) {
+                if (userData.daily.completed[m.id] && !userData.daily.claimed[m.id]) {
+                    userData.daily.claimed[m.id] = true;
+                    grantReward(m.reward, true);
+                    count++;
+                }
+            }
             if (count > 0) showMissionToast('報酬をまとめて受け取りました', `${count}個のミッション報酬を獲得！`);
             saveData(); renderMissionScreen(); renderCollectionScreen(); renderMissionMiniHud();
         }
@@ -766,15 +961,20 @@
             if (!hud) return;
             ensureProgressionData();
             const ready = MISSION_DEFS.filter(m => userData.missions.completed[m.id] && !userData.missions.claimed[m.id]);
-            const active = MISSION_DEFS.filter(m => !userData.missions.completed[m.id]).slice(0, 2);
+            ensureDailyMissionData();
+            const dailyReady = getDailyMissionDefs().filter(m => userData.daily.completed[m.id] && !userData.daily.claimed[m.id]);
+            const activeDaily = getDailyMissionDefs().filter(m => !userData.daily.completed[m.id]).slice(0, 1);
+            const active = activeDaily.length ? activeDaily : MISSION_DEFS.filter(m => !userData.missions.completed[m.id]).slice(0, 2);
             if (gameState !== 'playing') { hud.classList.add('hidden'); return; }
             hud.classList.remove('hidden');
-            if (ready.length) {
-                hud.innerHTML = `<div class="text-yellow-300 font-bold">🎁 受け取り可能: ${ready.length}</div><div class="text-gray-300">タイトルの MISSIONS で報酬GET</div>`;
+            if (ready.length || dailyReady.length) {
+                hud.innerHTML = `<div class="text-yellow-300 font-bold">🎁 受け取り可能: ${ready.length + dailyReady.length}</div><div class="text-gray-300">タイトルの MISSIONS で報酬GET</div>`;
             } else {
-                hud.innerHTML = `<div class="text-yellow-300 font-bold">MISSIONS</div>` + active.map(m => {
-                    const p = Math.min(1, getMissionProgress(m) / m.target);
-                    return `<div class="mt-1"><div class="flex justify-between gap-2"><span>${m.title}</span><span>${Math.floor(getMissionProgress(m))}/${m.target}</span></div><div class="mini-progress"><div style="width:${p*100}%"></div></div></div>`;
+                hud.innerHTML = `<div class="text-yellow-300 font-bold">DAILY / MISSIONS</div>` + active.map(m => {
+                    const isDaily = String(m.id).startsWith('d_');
+                    const progress = isDaily ? getDailyMissionProgress(m) : getMissionProgress(m);
+                    const p = Math.min(1, progress / m.target);
+                    return `<div class="mt-1"><div class="flex justify-between gap-2"><span>${m.title}</span><span>${Math.floor(progress)}/${m.target}</span></div><div class="mini-progress"><div style="width:${p*100}%"></div></div></div>`;
                 }).join('');
             }
         }
@@ -785,17 +985,18 @@
             const container = document.getElementById('missionsListContainer');
             if (!container) return;
             container.innerHTML = '';
-            MISSION_DEFS.forEach(m => {
-                const progress = getMissionProgress(m);
-                const complete = !!userData.missions.completed[m.id] || progress >= m.target;
-                const claimed = !!userData.missions.claimed[m.id];
+
+            const makeCard = (m, isDaily = false) => {
+                const progress = isDaily ? getDailyMissionProgress(m) : getMissionProgress(m);
+                const complete = isDaily ? (!!userData.daily.completed[m.id] || progress >= m.target) : (!!userData.missions.completed[m.id] || progress >= m.target);
+                const claimed = isDaily ? !!userData.daily.claimed[m.id] : !!userData.missions.claimed[m.id];
                 const pct = Math.min(100, Math.floor((progress / m.target) * 100));
                 const card = document.createElement('div');
                 card.className = `mission-card ${complete ? 'done' : ''} ${claimed ? 'claimed' : ''}`;
                 card.innerHTML = `
                     <div class="flex justify-between items-start gap-2">
                         <div>
-                            <div class="text-xs text-cyan-300 font-bold">${m.cat}</div>
+                            <div class="text-xs ${isDaily ? 'text-yellow-300' : 'text-cyan-300'} font-bold">${isDaily ? 'DAILY' : m.cat}</div>
                             <h3 class="text-lg font-bold text-white">${complete ? '✅ ' : ''}${m.title}</h3>
                             <p class="text-sm text-gray-300 mt-1">${m.desc}</p>
                         </div>
@@ -804,11 +1005,39 @@
                     <div class="mini-progress mt-3"><div style="width:${pct}%"></div></div>
                     <div class="flex justify-between items-center gap-2 mt-3">
                         <p class="text-xs text-yellow-200">報酬: ${rewardText(m.reward)}</p>
-                        <button class="claim-one px-3 py-1 rounded font-bold text-sm ${complete && !claimed ? 'btn-gold' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? 'CLAIMED' : 'CLAIM'}</button>
+                        <button class="${isDaily ? 'claim-daily' : 'claim-one'} px-3 py-1 rounded font-bold text-sm ${complete && !claimed ? 'btn-gold' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? 'CLAIMED' : 'CLAIM'}</button>
                     </div>`;
-                const btn = card.querySelector('.claim-one');
-                if (btn) btn.addEventListener('click', () => claimMission(m.id));
+                const btn = card.querySelector(isDaily ? '.claim-daily' : '.claim-one');
+                if (btn) btn.addEventListener('click', () => isDaily ? claimDailyMission(m.id) : claimMission(m.id));
                 container.appendChild(card);
+            };
+
+            const addHeader = (title, sub = '') => {
+                const h = document.createElement('div');
+                h.className = 'md:col-span-2 mt-2 mb-1 bg-black/40 border border-cyan-500/30 rounded-xl px-4 py-3';
+                h.innerHTML = `<div class="text-xl font-bold text-cyan-300" style="font-family:'Orbitron',sans-serif;">${title}</div>${sub ? `<div class="text-xs text-gray-300 mt-1">${sub}</div>` : ''}`;
+                container.appendChild(h);
+            };
+
+            addHeader('DAILY MISSIONS', `今日だけのミッション：${getTodayKey()}`);
+            getDailyMissionDefs().forEach(m => makeCard(m, true));
+
+            const categoryOrder = ['START','KILL','RUN','TIME','BOSS','LEVEL','SCORE','COIN','GEM','PLAY','ONLINE','HARD','LEGEND','COLLECT','SKIN','AURA','CAPE','BLACKHOLE','FINAL'];
+            const grouped = {};
+            MISSION_DEFS.forEach(m => {
+                const key = m.cat || 'OTHER';
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(m);
+            });
+            for (const cat of categoryOrder) {
+                if (!grouped[cat] || !grouped[cat].length) continue;
+                const done = grouped[cat].filter(m => userData.missions.completed[m.id]).length;
+                addHeader(cat, `${done}/${grouped[cat].length} completed`);
+                grouped[cat].forEach(m => makeCard(m, false));
+            }
+            Object.keys(grouped).filter(cat => !categoryOrder.includes(cat)).forEach(cat => {
+                addHeader(cat, `${grouped[cat].filter(m => userData.missions.completed[m.id]).length}/${grouped[cat].length} completed`);
+                grouped[cat].forEach(m => makeCard(m, false));
             });
         }
 
@@ -818,12 +1047,18 @@
             if (!container) return;
             const weaponHtml = LEGENDARY_WEAPON_DEFS.map(w => {
                 const on = !!userData.unlocks.legendaryWeapons[w.id];
-                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc}</p><p class="text-xs text-cyan-200 mt-2">解放条件: ${w.hint || 'ミッション報酬'}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
+            }).join('');
+            const codexHtml = WEAPON_CODEX_DEFS.map(w => {
+                return `<div class="collection-card unlocked"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-xs text-purple-200 font-bold mt-1">${w.type}</p><p class="text-sm text-gray-300 mt-1">${w.desc}</p></div>`;
+            }).join('');
+            const evoHtml = EVOLUTION_RECIPE_DEFS.map(e => {
+                return `<div class="collection-card"><div class="text-3xl">${e.icon}</div><h3 class="font-bold text-white mt-1">${e.name}</h3><p class="text-xs text-yellow-200 mt-1">合成条件: ${e.recipe}</p><p class="text-sm text-gray-300 mt-1">${e.desc}</p></div>`;
             }).join('');
             const skinHtml = SKIN_DEFS.map(sk => {
                 const on = !!userData.unlocks.skins[sk.id];
                 const eq = userData.equippedSkin === sk.id;
-                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${sk.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?sk.color:'#9ca3af'}">${sk.name}</h3><p class="text-sm text-gray-300">${sk.desc}</p><button class="equip-skin mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-neon':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${sk.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${sk.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?sk.color:'#9ca3af'}">${sk.name}</h3><p class="text-sm text-gray-300">${sk.desc}</p><p class="text-xs text-cyan-200 mt-2">能力: ${getSkinAbilityText(sk.id)}</p><button class="equip-skin mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-neon':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${sk.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
             }).join('');
             const auraHtml = AURA_DEFS.map(a => {
                 const on = !!userData.unlocks.auras[a.id];
@@ -836,7 +1071,9 @@
                 return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${c.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?c.color:'#9ca3af'}">${c.name}</h3><p class="text-sm text-gray-300">${c.desc}</p><button class="equip-cape mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-red':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${c.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
             }).join('');
             container.innerHTML = `
-                <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY / MYTHIC WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-purple-300 mb-2">WEAPON INDEX</h3><p class="text-xs text-gray-300 mb-2">ゲーム中に出る武器の図鑑です。</p><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${codexHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-orange-300 mb-2">EVOLUTION RECIPES</h3><p class="text-xs text-gray-300 mb-2">条件を満たすと、レベルアップ画面に合成進化が出ます。</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${evoHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-red-300 mb-2">CAPES</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${capeHtml}</div></section>`;
@@ -864,6 +1101,26 @@
             if (u.voidCollector) {
                 if (!player.legendaryVoidCollectorLevel) pool.push({ name:'【伝説】虚空コレクター', desc:'経験値吸収と成長速度が上がる', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel = 1; player.expBoost *= 1.3; }});
                 else if (player.legendaryVoidCollectorLevel < 5) pool.push({ name:'虚空コレクター強化', desc:'経験値ボーナスと吸収範囲UP', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel++; player.expBoost *= 1.15; }});
+            }
+            if (u.railCannon) {
+                if (!player.legendaryRailCannonLevel) pool.push({ name:'【神話】レールキャノン', desc:'通常弾が超高速・超貫通のレール弾になる', color:'#67e8f9', icon:'🔭', apply:()=>{ player.legendaryRailCannonLevel = 1; player.damage *= 1.25; player.pierce += 4; player.bulletSpeed += 5; }});
+                else if (player.legendaryRailCannonLevel < 5) pool.push({ name:'レールキャノン強化', desc:'レール弾の威力・速度・貫通数UP', color:'#67e8f9', icon:'🔭', apply:()=>{ player.legendaryRailCannonLevel++; player.damage *= 1.12; player.pierce += 2; player.bulletSpeed += 1.5; }});
+            }
+            if (u.blackholeEmperor) {
+                if (!player.legendaryBlackholeEmperorLevel) pool.push({ name:'【神話】ブラックホールエンペラー', desc:'一定間隔で敵を吸い込む重力核を作る', color:'#a855f7', icon:'⚫', apply:()=>{ player.legendaryBlackholeEmperorLevel = 1; player.blackholeEmperorTimer = 0; }});
+                else if (player.legendaryBlackholeEmperorLevel < 5) pool.push({ name:'ブラックホールエンペラー強化', desc:'重力核の範囲・威力・発動頻度UP', color:'#a855f7', icon:'⚫', apply:()=>{ player.legendaryBlackholeEmperorLevel++; }});
+            }
+            if (u.thunderAegis) {
+                if (!player.legendaryThunderAegisLevel) pool.push({ name:'【神話】サンダーイージス', desc:'防御力を上げ、雷の反撃を出す', color:'#38bdf8', icon:'🛡️⚡', apply:()=>{ player.legendaryThunderAegisLevel = 1; player.armorRate = Math.min(0.62, player.armorRate + 0.08); player.thunderAegisTimer = 0; }});
+                else if (player.legendaryThunderAegisLevel < 5) pool.push({ name:'サンダーイージス強化', desc:'防御力と雷反撃の威力UP', color:'#38bdf8', icon:'🛡️⚡', apply:()=>{ player.legendaryThunderAegisLevel++; player.armorRate = Math.min(0.68, player.armorRate + 0.04); }});
+            }
+            if (u.solarDrill) {
+                if (!player.legendarySolarDrillLevel) pool.push({ name:'【神話】ソーラードリル', desc:'敵の密集地に太陽レーザーを落とす', color:'#fb923c', icon:'☀️', apply:()=>{ player.legendarySolarDrillLevel = 1; player.solarDrillTimer = 0; }});
+                else if (player.legendarySolarDrillLevel < 5) pool.push({ name:'ソーラードリル強化', desc:'レーザーの威力と頻度UP', color:'#fb923c', icon:'☀️', apply:()=>{ player.legendarySolarDrillLevel++; }});
+            }
+            if (u.chronoLotus) {
+                if (!player.legendaryChronoLotusLevel) pool.push({ name:'【神話】クロノロータス', desc:'時間波で敵をまとめて削る', color:'#f0abfc', icon:'🪷', apply:()=>{ player.legendaryChronoLotusLevel = 1; player.chronoLotusTimer = 0; }});
+                else if (player.legendaryChronoLotusLevel < 5) pool.push({ name:'クロノロータス強化', desc:'時間波の範囲・威力・頻度UP', color:'#f0abfc', icon:'🪷', apply:()=>{ player.legendaryChronoLotusLevel++; }});
             }
         }
 
@@ -896,6 +1153,56 @@
             floatingTexts.push(new FloatingText(player.x, player.y - 60, 'PHOENIX REVIVE!', '#fb7185', 32));
             updateUI();
             return true;
+        }
+
+        function triggerMythicGravityCore() {
+            if (!player || !player.legendaryBlackholeEmperorLevel) return;
+            const level = player.legendaryBlackholeEmperorLevel;
+            let target = enemies.find(e => (e.isBoss || e.isMonkey) && !e.markedForDeletion) || enemies.find(e => !e.isCharmed && !e.markedForDeletion);
+            const tx = target ? target.x : player.x + Math.cos(player.faceAngle) * 180;
+            const ty = target ? target.y : player.y + Math.sin(player.faceAngle) * 180;
+            if (gravityPulsars.length < 12) gravityPulsars.push(new GravityPulsar(tx, ty, 35 + level * 22, level + 3));
+            effects.push(new Shockwave(tx, ty, '#a855f7', 8, 220 + level * 40));
+            floatingTexts.push(new FloatingText(tx, ty - 35, 'BLACKHOLE CORE', '#a855f7', 22));
+        }
+
+        function triggerThunderAegisPulse() {
+            if (!player || !player.legendaryThunderAegisLevel) return;
+            const level = player.legendaryThunderAegisLevel;
+            const radius = 170 + level * 35;
+            const damage = 90 + level * 75;
+            effects.push(new Shockwave(player.x, player.y, '#38bdf8', 12, radius));
+            for (const e of enemies) {
+                if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(player.x, player.y, e.x, e.y) < radius) e.takeDamage(damage);
+            }
+            floatingTexts.push(new FloatingText(player.x, player.y - 40, 'THUNDER AEGIS', '#38bdf8', 20));
+        }
+
+        function triggerSolarDrillStrike() {
+            if (!player || !player.legendarySolarDrillLevel) return;
+            const level = player.legendarySolarDrillLevel;
+            let target = enemies.find(e => (e.isBoss || e.isMonkey) && !e.markedForDeletion) || enemies.find(e => !e.isCharmed && !e.markedForDeletion);
+            const tx = target ? target.x : player.x + Math.cos(player.faceAngle) * 220;
+            const ty = target ? target.y : player.y + Math.sin(player.faceAngle) * 220;
+            if (orbitalStrikes.length < 12) orbitalStrikes.push(new OrbitalStrike(tx, ty, Math.max(3, level + 2)));
+            effects.push(new Shockwave(tx, ty, '#fb923c', 10, 260 + level * 45));
+            floatingTexts.push(new FloatingText(tx, ty - 45, 'SOLAR DRILL', '#fb923c', 24));
+        }
+
+        function triggerChronoLotusWave() {
+            if (!player || !player.legendaryChronoLotusLevel) return;
+            const level = player.legendaryChronoLotusLevel;
+            const radius = 240 + level * 55;
+            const damage = 160 + level * 120;
+            effects.push(new Shockwave(player.x, player.y, '#f0abfc', 7, radius));
+            for (const e of enemies) {
+                if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(player.x, player.y, e.x, e.y) < radius) {
+                    e.takeDamage(damage);
+                    e.x += (player.x - e.x) * 0.035;
+                    e.y += (player.y - e.y) * 0.035;
+                }
+            }
+            floatingTexts.push(new FloatingText(player.x, player.y - 48, 'CHRONO LOTUS', '#f0abfc', 24));
         }
 
         function getEquippedSkinColor() {
@@ -2043,6 +2350,12 @@
                 if (player.bladeRingLevel >= 3 && player.electricFieldLevel >= 3 && !player.evoThunderBlade) {
                     ultimateSkills.push({ name: '【進化】雷鳴の剣域', desc: '円環と雷域が融合。高速回転する剣が常に雷を放つ', color: '#2dd4bf', icon: '⚡🌀', apply: () => { player.evoThunderBlade = true; } });
                 }
+                if ((player.legendaryRailCannonLevel || 0) >= 3 && (player.legendaryNeonLanceLevel || 0) >= 3 && !player.evoRailBurst) {
+                    ultimateSkills.push({ name: '【神話進化】星核レールバースト', desc: 'レールキャノンとネオンランスが融合。通常弾が超火力の星核弾になる', color: '#e0f2fe', icon: '🔭🔱', apply: () => { player.evoRailBurst = true; player.damage *= 1.35; player.pierce += 6; } });
+                }
+                if ((player.legendaryBlackholeEmperorLevel || 0) >= 3 && (player.legendaryVoidCollectorLevel || 0) >= 3 && !player.evoEndBlackhole) {
+                    ultimateSkills.push({ name: '【神話進化】終焉ブラックホール', desc: 'ブラックホールと虚空コレクターが融合。吸引範囲と経験値回収がさらに強化', color: '#a855f7', icon: '⚫🌌', apply: () => { player.evoEndBlackhole = true; player.magnetBonus += 250; player.expBoost *= 1.25; } });
+                }
             }
 
             addUnlockedLegendarySkills(pool);
@@ -2125,8 +2438,11 @@
             document.getElementById('finalTime').innerText = document.getElementById('timeDisplay').innerText;
             const finalScoreVal = Math.floor(score); document.getElementById('finalScore').innerText = finalScoreVal;
             
-            let earnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 6);
+            let baseEarnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 6);
+            let earnedCoins = Math.floor(baseEarnedCoins * RUN_COIN_GAIN_RATE * getCoinBonusMultiplier());
             userData.coins += earnedCoins; document.getElementById('earnedCoinsDisplay').innerText = `+${earnedCoins}`;
+            ensureDailyMissionData();
+            userData.daily.stats.dailyBestScore = Math.max(userData.daily.stats.dailyBestScore || 0, finalScoreVal);
             finishMissionRun(earnedCoins);
             
             const newRecordText = document.getElementById('newRecordText');
@@ -4191,11 +4507,20 @@
                     this.maxHp = 260 + (hpUpg * 15); this.hp = this.maxHp;
                     this.damage = 10 + (dmgUpg * 1.5);
                 }
-                
+
+                const skinBonus = getEquippedSkinBonus();
+                this.speed *= Number(skinBonus.speedMult || 1);
+                this.maxHp = Math.max(1, Math.round(this.maxHp * Number(skinBonus.hpMult || 1)));
+                this.hp = this.maxHp;
+                this.damage *= Number(skinBonus.damageMult || 1);
+                this.expBoost *= Number(skinBonus.expMult || 1);
+                this.armorRate = Math.min(0.7, this.armorRate + Number(skinBonus.armorAdd || 0));
+                this.magnetBonus += Number(skinBonus.magnetAdd || 0);
+
                 this.level = 1; this.exp = 0; this.expToNext = 9; 
                 this.pendingLevelUps = 0;
                 
-                this.fireRate = (isOnlineMode ? 50 : 60) * (1 - this.rapidBonus); this.fireTimer = 0; this.bulletSpeed = isOnlineMode ? 12.5 : 15; this.bulletSize = isOnlineMode ? 5 : 6; this.pierce = 1 + this.extraPierce; this.attackRange = isOnlineMode ? 620 : 500; 
+                this.fireRate = (isOnlineMode ? 50 : 60) * (1 - this.rapidBonus) * Number(skinBonus.fireRateMult || 1); this.fireTimer = 0; this.bulletSpeed = isOnlineMode ? 12.5 : 15; this.bulletSize = isOnlineMode ? 5 : 6; this.pierce = 1 + this.extraPierce + Number(skinBonus.pierceAdd || 0); this.attackRange = isOnlineMode ? 620 : 500; 
                 
                 this.bladeRingLevel = 0; this.bladeRingAngle = 0; 
                 this.electricFieldLevel = 0; this.electricFieldTimer = 0;
@@ -4231,10 +4556,16 @@
                 this.evoRicochetSniper = false; this.evoToxicAegis = false;
                 this.evoGravityBeam = false; this.evoThunderBlade = false;
                 this.evoGravitonDagger = false; this.evoSingularityBomb = false;
+                this.legendaryRailCannonLevel = 0;
+                this.legendaryBlackholeEmperorLevel = 0; this.blackholeEmperorTimer = 0;
+                this.legendaryThunderAegisLevel = 0; this.thunderAegisTimer = 0;
+                this.legendarySolarDrillLevel = 0; this.solarDrillTimer = 0;
+                this.legendaryChronoLotusLevel = 0; this.chronoLotusTimer = 0;
+                this.evoRailBurst = false; this.evoEndBlackhole = false;
 
                 this.invincibleTimer = 60; 
                 
-                this.regenTimer = 0; this.regenAmount = 1; this.regenRate = 60; this.recoveryMasteryLevel = 0; 
+                this.regenTimer = 0; this.regenAmount = 1 + Number(skinBonus.regenAdd || 0); this.regenRate = 60; this.recoveryMasteryLevel = 0; 
                 this.pendingBossSpawn = false; this.pendingMidBossSpawn = false; this.pendingMonkeyBoss = false;
 
                 this.trail = [];
@@ -4282,6 +4613,27 @@
                         triggerLegendaryStarfall();
                         this.starfallTimer = 0;
                     }
+                }
+
+                if (this.legendaryBlackholeEmperorLevel > 0) {
+                    this.blackholeEmperorTimer++;
+                    const cd = Math.max(150, 520 - this.legendaryBlackholeEmperorLevel * 65);
+                    if (this.blackholeEmperorTimer >= cd) { triggerMythicGravityCore(); this.blackholeEmperorTimer = 0; }
+                }
+                if (this.legendaryThunderAegisLevel > 0) {
+                    this.thunderAegisTimer++;
+                    const cd = Math.max(90, 360 - this.legendaryThunderAegisLevel * 45);
+                    if (this.thunderAegisTimer >= cd) { triggerThunderAegisPulse(); this.thunderAegisTimer = 0; }
+                }
+                if (this.legendarySolarDrillLevel > 0) {
+                    this.solarDrillTimer++;
+                    const cd = Math.max(120, 420 - this.legendarySolarDrillLevel * 55);
+                    if (this.solarDrillTimer >= cd) { triggerSolarDrillStrike(); this.solarDrillTimer = 0; }
+                }
+                if (this.legendaryChronoLotusLevel > 0) {
+                    this.chronoLotusTimer++;
+                    const cd = Math.max(150, 480 - this.legendaryChronoLotusLevel * 60);
+                    if (this.chronoLotusTimer >= cd) { triggerChronoLotusWave(); this.chronoLotusTimer = 0; }
                 }
 
                 if (this.ironmanSuitLevel > 0) {
@@ -4657,7 +5009,13 @@
                         bulletColor = '#facc15';
                         bulletShadow = '#f59e0b';
                     }
-                    const b = new Bullet(this.x, this.y, angle, dmg, this.bulletSpeed + (this.legendaryNeonLanceLevel || 0), this.bulletSize + (this.legendaryNeonLanceLevel || 0), bulletPierce, bulletColor, bulletShadow);
+                    if (this.legendaryRailCannonLevel > 0) {
+                        dmg *= (1.45 + this.legendaryRailCannonLevel * 0.25);
+                        bulletPierce += 6 + this.legendaryRailCannonLevel * 2;
+                        bulletColor = this.evoRailBurst ? '#f0f9ff' : '#67e8f9';
+                        bulletShadow = this.evoRailBurst ? '#facc15' : '#0ea5e9';
+                    }
+                    const b = new Bullet(this.x, this.y, angle, dmg, this.bulletSpeed + (this.legendaryNeonLanceLevel || 0) + (this.legendaryRailCannonLevel || 0) * 2, this.bulletSize + (this.legendaryNeonLanceLevel || 0) + (this.legendaryRailCannonLevel ? 2 : 0), bulletPierce, bulletColor, bulletShadow);
                     if (nearestRemote) b.onlineAimId = nearestRemote.id;
                     if (bullets.length < 200) bullets.push(b);
                     createParticles(this.x + Math.cos(angle)*this.radius, this.y + Math.sin(angle)*this.radius, 3, this.color, 2);
