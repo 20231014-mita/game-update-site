@@ -299,7 +299,7 @@
         // --- 新規追加のグローバル配列 ---
         let bounceBombs = [], poisonClouds = [], blackholes = [], divineSwords = [];
         let sniperBullets = [], phantomDaggers = [], gravityPulsars = [];
-        let mapBlackholes = [], bananaPeels = [], onlineLegendaryChests = [], astralJudgements = [], harisenNovas = [];
+        let mapBlackholes = [], bananaPeels = [], onlineLegendaryChests = [], astralJudgements = [], harisenNovas = [], overlordFlames = [], cosmicSushiStorms = [];
 
         let player = null;
         let isMuryokushoActive = false;
@@ -317,16 +317,27 @@
         let lavaDomainTimer = 0;
         const LAVA_DOMAIN_MAX_TIME = 45 * 60;
         const restrictedSkills = ['kamehameha', 'orbitalStrike', 'hollowMurasaki', 'unibeam', 'keraunos', 'infinitySnap', 'infiniteBlade', 'funnel', 'disneyMagic', 'muryoku'];
+        const SAVE_RESET_VERSION = '2026-05-01-reset-collection-upgrades-v2';
+        const COIN_GAIN_RATE = 1 / 3;
+        const scaledCoinReward = (coins) => Math.max(0, Math.floor(Number(coins || 0) * COIN_GAIN_RATE));
 
         // --- アップグレード定義の復元 ---
         const upgradeDef = [
             { id: 'hp', name: '初期HPアップ', desc: '開始時の最大HPが20増える', icon: '❤️' },
             { id: 'damage', name: '初期攻撃力アップ', desc: '開始時の弾ダメージが5増える', icon: '⚔️' },
             { id: 'speed', name: '移動速度アップ', desc: '開始時の移動速度が少し上がる', icon: '💨' },
-            { id: 'exp', name: '獲得経験値アップ', desc: '経験値の取得量が20%増える', icon: '⭐' }
+            { id: 'exp', name: '獲得経験値アップ', desc: '経験値の取得量が20%増える', icon: '⭐' },
+            { id: 'armor', name: 'ネオン装甲', desc: '受けるダメージを少し減らす', icon: '🛡️' },
+            { id: 'magnet', name: 'ジェム磁力強化', desc: '経験値ジェムを遠くから吸い寄せる', icon: '🧲' },
+            { id: 'rapid', name: '連射回路強化', desc: '通常弾の発射間隔が少し短くなる', icon: '⚡' },
+            { id: 'pierce', name: '貫通チップ', desc: '通常弾の貫通力が上がる', icon: '💠' }
         ];
 
-        let userData = { score: 0, coins: 0, nickname: '', upgrades: { hp: 0, damage: 0, speed: 0, exp: 0 } };
+        let userData = { score: 0, coins: 0, nickname: '', upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 } };
+
+        function createFreshUserData(nickname = '') {
+            return { score: 0, coins: 0, nickname: normalizeNickname(nickname || ''), upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 }, stats: {}, missions: { completed: {}, claimed: {} }, unlocks: { legendaryWeapons: {}, skins: { classic: true }, auras: { none: true }, capes: { none: true } }, equippedSkin: 'classic', equippedAura: 'none', equippedCape: 'none', resetVersion: SAVE_RESET_VERSION };
+        }
 
         // ==========================================
         // ミッション・報酬・コレクション拡張
@@ -337,17 +348,51 @@
             { id:'gold', name:'ゴールドサバイバー', icon:'🟡', color:'#facc15', desc:'コインを集めると解放' },
             { id:'void', name:'ヴォイドランナー', icon:'🟣', color:'#a855f7', desc:'長く生き残ると解放' },
             { id:'emerald', name:'エメラルドガーディアン', icon:'🟢', color:'#22c55e', desc:'ボス討伐で解放' },
-            { id:'angel', name:'エンジェルコア', icon:'⚪', color:'#e2e8f0', desc:'高難度ミッションで解放' }
+            { id:'angel', name:'白銀エンジェルコア', icon:'⚪', color:'#e2e8f0', desc:'白銀の光で包まれる最上級スキン' },
+            { id:'obsidian', name:'黒曜シャドウコア', icon:'⚫', color:'#7c3aed', desc:'黒い外殻と紫の目が光る隠しスキン' },
+            { id:'solar', name:'太陽神ヘリオス', icon:'☀️', color:'#f97316', desc:'燃える太陽のような超派手スキン' }
         ];
 
         const AURA_DEFS = [
             { id:'none', name:'オーラなし', icon:'○', color:'#ffffff', desc:'軽量で見やすい標準状態' },
-            { id:'cyanFlame', name:'蒼炎オーラ', icon:'🔥', color:'#06b6d4', desc:'近くに青い炎が出る' },
-            { id:'goldSpark', name:'黄金スパーク', icon:'✨', color:'#facc15', desc:'小さな星が周囲に出る' },
-            { id:'voidMist', name:'虚空ミスト', icon:'🌌', color:'#8b5cf6', desc:'紫の霧をまとえる' },
-            { id:'toxicPulse', name:'猛毒パルス', icon:'☣️', color:'#84cc16', desc:'緑の波紋が出る' },
-            { id:'royalHalo', name:'王者の光輪', icon:'👑', color:'#fef3c7', desc:'伝説級の光輪' }
+            { id:'cyanFlame', name:'蒼炎オーラ', icon:'🔥', color:'#06b6d4', desc:'青い炎が足元で燃える' },
+            { id:'goldSpark', name:'黄金スパーク', icon:'✨', color:'#facc15', desc:'金色の星が周囲を舞う' },
+            { id:'voidMist', name:'虚空ミスト', icon:'🌌', color:'#8b5cf6', desc:'紫の銀河霧をまとえる' },
+            { id:'toxicPulse', name:'猛毒パルス', icon:'☣️', color:'#84cc16', desc:'緑の波紋が周期的に広がる' },
+            { id:'royalHalo', name:'王者の黄金冠', icon:'👑', color:'#facc15', desc:'頭上に黄金の王冠が浮かぶ最強感のあるオーラ' },
+            { id:'solarFlare', name:'太陽フレア', icon:'☀️', color:'#fb923c', desc:'熱い炎の輪がゆらめく' },
+            { id:'stormKing', name:'雷帝オーラ', icon:'🌩️', color:'#67e8f9', desc:'細い雷が体の周りを走る' }
         ];
+
+        const CAPE_DEFS = [
+            { id:'none', name:'マントなし', icon:'—', color:'#ffffff', desc:'軽量な標準状態' },
+            { id:'crimson', name:'紅蓮の英雄マント', icon:'🟥', color:'#ef4444', desc:'赤いマントが後ろでなびく' },
+            { id:'royal', name:'王者の黄金マント', icon:'🟨', color:'#facc15', desc:'金色の縁取りがある強者のマント' },
+            { id:'voidCape', name:'虚空の星雲マント', icon:'🌌', color:'#8b5cf6', desc:'宇宙の霧のように揺れるマント' },
+            { id:'stormCape', name:'雷帝の蒼雷マント', icon:'🌩️', color:'#67e8f9', desc:'青い雷をまとったマント' },
+            { id:'phantom', name:'幻影クローク', icon:'👻', color:'#c084fc', desc:'残像が残る紫のマント' },
+            { id:'galaxy', name:'銀河航海マント', icon:'🪐', color:'#38bdf8', desc:'星雲の粒子が流れる宇宙マント' },
+            { id:'inferno', name:'業火将軍マント', icon:'🔥', color:'#fb923c', desc:'炎の縁取りが揺れる攻撃的なマント' },
+            { id:'monarch', name:'覇王の黒金マント', icon:'🦁', color:'#f59e0b', desc:'黒と金で最強感のある上位マント' }
+        ];
+
+        SKIN_DEFS.push(
+            { id:'sapphire', name:'サファイアストライカー', icon:'🔷', color:'#38bdf8', desc:'青い装甲が光るスピード系スキン' },
+            { id:'phantomSkin', name:'ファントム忍者', icon:'🥷', color:'#a78bfa', desc:'残像をまとった隠密スキン' },
+            { id:'infernoSkin', name:'インフェルノブレイザー', icon:'🔥', color:'#fb923c', desc:'炎の目が光る攻撃型スキン' },
+            { id:'galaxyKnight', name:'ギャラクシーナイト', icon:'🛡️', color:'#60a5fa', desc:'銀河の鎧をまとった騎士スキン' },
+            { id:'monkeySlayer', name:'大猿討伐者', icon:'🐵', color:'#facc15', desc:'大猿王に挑む者の証' },
+            { id:'blackholeCore', name:'ブラックホールコア', icon:'⚫', color:'#111827', desc:'黒い中心核が怪しく光るレアスキン' }
+        );
+
+        AURA_DEFS.push(
+            { id:'crownBurst', name:'覇王クラウンバースト', icon:'👑', color:'#fbbf24', desc:'黄金の冠と光の破片が頭上で輝く' },
+            { id:'galaxyTrail', name:'銀河トレイル', icon:'🪐', color:'#38bdf8', desc:'移動した後に星の軌跡が残る' },
+            { id:'infernoRing', name:'獄炎リング', icon:'🔥', color:'#f97316', desc:'赤い火の輪が足元で回転する' },
+            { id:'phantomAfterimage', name:'幻影残像オーラ', icon:'👻', color:'#c084fc', desc:'紫の残像がふわっと現れる' },
+            { id:'blackholeAura', name:'事象の地平線', icon:'⚫', color:'#a855f7', desc:'黒い渦と紫の光をまとえる超レアオーラ' },
+            { id:'thunderCrown', name:'雷冠オーラ', icon:'⚡', color:'#67e8f9', desc:'小さな雷の冠が頭上に走る' }
+        );
 
         const LEGENDARY_WEAPON_DEFS = [
             { id:'neonLance', name:'伝説武器：ネオンランス', icon:'🔱', desc:'通常弾が黄金の貫通弾になる。ソロ専用。' },
@@ -509,13 +554,32 @@
             { id:'m150', cat:'RUN', title:'銀河を制した者', desc:'1回のプレイで敵を3300体倒す', metric:'bestRunKills', target:3300, reward:{coins:20000, weapon:'voidCollector', skin:'angel', aura:'royalHalo'} }
         ];
 
+        MISSION_DEFS.push(
+            { id:'m151', cat:'CAPE', title:'赤き英雄の証', desc:'敵を合計3500体倒す', metric:'totalKills', target:3500, reward:{coins:1500, cape:'crimson'} },
+            { id:'m152', cat:'CAPE', title:'王者のマント', desc:'最高レベル35に到達する', metric:'bestLevel', target:35, reward:{coins:2500, cape:'royal'} },
+            { id:'m153', cat:'CAPE', title:'虚空をまとう者', desc:'1回のプレイで900秒生き残る', metric:'bestTime', target:900, reward:{coins:3500, cape:'voidCape', skin:'obsidian'} },
+            { id:'m154', cat:'CAPE', title:'雷帝の資格', desc:'ボス系の敵を合計60体倒す', metric:'totalBossLikeKills', target:60, reward:{coins:4200, cape:'stormCape', aura:'stormKing'} },
+            { id:'m155', cat:'AURA', title:'太陽神の覚醒', desc:'自己ベスト300000点を超える', metric:'bestScore', target:300000, reward:{coins:5000, skin:'solar', aura:'solarFlare'} },
+            { id:'m156', cat:'BOSS', title:'大猿王に挑む者', desc:'ボス系の敵を合計120体倒す', metric:'totalBossLikeKills', target:120, reward:{coins:8000, cape:'royal', aura:'royalHalo'} },
+            { id:'m157', cat:'SKIN', title:'蒼き挑戦者', desc:'最高レベル20に到達する', metric:'bestLevel', target:20, reward:{coins:2000, skin:'sapphire'} },
+            { id:'m158', cat:'SKIN', title:'幻影の一撃', desc:'オンラインで攻撃を合計420回当てる', metric:'totalOnlineHits', target:420, reward:{coins:4200, skin:'phantomSkin', aura:'phantomAfterimage'} },
+            { id:'m159', cat:'SKIN', title:'燃える討伐者', desc:'敵を合計15000体倒す', metric:'totalKills', target:15000, reward:{coins:5200, skin:'infernoSkin', aura:'infernoRing'} },
+            { id:'m160', cat:'SKIN', title:'銀河騎士の誕生', desc:'ミッションを60個達成する', metric:'completedMissionCount', target:60, reward:{coins:6500, skin:'galaxyKnight', cape:'galaxy'} },
+            { id:'m161', cat:'BOSS', title:'大猿討伐の証', desc:'ボス系の敵を合計180体倒す', metric:'totalBossLikeKills', target:180, reward:{coins:9000, skin:'monkeySlayer', cape:'monarch'} },
+            { id:'m162', cat:'AURA', title:'王冠、爆ぜる', desc:'自己ベスト420000点を超える', metric:'bestScore', target:420000, reward:{coins:8500, aura:'crownBurst'} },
+            { id:'m163', cat:'AURA', title:'銀河の軌跡', desc:'1回のプレイで1500秒生き残る', metric:'bestTime', target:1500, reward:{coins:7200, aura:'galaxyTrail'} },
+            { id:'m164', cat:'CAPE', title:'業火の将軍', desc:'1回のプレイで敵を1500体倒す', metric:'bestRunKills', target:1500, reward:{coins:7600, cape:'inferno'} },
+            { id:'m165', cat:'BLACKHOLE', title:'黒き中心核', desc:'最高レベル60に到達する', metric:'bestLevel', target:60, reward:{coins:10000, skin:'blackholeCore', aura:'blackholeAura'} },
+            { id:'m166', cat:'AURA', title:'雷の王冠', desc:'ボス系の敵を合計240体倒す', metric:'totalBossLikeKills', target:240, reward:{coins:12000, aura:'thunderCrown'} }
+        );
+
         function ensureProgressionData() {
             if (!userData || typeof userData !== 'object') userData = {};
             userData.score = Number(userData.score || 0);
             userData.coins = Number(userData.coins || 0);
             userData.nickname = normalizeNickname(userData.nickname || localStorage.getItem('neon_survivor_nickname') || '');
             userData.upgrades = userData.upgrades || {};
-            ['hp','damage','speed','exp'].forEach(k => userData.upgrades[k] = Number(userData.upgrades[k] || 0));
+            upgradeDef.forEach(upg => userData.upgrades[upg.id] = Number(userData.upgrades[upg.id] || 0));
             const baseStats = {
                 totalKills:0,totalBossKills:0,totalMidBossKills:0,totalMonkeyKills:0,totalBossLikeKills:0,
                 totalGems:0,totalLevelUps:0,totalPlayTime:0,totalRuns:0,totalSoloRuns:0,totalOnlineRuns:0,
@@ -531,10 +595,13 @@
             userData.unlocks.legendaryWeapons = userData.unlocks.legendaryWeapons || {};
             userData.unlocks.skins = Object.assign({ classic:true }, userData.unlocks.skins || {});
             userData.unlocks.auras = Object.assign({ none:true }, userData.unlocks.auras || {});
+            userData.unlocks.capes = Object.assign({ none:true }, userData.unlocks.capes || {});
             userData.equippedSkin = userData.equippedSkin || 'classic';
             userData.equippedAura = userData.equippedAura || 'none';
+            userData.equippedCape = userData.equippedCape || 'none';
             if (!userData.unlocks.skins[userData.equippedSkin]) userData.equippedSkin = 'classic';
             if (!userData.unlocks.auras[userData.equippedAura]) userData.equippedAura = 'none';
+            if (!userData.unlocks.capes[userData.equippedCape]) userData.equippedCape = 'none';
         }
 
         let runStats = null;
@@ -628,10 +695,11 @@
 
         function rewardText(reward = {}) {
             const parts = [];
-            if (reward.coins) parts.push(`+${reward.coins} COINS`);
+            if (reward.coins) parts.push(`+${scaledCoinReward(reward.coins)} COINS`);
             if (reward.weapon) parts.push((LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon));
             if (reward.skin) parts.push(`スキン:${SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin}`);
             if (reward.aura) parts.push(`オーラ:${AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura}`);
+            if (reward.cape) parts.push(`マント:${CAPE_DEFS.find(x => x.id === reward.cape)?.name || reward.cape}`);
             return parts.join(' / ') || '報酬なし';
         }
 
@@ -645,10 +713,11 @@
         function grantReward(reward = {}, silent = false) {
             ensureProgressionData();
             const unlocked = [];
-            if (reward.coins) { userData.coins += reward.coins; userData.stats.totalCoinsEarned += reward.coins; }
+            if (reward.coins) { const c = scaledCoinReward(reward.coins); userData.coins += c; userData.stats.totalCoinsEarned += c; }
             if (reward.weapon && !userData.unlocks.legendaryWeapons[reward.weapon]) { userData.unlocks.legendaryWeapons[reward.weapon] = true; unlocked.push(LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon); }
             if (reward.skin && !userData.unlocks.skins[reward.skin]) { userData.unlocks.skins[reward.skin] = true; unlocked.push(SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin); }
             if (reward.aura && !userData.unlocks.auras[reward.aura]) { userData.unlocks.auras[reward.aura] = true; unlocked.push(AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura); }
+            if (reward.cape && !userData.unlocks.capes[reward.cape]) { userData.unlocks.capes[reward.cape] = true; unlocked.push(CAPE_DEFS.find(x => x.id === reward.cape)?.name || reward.cape); }
             if (!silent && unlocked.length) showMissionToast('新アイテム解放！', unlocked.join(' / '));
         }
 
@@ -761,12 +830,19 @@
                 const eq = userData.equippedAura === a.id;
                 return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${a.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?a.color:'#9ca3af'}">${a.name}</h3><p class="text-sm text-gray-300">${a.desc}</p><button class="equip-aura mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-gold':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${a.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
             }).join('');
+            const capeHtml = CAPE_DEFS.map(c => {
+                const on = !!userData.unlocks.capes[c.id];
+                const eq = userData.equippedCape === c.id;
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${c.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?c.color:'#9ca3af'}">${c.name}</h3><p class="text-sm text-gray-300">${c.desc}</p><button class="equip-cape mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-red':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${c.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+            }).join('');
             container.innerHTML = `
                 <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div></section>
-                <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>`;
+                <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-red-300 mb-2">CAPES</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${capeHtml}</div></section>`;
             container.querySelectorAll('.equip-skin').forEach(btn => btn.addEventListener('click', () => { userData.equippedSkin = btn.dataset.id; saveData(); renderCollectionScreen(); }));
             container.querySelectorAll('.equip-aura').forEach(btn => btn.addEventListener('click', () => { userData.equippedAura = btn.dataset.id; saveData(); renderCollectionScreen(); }));
+            container.querySelectorAll('.equip-cape').forEach(btn => btn.addEventListener('click', () => { userData.equippedCape = btn.dataset.id; saveData(); renderCollectionScreen(); }));
         }
 
         function addUnlockedLegendarySkills(pool) {
@@ -828,6 +904,43 @@
             return def.color || '#0ff';
         }
 
+        function drawEquippedCape(ctx, x, y, faceAngle = 0) {
+            ensureProgressionData();
+            const cape = CAPE_DEFS.find(c => c.id === userData.equippedCape) || CAPE_DEFS[0];
+            if (!cape || cape.id === 'none') return;
+            const back = faceAngle + Math.PI;
+            const sway = Math.sin(Date.now() / 180) * 0.22;
+            const len = cape.id === 'royal' ? 58 : cape.id === 'voidCape' ? 64 : 52;
+            const widthCape = cape.id === 'stormCape' ? 34 : 30;
+            const bx = x + Math.cos(back) * 16;
+            const by = y + Math.sin(back) * 16;
+            ctx.save();
+            ctx.translate(bx, by);
+            ctx.rotate(back + sway);
+            const grad = ctx.createLinearGradient(0, -widthCape, len, widthCape);
+            grad.addColorStop(0, cape.color);
+            grad.addColorStop(0.58, cape.id === 'voidCape' ? 'rgba(88,28,135,.88)' : cape.id === 'royal' ? 'rgba(250,204,21,.88)' : cape.color);
+            grad.addColorStop(1, 'rgba(0,0,0,.15)');
+            ctx.beginPath();
+            ctx.moveTo(0, -widthCape * 0.55);
+            ctx.quadraticCurveTo(len * 0.55, -widthCape * 0.95, len, -widthCape * 0.25);
+            ctx.lineTo(len * 0.96, widthCape * 0.25);
+            ctx.quadraticCurveTo(len * 0.52, widthCape * 1.05, 0, widthCape * 0.55);
+            ctx.closePath();
+            ctx.fillStyle = grad;
+            ctx.shadowBlur = cape.id === 'royal' ? 22 : 14;
+            ctx.shadowColor = cape.color;
+            ctx.fill();
+            ctx.lineWidth = cape.id === 'royal' ? 4 : 2;
+            ctx.strokeStyle = cape.id === 'royal' ? '#fef3c7' : 'rgba(255,255,255,.45)';
+            ctx.stroke();
+            if (cape.id === 'stormCape' && Math.random() < 0.25) {
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#67e8f9';
+                ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(len * .45, MathUtils.random(-widthCape, widthCape)); ctx.lineTo(len * .85, MathUtils.random(-widthCape, widthCape)); ctx.stroke();
+            }
+            ctx.restore();
+        }
+
         function drawEquippedAura(ctx, x, y) {
             ensureProgressionData();
             const aura = AURA_DEFS.find(a => a.id === userData.equippedAura) || AURA_DEFS[0];
@@ -837,9 +950,16 @@
             const t = Date.now() / 180;
             const r = 34 + Math.sin(t) * 4;
             ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.strokeStyle = aura.color; ctx.lineWidth = aura.id === 'royalHalo' ? 5 : 3; ctx.shadowBlur = 18; ctx.shadowColor = aura.color; ctx.stroke();
+            ctx.strokeStyle = aura.color; ctx.lineWidth = aura.id === 'royalHalo' ? 4 : 3; ctx.shadowBlur = 18; ctx.shadowColor = aura.color; ctx.stroke();
             if (aura.id === 'royalHalo') {
-                ctx.beginPath(); ctx.ellipse(x, y - 30, 28, 8, 0, 0, Math.PI * 2); ctx.strokeStyle = '#fef3c7'; ctx.stroke();
+                const crownY = y - 48 + Math.sin(t) * 2;
+                ctx.fillStyle = 'rgba(250,204,21,.95)'; ctx.strokeStyle = '#fef3c7'; ctx.lineWidth = 2; ctx.shadowBlur = 24; ctx.shadowColor = '#facc15';
+                ctx.beginPath(); ctx.moveTo(x - 26, crownY + 12); ctx.lineTo(x - 18, crownY - 7); ctx.lineTo(x - 8, crownY + 5); ctx.lineTo(x, crownY - 13); ctx.lineTo(x + 8, crownY + 5); ctx.lineTo(x + 18, crownY - 7); ctx.lineTo(x + 26, crownY + 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+                for (const dx of [-18, 0, 18]) { ctx.beginPath(); ctx.arc(x + dx, crownY - (dx === 0 ? 13 : 7), 4, 0, Math.PI * 2); ctx.fillStyle = dx === 0 ? '#fff7ed' : '#fde68a'; ctx.fill(); }
+            } else if (aura.id === 'solarFlare') {
+                for (let i = 0; i < 10; i++) { const a = (Math.PI*2/10)*i + t*0.4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a)*30, y + Math.sin(a)*30); ctx.lineTo(x + Math.cos(a)*48, y + Math.sin(a)*48); ctx.strokeStyle = i%2 ? '#f97316' : '#fef3c7'; ctx.lineWidth = 3; ctx.stroke(); }
+            } else if (aura.id === 'stormKing') {
+                for (let i = 0; i < 4; i++) { const a = Math.random()*Math.PI*2; ctx.beginPath(); ctx.moveTo(x + Math.cos(a)*24, y + Math.sin(a)*24); ctx.lineTo(x + Math.cos(a+.4)*48, y + Math.sin(a+.4)*48); ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 2; ctx.stroke(); }
             } else if (Math.random() < 0.35) {
                 createParticles(x + MathUtils.random(-22, 22), y + MathUtils.random(-22, 22), 1, aura.color, 3);
             }
@@ -1020,12 +1140,8 @@
                     score: Number(raw.score || 0),
                     coins: Number(raw.coins || 0),
                     nickname: nick,
-                    upgrades: {
-                        hp: Number(raw.upgrades.hp || 0),
-                        damage: Number(raw.upgrades.damage || 0),
-                        speed: Number(raw.upgrades.speed || 0),
-                        exp: Number(raw.upgrades.exp || 0)
-                    }
+                    upgrades: Object.assign({}, raw.upgrades || {}),
+                    resetVersion: SAVE_RESET_VERSION
                 });
                 ensureProgressionData();
                 if (nick) {
@@ -1086,7 +1202,7 @@
         function endRunAndReturnToMenu() {
             if (!player) { gameState = 'start'; showScreen('startScreen'); return; }
             const finalScoreVal = Math.floor(score || 0);
-            const earnedCoins = Math.max(0, Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime || 0)) / 2));
+            const earnedCoins = Math.max(0, Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime || 0)) / 6));
             userData.coins = Number(userData.coins || 0) + earnedCoins;
             finishMissionRun(earnedCoins);
             if (finalScoreVal > Number(userData.score || 0)) userData.score = finalScoreVal;
@@ -1331,6 +1447,36 @@
             }
         }
 
+        function isRemoteVisibleOnScreen(remote, margin = 80) {
+            if (!remote || !Number.isFinite(remote.x) || !Number.isFinite(remote.y) || Number(remote.hp || 0) <= 0) return false;
+            const sx = remote.x - camera.x;
+            const sy = remote.y - camera.y;
+            return sx >= -margin && sx <= width + margin && sy >= -margin && sy <= height + margin;
+        }
+
+        function getPriorityOnlineTarget(fromX, fromY, maxDist = Infinity) {
+            if (!isOnlineMode || !remotePlayers || remotePlayers.size === 0) return null;
+            let visibleTarget = null;
+            let visibleDist = Infinity;
+            let anyTarget = null;
+            let anyDist = Infinity;
+            remotePlayers.forEach(r => {
+                if (!r || Number(r.hp || 0) <= 0) return;
+                const d = MathUtils.distance(fromX, fromY, r.x, r.y);
+                if (d > maxDist) return;
+                if (isRemoteVisibleOnScreen(r) && d < visibleDist) { visibleDist = d; visibleTarget = r; }
+                if (d < anyDist) { anyDist = d; anyTarget = r; }
+            });
+            return visibleTarget || anyTarget;
+        }
+
+        function aimAtOnlineTargetIfVisible(actor) {
+            if (!actor) return null;
+            const target = getPriorityOnlineTarget(actor.x, actor.y, Infinity);
+            if (target && isRemoteVisibleOnScreen(target)) actor.faceAngle = MathUtils.angle(actor.x, actor.y, target.x, target.y);
+            return target;
+        }
+
         function triggerOnlineLevelUpScreen() {
             gameState = 'levelup';
             const container = document.getElementById('upgradesContainer');
@@ -1349,8 +1495,8 @@
             }
             
             // --- オンライン限定武器 ---
-            if ((player.onlineSniperLevel || 0) === 0) pool.push({ name:'【狙撃】スナイパーライフル', desc:'たまに超高速・高威力の貫通弾を撃つ', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel = 1; }});
-            else if (player.onlineSniperLevel < 3) pool.push({ name:'スナイパーライフル強化', desc:'狙撃弾のダメージと発射頻度がUP', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel += 1; }});
+            if ((player.onlineSniperLevel || 0) === 0) pool.push({ name:'【狙撃】スナイパーライフル', desc:'高火力の貫通狙撃弾を撃つ。初期150ダメージ', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel = 1; }});
+            else if (player.onlineSniperLevel < 3) pool.push({ name:'スナイパーライフル強化', desc:'狙撃弾のダメージが+50され、発射頻度もUP', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel += 1; }});
             
             if ((player.onlineBounceBombLevel || 0) === 0) pool.push({ name:'【反射】バウンスボム', desc:'画面端で反射する爆弾を放つ', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel = 1; }});
             else if (player.onlineBounceBombLevel < 3) pool.push({ name:'バウンスボム強化', desc:'反射爆弾の威力とサイズがUP', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel += 1; }});
@@ -1373,7 +1519,7 @@
             if ((player.electricFieldLevel || 0) === 0) pool.push({ name:'【雷鳴】破滅の雷域', desc:'周囲に電撃フィールドを発生させ、近づいた敵を感電させる', color:'#00ffff', icon:'🌩️', apply:()=>{ player.electricFieldLevel = 1; }});
             else if (player.electricFieldLevel < 3) pool.push({ name:'破滅の雷域 強化', desc:'電撃フィールドの範囲と威力がUP', color:'#00ffff', icon:'🌩️', apply:()=>{ player.electricFieldLevel += 1; }});
 
-            if ((player.voidTempestLevel || 0) === 0) pool.push({ name:'【悟空の暴風】虚空次元の暴風', desc:'暴風を呼び出し、敵や相手を巻き込むオンライン対応武器', color:'#38bdf8', icon:'🌪️', apply:()=>{ player.voidTempestLevel = 1; }});
+            if ((player.voidTempestLevel || 0) === 0) pool.push({ name:'【暴風】虚空次元の暴風', desc:'暴風を呼び出し、敵や相手を巻き込むオンライン対応武器', color:'#38bdf8', icon:'🌪️', apply:()=>{ player.voidTempestLevel = 1; }});
             else if (player.voidTempestLevel < 3) pool.push({ name:'虚空次元の暴風 強化', desc:'暴風の威力と持続力がUP', color:'#38bdf8', icon:'🌪️', apply:()=>{ player.voidTempestLevel += 1; }});
 
             if ((player.onlineAstralLevel || 0) === 0) pool.push({ name:'【星骸】アストラル・ジャッジメント', desc:'星の槍を落として広範囲を切り裂く、強めのオンライン専用武器', color:'#818cf8', icon:'☄️', apply:()=>{ player.onlineAstralLevel = 1; }});
@@ -1381,6 +1527,9 @@
 
             if ((player.onlineHarisenLevel || 0) === 0) pool.push({ name:'【冥笑】ネビュラ・ハリセンノヴァ', desc:'銀河ハリセンで相手の場所に巨大なツッコミ衝撃波を落とす', color:'#22d3ee', icon:'🪭', apply:()=>{ player.onlineHarisenLevel = 1; }});
             else if (player.onlineHarisenLevel < 3) pool.push({ name:'ネビュラ・ハリセンノヴァ 強化', desc:'ツッコミ衝撃波の範囲・威力・連発力がUP', color:'#22d3ee', icon:'🪭', apply:()=>{ player.onlineHarisenLevel += 1; }});
+
+            if ((player.onlineSushiLevel || 0) === 0) pool.push({ name:'【銀河宴】コズミック・スシレイン', desc:'宇宙寿司メテオを降らせる。ふざけた見た目なのにかなり強い範囲武器', color:'#f472b6', icon:'🍣', apply:()=>{ player.onlineSushiLevel = 1; }});
+            else if (player.onlineSushiLevel < 3) pool.push({ name:'コズミック・スシレイン 強化', desc:'寿司メテオの数・範囲・威力がUP', color:'#f472b6', icon:'🍣', apply:()=>{ player.onlineSushiLevel += 1; }});
 
             let ultimateSkills = [];
             if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
@@ -1599,8 +1748,8 @@
                 const snap = await fbGetDoc(docRef);
                 if (snap.exists()) {
                     let d = snap.data();
-                    if (d && d.upgrades) {
-                        userData = d;
+                    if (d && d.upgrades && d.resetVersion === SAVE_RESET_VERSION) {
+                        userData = d; ensureProgressionData();
                         document.getElementById('currentBestDisplay').innerText = userData.score;
                     }
                 }
@@ -1617,32 +1766,40 @@
         }
 
         function loadData() {
+            const savedNick = normalizeNickname(localStorage.getItem('neon_survivor_nickname') || userData.nickname || '');
             const saved = localStorage.getItem('neon_survivor_save');
+            let shouldReset = true;
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    if (parsed && typeof parsed === 'object') userData = Object.assign({}, parsed, {
-                        score: Number(parsed.score || 0),
-                        coins: Number(parsed.coins || 0),
-                        nickname: normalizeNickname(parsed.nickname || localStorage.getItem('neon_survivor_nickname') || ''),
-                        upgrades: {
-                            hp: Number(parsed.upgrades?.hp || 0), damage: Number(parsed.upgrades?.damage || 0),
-                            speed: Number(parsed.upgrades?.speed || 0), exp: Number(parsed.upgrades?.exp || 0)
-                        }
-                    });
-                    ensureProgressionData();
-                } catch(e) {}
+                    shouldReset = parsed?.resetVersion !== SAVE_RESET_VERSION;
+                    if (!shouldReset && parsed && typeof parsed === 'object') {
+                        userData = Object.assign({}, parsed, {
+                            score: Number(parsed.score || 0),
+                            coins: Number(parsed.coins || 0),
+                            nickname: normalizeNickname(parsed.nickname || savedNick || ''),
+                            upgrades: Object.assign({}, parsed.upgrades || {})
+                        });
+                    }
+                } catch(e) { shouldReset = true; }
             }
-            const savedNick = normalizeNickname(localStorage.getItem('neon_survivor_nickname') || userData.nickname || '');
-            if (savedNick) userData.nickname = savedNick;
+            if (shouldReset) {
+                userData = createFreshUserData(savedNick);
+                localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
+            }
+            ensureProgressionData();
+            userData.resetVersion = SAVE_RESET_VERSION;
+            const finalNick = normalizeNickname(savedNick || userData.nickname || '');
+            if (finalNick) userData.nickname = finalNick;
             const nickInput = document.getElementById('nicknameInput');
-            if (nickInput && savedNick) nickInput.value = savedNick;
+            if (nickInput && finalNick) nickInput.value = finalNick;
             document.getElementById('currentBestDisplay').innerText = userData.score;
             loadDataFromCloud();
         }
 
         function saveData() {
             ensureProgressionData();
+            userData.resetVersion = SAVE_RESET_VERSION;
             userData.nickname = normalizeNickname(userData.nickname || localStorage.getItem('neon_survivor_nickname') || '');
             localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
             if (userData.nickname) localStorage.setItem('neon_survivor_nickname', userData.nickname);
@@ -1943,7 +2100,8 @@
                 return;
             }
             
-            if (player.pendingMonkeyBoss) { type = 7; player.pendingMonkeyBoss = false; triggerMonkeyDomain(); }
+            if (player.pendingOverlordBoss) { type = 8; player.pendingOverlordBoss = false; triggerBossWarning(); }
+            else if (player.pendingMonkeyBoss) { type = 7; player.pendingMonkeyBoss = false; player.pendingOverlordBoss = false; triggerMonkeyDomain(); }
             else if (player.pendingBossSpawn) { type = 3; player.pendingBossSpawn = false; triggerBossWarning(); } 
             else if (player.pendingMidBossSpawn) { type = 4; player.pendingMidBossSpawn = false; } 
             else {
@@ -1967,7 +2125,7 @@
             document.getElementById('finalTime').innerText = document.getElementById('timeDisplay').innerText;
             const finalScoreVal = Math.floor(score); document.getElementById('finalScore').innerText = finalScoreVal;
             
-            let earnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 2);
+            let earnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 6);
             userData.coins += earnedCoins; document.getElementById('earnedCoinsDisplay').innerText = `+${earnedCoins}`;
             finishMissionRun(earnedCoins);
             
@@ -2017,7 +2175,7 @@
                     this.x += this.vx; this.y += this.vy; this.vx *= 0.9; this.vy *= 0.9; this.scatterTimer--;
                     this.x = Math.max(0, Math.min(width, this.x)); this.y = Math.max(0, Math.min(height, this.y)); return; 
                 }
-                const bonusRange = player && player.legendaryVoidCollectorLevel ? player.legendaryVoidCollectorLevel * 90 : 0;
+                const bonusRange = (player && player.legendaryVoidCollectorLevel ? player.legendaryVoidCollectorLevel * 90 : 0) + (player && player.magnetBonus ? player.magnetBonus : 0);
                 const activePickupRange = this.pickupRange + bonusRange;
                 const dist = MathUtils.distance(this.x, this.y, player.x, player.y);
                 if (dist < activePickupRange) {
@@ -2068,7 +2226,7 @@
         // --- 新規追加：スナイパー用の銃弾クラス ---
         class SniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 8.75, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 1.09375, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
                 this.angle = angle;
             }
             draw(ctx) {
@@ -2098,7 +2256,7 @@
 
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 8.75, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 1.09375, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
                 this.bounces = 6;
                 this.lifeTimer = 0;
                 this.angle = angle;
@@ -3243,7 +3401,7 @@
             }
             update() {
                 this.timer++;
-                if (this.timer % 4 === 0) {
+                if (this.timer % 8 === 0) {
                     let w = (Number.isFinite(width) && width > 1) ? width : 800;
                     let h = (Number.isFinite(height) && height > 1) ? height : 600;
                     let targetX = player.x + MathUtils.random(-w, w); let targetY = player.y + MathUtils.random(-h, h);
@@ -3254,7 +3412,7 @@
                     for(let t of enemies) {
                         if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(targetX, targetY, t.x, t.y) < 200) t.takeDamage(this.damage * 2);
                     }
-                    triggerShake(8); Sound.playTone(800, 'square', 0.1, 0.05);
+                    triggerShake(4); Sound.playTone(800, 'square', 0.08, 0.025);
                 }
                 if (this.timer >= this.maxTime) this.markedForDeletion = true;
             }
@@ -3262,7 +3420,7 @@
                 if(this.timer % 10 === 0) {
                     let w = (Number.isFinite(width) && width > 1) ? width : 800;
                     let h = (Number.isFinite(height) && height > 1) ? height : 600;
-                    ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(250, 204, 21, 0.1)'; ctx.fillRect(camera.x, camera.y, w, h); ctx.restore();
+                    ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = 'rgba(250, 204, 21, 0.05)'; ctx.fillRect(camera.x, camera.y, w, h); ctx.restore();
                 }
             }
         }
@@ -3415,7 +3573,7 @@
 
         class PoisonCloud {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.radius = (60 + level * 15) * 2;
+                this.x = x; this.y = y; this.damage = damage * 3; this.radius = (60 + level * 15) * 4;
                 this.timer = 0; this.maxTime = 400; this.markedForDeletion = false;
             }
             update() {
@@ -3540,7 +3698,7 @@
 
         class GravityPulsar {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.radius = (80 + level * 20) * 2;
+                this.x = x; this.y = y; this.damage = damage * 3; this.radius = (80 + level * 20) * 4;
                 this.timer = 0; this.maxTime = 240 + level * 60; this.markedForDeletion = false;
             }
             update() {
@@ -3591,7 +3749,7 @@
         class OnlineLegendaryChest {
             constructor(x, y, type) {
                 this.x = x; this.y = y; this.type = type || (Math.random() < 0.5 ? 'murasaki' : 'kamehameha');
-                this.hp = 180; this.maxHp = 180; this.radius = 42; this.timer = 0; this.markedForDeletion = false;
+                this.hp = 360; this.maxHp = 360; this.radius = 42; this.timer = 0; this.markedForDeletion = false;
                 this.hitMarks = new WeakSet();
             }
             label() { return this.type === 'murasaki' ? '虚式「茈」' : '龍星・崩命破'; }
@@ -3649,15 +3807,15 @@
                 ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(-36, -48, 72, 6);
                 ctx.fillStyle = '#22c55e'; ctx.fillRect(-36, -48, 72 * Math.max(0, this.hp / this.maxHp), 6);
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Noto Sans JP';
-                ctx.fillText('LEGEND CHEST', 0, 47);
+                if (MathUtils.distance(this.x, this.y, player.x, player.y) < 900) ctx.fillText('LEGEND CHEST', 0, 47);
                 ctx.restore();
             }
         }
 
         class AstralJudgement {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.level = level;
-                this.timer = 0; this.radius = 120 + level * 28; this.markedForDeletion = false;
+                this.x = x; this.y = y; this.damage = damage * 3; this.level = level;
+                this.timer = 0; this.radius = (120 + level * 28) * 2; this.markedForDeletion = false;
                 this.remoteHitTick = new Map();
             }
             update() {
@@ -3722,8 +3880,8 @@
 
         class NebulaHarisenNova {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.level = level;
-                this.timer = 0; this.radius = 150 + level * 34; this.markedForDeletion = false;
+                this.x = x; this.y = y; this.damage = damage * 3; this.level = level;
+                this.timer = 0; this.radius = (150 + level * 34) * 2; this.markedForDeletion = false;
                 this.remoteHitDone = new Set(); this.spin = Math.random() * Math.PI * 2;
             }
             update() {
@@ -3779,6 +3937,43 @@
             }
         }
 
+
+        class CosmicSushiRain {
+            constructor(x, y, damage, level) {
+                this.x = x; this.y = y; this.damage = damage * 3; this.level = level;
+                this.timer = 0; this.markedForDeletion = false;
+                this.radius = (135 + level * 38) * 2;
+                this.meteors = Array.from({length: 5 + level * 2}, (_, i) => ({ ox: MathUtils.random(-this.radius, this.radius), oy: MathUtils.random(-this.radius, this.radius), delay: 12 + i * 7, hit: false, emoji: ['🍣','🍤','🍙','🍥'][MathUtils.randomInt(0,3)] }));
+                this.remoteHitDone = new Set();
+            }
+            update() {
+                this.timer++;
+                for (const m of this.meteors) {
+                    if (!m.hit && this.timer >= m.delay) {
+                        m.hit = true;
+                        const hx = this.x + m.ox, hy = this.y + m.oy;
+                        effects.push(new Shockwave(hx, hy, '#f472b6', 10, (95 + this.level * 18) * 2));
+                        createParticles(hx, hy, 24, '#f472b6', 4);
+                        for (const e of enemies) { if (!e || e.markedForDeletion || e.isCharmed) continue; if (MathUtils.distance(hx, hy, e.x, e.y) < 230 + e.radius) e.takeDamage(this.damage); }
+                        if (isOnlineMode) {
+                            remotePlayers.forEach(r => {
+                                if (!r || Number(r.hp || 0) <= 0 || this.remoteHitDone.has(r.id + ':' + m.delay)) return;
+                                if (MathUtils.distance(hx, hy, r.x, r.y) < 230 + ONLINE_REMOTE_RADIUS) { sendOnlineHit(r.id, this.damage); this.remoteHitDone.add(r.id + ':' + m.delay); floatingTexts.push(new FloatingText(r.x, r.y - 42, `SUSHI -${Math.floor(this.damage)}`, '#f472b6', 14)); }
+                            });
+                        }
+                    }
+                }
+                if (this.timer > 120) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(244,114,182,.55)'; ctx.lineWidth = 4; ctx.shadowBlur = 18; ctx.shadowColor = '#f472b6'; ctx.stroke();
+                for (const m of this.meteors) { const fall = Math.min(1, Math.max(0, (this.timer - m.delay + 18) / 18)); const sx = m.ox - 80 * (1 - fall), sy = m.oy - 260 * (1 - fall); ctx.save(); ctx.translate(sx, sy); ctx.rotate(this.timer * 0.08); ctx.font = `${28 + this.level * 4}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowBlur = 18; ctx.shadowColor = '#f472b6'; ctx.fillText(m.emoji, 0, 0); ctx.restore(); }
+                ctx.font = 'bold 16px Orbitron, Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.shadowBlur = 12; ctx.shadowColor = '#f472b6'; ctx.fillText('COSMIC SUSHI RAIN', 0, -this.radius - 18);
+                ctx.restore();
+            }
+        }
+
         class RealisticMapBlackHole {
             constructor(x, y) {
                 this.x = x; this.y = y;
@@ -3787,6 +3982,8 @@
                 this.radius = 1080;
                 this.eventRadius = 162;
                 this.damageTick = -999;
+                this.instabilitySeed = Math.random() * Math.PI * 2;
+                this.surgeTimer = 0;
                 this.starDust = Array.from({ length: 140 }, () => ({
                     a: Math.random() * Math.PI * 2,
                     d: MathUtils.random(140, 1000),
@@ -3803,9 +4000,14 @@
                     if (d < this.radius && d > 1) {
                         const a = MathUtils.angle(player.x, player.y, this.x, this.y);
                         const t = Math.max(0, (this.radius - d) / this.radius);
-                        const pullPower = 5.2 + t * 18.5;
+                        let instability = 0.78 + Math.sin(this.timer * 0.045 + this.instabilitySeed) * 0.32 + Math.sin(this.timer * 0.137) * 0.18;
+                        if (this.surgeTimer > 0) { this.surgeTimer--; instability += 0.65; }
+                        else if (Math.random() < 0.006) { this.surgeTimer = MathUtils.randomInt(24, 70); }
+                        instability = Math.max(0.42, Math.min(1.85, instability));
+                        const pullPower = (5.2 + t * 18.5) * instability;
                         player.x += Math.cos(a) * pullPower;
                         player.y += Math.sin(a) * pullPower;
+                        if (Math.random() < 0.18 * t) createParticles(player.x, player.y, 2, instability > 1.35 ? '#facc15' : '#a855f7', 3);
 
                         if (d < this.eventRadius + player.radius && this.timer - this.damageTick >= 30) {
                             this.damageTick = this.timer;
@@ -3971,10 +4173,18 @@
                 let dmgUpg = safe(Number((userData && userData.upgrades && userData.upgrades.damage) || 0));
                 let spdUpg = safe(Number((userData && userData.upgrades && userData.upgrades.speed) || 0));
                 let expUpg = safe(Number((userData && userData.upgrades && userData.upgrades.exp) || 0));
+                let armorUpg = safe(Number((userData && userData.upgrades && userData.upgrades.armor) || 0));
+                let magnetUpg = safe(Number((userData && userData.upgrades && userData.upgrades.magnet) || 0));
+                let rapidUpg = safe(Number((userData && userData.upgrades && userData.upgrades.rapid) || 0));
+                let pierceUpg = safe(Number((userData && userData.upgrades && userData.upgrades.pierce) || 0));
 
                 this.speed = 4.2 + (spdUpg * 0.3);
                 this.maxHp = 100 + (hpUpg * 20); this.hp = this.maxHp; 
                 this.damage = 30 + (dmgUpg * 5); this.expBoost = 1.0 + (expUpg * 0.2);
+                this.armorRate = Math.min(0.45, armorUpg * 0.045);
+                this.magnetBonus = magnetUpg * 55;
+                this.rapidBonus = Math.min(0.45, rapidUpg * 0.045);
+                this.extraPierce = Math.floor(pierceUpg / 2);
                 if (isOnlineMode) {
                     // オンライン対戦用バランス：即死しにくく、撃ち合いが続くHPと低めの火力
                     this.speed = 4.0 + (spdUpg * 0.18);
@@ -3985,7 +4195,7 @@
                 this.level = 1; this.exp = 0; this.expToNext = 9; 
                 this.pendingLevelUps = 0;
                 
-                this.fireRate = isOnlineMode ? 50 : 60; this.fireTimer = 0; this.bulletSpeed = isOnlineMode ? 12.5 : 15; this.bulletSize = isOnlineMode ? 5 : 6; this.pierce = 1; this.attackRange = isOnlineMode ? 620 : 500; 
+                this.fireRate = (isOnlineMode ? 50 : 60) * (1 - this.rapidBonus); this.fireTimer = 0; this.bulletSpeed = isOnlineMode ? 12.5 : 15; this.bulletSize = isOnlineMode ? 5 : 6; this.pierce = 1 + this.extraPierce; this.attackRange = isOnlineMode ? 620 : 500; 
                 
                 this.bladeRingLevel = 0; this.bladeRingAngle = 0; 
                 this.electricFieldLevel = 0; this.electricFieldTimer = 0;
@@ -4015,6 +4225,7 @@
                 this.onlineBananaLevel = 0; this.onlineBananaTimer = 0;
                 this.onlineAstralLevel = 0; this.onlineAstralTimer = 0;
                 this.onlineHarisenLevel = 0; this.onlineHarisenTimer = 0;
+                this.onlineSushiLevel = 0; this.onlineSushiTimer = 0;
                 this.onlineChestMurasaki = false; this.onlineChestKamehameha = false;
                 this.evoBlackhole = false; this.evoDivineSword = false;
                 this.evoRicochetSniper = false; this.evoToxicAegis = false;
@@ -4053,6 +4264,9 @@
                         this.faceAngle = angle; this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
                     }
                 }
+
+                // オンラインでは、画面内に相手プレイヤーがいる時だけ全武器の狙いを相手へ優先する。
+                aimAtOnlineTargetIfVisible(this);
 
                 this.x = safe(Math.max(-mapSize, Math.min(mapSize, this.x))); 
                 this.y = safe(Math.max(-mapSize, Math.min(mapSize, this.y)));
@@ -4223,6 +4437,13 @@
                             this.fireOnlineHarisenNova(); this.onlineHarisenTimer = 0;
                         }
                     }
+                    if (this.onlineSushiLevel > 0) {
+                        this.onlineSushiTimer++;
+                        const sushiCd = Math.max(360, 660 - this.onlineSushiLevel * 80);
+                        if (this.onlineSushiTimer >= sushiCd) {
+                            this.fireOnlineSushiRain(); this.onlineSushiTimer = 0;
+                        }
+                    }
                     if (this.onlineChestMurasaki) {
                         this.hollowMurasakiLevel = Math.max(this.hollowMurasakiLevel || 0, 1);
                         this.hollowMurasakiTimer++;
@@ -4242,47 +4463,15 @@
 
             // --- 新規スキル発動関数 ---
             fireOnlineSniper() {
-                let target = null; 
-                let minDist = 1500;
-                let w = (Number.isFinite(width) && width > 1) ? width : 800;
-                let h = (Number.isFinite(height) && height > 1) ? height : 600;
-
-                // 画面内にいるプレイヤーを最優先で探す
-                let bestRemote = null;
-                let bestRemoteDist = Infinity;
-
-                remotePlayers.forEach(r => {
-                    if (r && Number(r.hp || 0) > 0) {
-                        let screenX = r.x - camera.x;
-                        let screenY = r.y - camera.y;
-                        let inScreen = screenX >= 0 && screenX <= w && screenY >= 0 && screenY <= h;
-                        
-                        const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (inScreen && dist < bestRemoteDist) {
-                            bestRemoteDist = dist;
-                            bestRemote = r;
-                        }
-                    }
-                });
-
-                if (bestRemote) {
-                    target = bestRemote;
-                } else {
-                    remotePlayers.forEach(r => {
-                        if (r && Number(r.hp || 0) > 0) {
-                            const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
-                            if (dist < minDist) { minDist = dist; target = r; }
-                        }
-                    });
-                    if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
-                }
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
 
                 if (target) {
                     const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
-                    let dmg = 80 + this.onlineSniperLevel * 20;
+                    let dmg = 150 + (this.onlineSniperLevel - 1) * 50;
                     let b = this.evoRicochetSniper 
                         ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
-                        : new SniperBullet(this.x, this.y, angle, dmg); // SniperBulletに変更
+                        : new SniperBullet(this.x, this.y, angle, dmg);
                     if(target.id) b.onlineAimId = target.id;
                     if(sniperBullets.length < 50) sniperBullets.push(b);
                     Sound.shoot(); triggerShake(3);
@@ -4290,13 +4479,7 @@
             }
 
             fireOnlineBounceBomb() {
-                let target = null; let minDist = 1000;
-                remotePlayers.forEach(r => {
-                    if (r && Number(r.hp || 0) > 0) {
-                        const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (dist < minDist) { minDist = dist; target = r; }
-                    }
-                });
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
                 
                 let angle = this.faceAngle;
@@ -4324,13 +4507,7 @@
             }
 
             fireOnlineGravity() {
-                let target = null; let minDist = Infinity;
-                remotePlayers.forEach(r => {
-                    if (r && Number(r.hp || 0) > 0) {
-                        let d = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (d < minDist) { minDist = d; target = r; }
-                    }
-                });
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
                 
                 if (target) {
@@ -4354,13 +4531,7 @@
 
 
             fireOnlineAstralJudgement() {
-                let target = null; let minDist = Infinity;
-                remotePlayers.forEach(r => {
-                    if (r && Number(r.hp || 0) > 0) {
-                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (d < minDist) { minDist = d; target = r; }
-                    }
-                });
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
                 const tx = target ? target.x : this.x + Math.cos(this.faceAngle) * 280;
                 const ty = target ? target.y : this.y + Math.sin(this.faceAngle) * 280;
@@ -4371,13 +4542,7 @@
             }
 
             fireOnlineHarisenNova() {
-                let target = null; let minDist = Infinity;
-                remotePlayers.forEach(r => {
-                    if (r && Number(r.hp || 0) > 0) {
-                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (d < minDist) { minDist = d; target = r; }
-                    }
-                });
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
                 const tx = target ? target.x : this.x + Math.cos(this.faceAngle) * 340;
                 const ty = target ? target.y : this.y + Math.sin(this.faceAngle) * 340;
@@ -4389,6 +4554,16 @@
             }
 
             startShield() { if (isOnlineMode) return; if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 3)); }
+            fireOnlineSushiRain() {
+                let target = getPriorityOnlineTarget(this.x, this.y, Infinity);
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                const tx = target ? target.x : this.x + Math.cos(this.faceAngle) * 260;
+                const ty = target ? target.y : this.y + Math.sin(this.faceAngle) * 260;
+                if (cosmicSushiStorms.length < 6) cosmicSushiStorms.push(new CosmicSushiRain(tx, ty, 55 + this.onlineSushiLevel * 22, this.onlineSushiLevel));
+                Sound.playTone(520, 'triangle', 0.12, 0.06);
+                floatingTexts.push(new FloatingText(this.x, this.y - 70, '銀河寿司、出前完了！', '#f472b6', 16));
+            }
+
             startHollowMurasakiCharge() { if (isOnlineMode && !this.onlineChestMurasaki) return; if (hollowMurasakiCharges.length < 10) hollowMurasakiCharges.push(new HollowMurasakiCharge(this.x, this.y, this.faceAngle, 999999999, this.hollowMurasakiLevel)); }
             startKamehameha() { if (isOnlineMode && !this.onlineChestKamehameha) return; if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel, this.evoGravityBeam)); }
             startInfiniteBlade() { if (isOnlineMode) return; if (infiniteBladeCharges.length < 10) infiniteBladeCharges.push(new InfiniteBladeCharge(this.x, this.y, this.faceAngle, 999999999, this.infiniteBladeLevel)); }
@@ -4456,21 +4631,16 @@
 
             shoot() {
                 let nearestEnemy = null;
-                let nearestRemote = null;
+                let nearestRemote = getPriorityOnlineTarget(this.x, this.y, Infinity);
                 let minDist = this.attackRange;
 
-                for (const enemy of enemies) {
-                    if (enemy.isCharmed || enemy.markedForDeletion) continue;
-                    const dist = MathUtils.distance(this.x, this.y, enemy.x, enemy.y);
-                    if (dist < minDist) { minDist = dist; nearestEnemy = enemy; nearestRemote = null; }
-                }
-
-                if (isOnlineMode && remotePlayers && remotePlayers.size > 0) {
-                    remotePlayers.forEach(r => {
-                        if (!r || !Number.isFinite(r.x) || !Number.isFinite(r.y) || Number(r.hp || 0) <= 0) return;
-                        const dist = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (dist < minDist) { minDist = dist; nearestRemote = r; nearestEnemy = null; }
-                    });
+                // オンラインでは画面内の相手プレイヤーを距離に関係なく最優先。相手がいない時だけ敵を狙う。
+                if (!nearestRemote) {
+                    for (const enemy of enemies) {
+                        if (enemy.isCharmed || enemy.markedForDeletion) continue;
+                        const dist = MathUtils.distance(this.x, this.y, enemy.x, enemy.y);
+                        if (dist < minDist) { minDist = dist; nearestEnemy = enemy; }
+                    }
                 }
 
                 const target = nearestRemote || nearestEnemy;
@@ -4496,15 +4666,21 @@
             }
 
             shootIronBlaster() {
-                let nearestEnemy = null; let minDist = this.attackRange * 1.5; 
-                for (const enemy of enemies) {
-                    if (enemy.isCharmed || enemy.markedForDeletion) continue;
-                    const dist = MathUtils.distance(this.x, this.y, enemy.x, enemy.y);
-                    if (dist < minDist) { minDist = dist; nearestEnemy = enemy; }
+                let nearestEnemy = null; let minDist = this.attackRange * 1.5;
+                let priorityRemote = getPriorityOnlineTarget(this.x, this.y, Infinity);
+                if (!priorityRemote) {
+                    for (const enemy of enemies) {
+                        if (enemy.isCharmed || enemy.markedForDeletion) continue;
+                        const dist = MathUtils.distance(this.x, this.y, enemy.x, enemy.y);
+                        if (dist < minDist) { minDist = dist; nearestEnemy = enemy; }
+                    }
                 }
-                if (nearestEnemy) {
-                    const angle = MathUtils.angle(this.x, this.y, nearestEnemy.x, nearestEnemy.y);
-                    if (ironBlasters.length < 100) ironBlasters.push(new IronBlaster(this.x, this.y, angle, 777, this.bulletSpeed * 2, 8));
+                const target = priorityRemote || nearestEnemy;
+                if (target) {
+                    const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                    const b = new IronBlaster(this.x, this.y, angle, 777, this.bulletSpeed * 2, 8);
+                    if (priorityRemote) b.onlineAimId = priorityRemote.id;
+                    if (ironBlasters.length < 100) ironBlasters.push(b);
                     createParticles(this.x + Math.cos(angle)*this.radius, this.y + Math.sin(angle)*this.radius, 5, '#3b82f6', 3); 
                     Sound.shoot();
                 }
@@ -4512,6 +4688,7 @@
 
             draw(ctx) {
                 ctx.save(); let px = safe(this.x), py = safe(this.y);
+                drawEquippedCape(ctx, px, py, this.faceAngle || 0);
                 drawEquippedAura(ctx, px, py);
 
                 if (this.trail.length > 1) {
@@ -4642,7 +4819,9 @@
                 floatingTexts.push(new FloatingText(this.x, this.y - 30, "LEVEL UP!", '#ff0', 20));
                 
                 if (!isOnlineMode) {
-                    if (this.level > 0 && this.level % 10 === 0) {
+                    if (this.level > 0 && this.level % 20 === 0) {
+                        this.pendingOverlordBoss = true;
+                    } else if (this.level > 0 && this.level % 10 === 0) {
                         this.pendingMonkeyBoss = true;
                     } else if (this.level > 3) {
                         if (this.level % 3 === 0) this.pendingBossSpawn = true; else this.pendingMidBossSpawn = true;
@@ -4661,6 +4840,7 @@
                     const damageRate = Math.max(0.2, 0.8 - this.onlineShieldLevel * 0.1);
                     amount *= damageRate;
                 }
+                if (this.armorRate) amount *= Math.max(0.35, 1 - this.armorRate);
                 recordDamageTaken(amount);
                 this.hp -= amount; 
                 this.invincibleTimer = isOnlineMode ? 32 : 15; // オフライン時の無敵時間を短縮してダメージを受けやすく
@@ -4672,10 +4852,33 @@
             }
         }
 
+
+        class OverlordFlame {
+            constructor(x, y, angle, damage = 50, power = 1) {
+                this.x = x; this.y = y; this.angle = angle; this.damage = damage;
+                this.power = power; this.speed = 6.5 + Math.min(3, power);
+                this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
+                this.radius = 22 + power * 5; this.timer = 0; this.maxTime = 210; this.markedForDeletion = false; this.trail = [];
+            }
+            update() {
+                this.timer++; this.trail.push({x:this.x, y:this.y}); if (this.trail.length > 12) this.trail.shift();
+                this.x += this.vx; this.y += this.vy; this.vx *= 1.003; this.vy *= 1.003;
+                if (player && MathUtils.distance(this.x, this.y, player.x, player.y) < this.radius + player.radius) {
+                    player.takeDamage(50); createParticles(this.x, this.y, 34, '#fb923c', 5); effects.push(new Shockwave(this.x, this.y, '#fb923c', 10, 150)); floatingTexts.push(new FloatingText(player.x, player.y - 50, '炎 -50', '#fb923c', 20)); this.markedForDeletion = true;
+                }
+                if (this.timer > this.maxTime) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.globalCompositeOperation = 'screen';
+                for (let i = 0; i < this.trail.length; i++) { const p = this.trail[i]; const a = i / this.trail.length; ctx.beginPath(); ctx.arc(p.x, p.y, this.radius * a * 0.8, 0, Math.PI*2); ctx.fillStyle = `rgba(249,115,22,${0.08 + a * 0.25})`; ctx.fill(); }
+                ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.angle); ctx.font = `${Math.floor(30 + this.power * 4)}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowBlur = 22; ctx.shadowColor = '#fb923c'; ctx.fillText('🔥', 0, 0); ctx.restore();
+            }
+        }
+
         class Enemy {
-            constructor(x, y, type) {
+            constructor(x, y, type, power = 1) {
                 this.x = x; this.y = y; this.type = type; this.markedForDeletion = false; this.invincibleTimer = 0; 
-                this.isBoss = false; this.isMidBoss = false; this.isMonkey = false; this.isCharmed = false; 
+                this.isBoss = false; this.isMidBoss = false; this.isMonkey = false; this.isApeOverlord = false; this.isCharmed = false; 
                 this.danmakuTimer = 0; this.danmakuAngle = 0; // 弾幕ボス用
                 const timeMultiplier = 1 + (gameTime / 60); 
 
@@ -4709,6 +4912,14 @@
                         this.damage = 200 * 1.5; // ダメージ強化
                         this.expValue = 200; this.isMonkey = true; 
                         this.clubAngle = 0; 
+                        break;
+                    case 8:
+                        this.overlordPower = Math.max(1, power || 1);
+                        this.radius = 120; this.color = '#7f1d1d'; this.speed = 1.65 + (timeMultiplier * 0.06);
+                        this.hp = 60000 * Math.max(1, Math.floor(player.level / 5)) * this.overlordPower;
+                        this.damage = 360 * this.overlordPower;
+                        this.expValue = 600; this.isMonkey = true; this.isApeOverlord = true;
+                        this.clubAngle = 0; this.overlordFireTimer = 0; this.overlordStep = 0;
                         break;
                 }
                 if (isOnlineMode) {
@@ -4764,6 +4975,23 @@
                         this.fireTimer = 0;
                         if(enemyBullets.length < 200) enemyBullets.push(new Bullet(this.x, this.y, MathUtils.angle(this.x, this.y, player.x, player.y), this.damage, 3, 5, 1, '#10b981', '#059669', true));
                     }
+                } else if (this.type === 8) {
+                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
+                    const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                    const dashPulse = 1 + Math.max(0, Math.sin(this.overlordStep * 0.05)) * 0.35;
+                    this.x += Math.cos(angle) * this.speed * dashPulse; this.y += Math.sin(angle) * this.speed * dashPulse;
+                    this.clubAngle += 0.12 + 0.035 * (this.overlordPower || 1);
+                    this.overlordStep++;
+                    this.overlordFireTimer++;
+                    if (this.overlordFireTimer >= 300) {
+                        this.overlordFireTimer = 0;
+                        if (overlordFlames.length < 35) overlordFlames.push(new OverlordFlame(this.x, this.y, angle, 50, this.overlordPower || 1));
+                        createParticles(this.x, this.y, 45, '#fb923c', 6);
+                        floatingTexts.push(new FloatingText(this.x, this.y - 120, '獄炎投擲', '#fb923c', 24));
+                    }
+                    if (d < this.radius + player.radius + 10 && !this.isCharmed) {
+                        player.takeDamage(35);
+                    }
                 } else if (this.type === 7) { 
                     const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
                     this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
@@ -4776,8 +5004,8 @@
                         if (normClubAngle < 0) normClubAngle += Math.PI * 2;
                         let diff = Math.abs(angleToPlayer - normClubAngle);
                         if (diff > Math.PI) diff = Math.PI * 2 - diff;
-                        
-                        if (diff < 0.6) { // クラブの当たり判定（角度）も少し広く
+
+                        if (diff < 0.6) {
                             player.takeDamage(99999); 
                         }
                     }
@@ -4790,7 +5018,26 @@
             draw(ctx) {
                 ctx.save(); ctx.beginPath(); let px = safe(this.x), py = safe(this.y), r = safeR(this.radius);
                 
-                if (this.type === 7) { 
+                if (this.type === 8) {
+                    ctx.translate(px, py);
+                    const pulse = 1 + Math.sin(Date.now()/120) * 0.04;
+                    ctx.scale(pulse, pulse);
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.beginPath(); ctx.arc(0, 0, r * 1.35, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(239,68,68,.16)'; ctx.shadowBlur = 70; ctx.shadowColor = '#ef4444'; ctx.fill();
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = '#1a0202'; ctx.shadowBlur = 55; ctx.shadowColor = '#fb923c'; ctx.fill();
+                    ctx.beginPath(); ctx.arc(0, 0, r*0.72, 0, Math.PI * 2); ctx.fillStyle = '#3b0505'; ctx.fill();
+                    ctx.fillStyle = '#facc15'; ctx.shadowBlur = 22; ctx.shadowColor = '#facc15';
+                    for (let i = -1; i <= 1; i += 2) { ctx.beginPath(); ctx.moveTo(i*r*.18, -r*.55); ctx.lineTo(i*r*.68, -r*1.45); ctx.lineTo(i*r*.05, -r*.82); ctx.fill(); }
+                    ctx.fillStyle = '#f97316';
+                    ctx.beginPath(); ctx.arc(-r*.32, -r*.1, r*.12, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(r*.32, -r*.1, r*.12, 0, Math.PI*2); ctx.fill();
+                    ctx.rotate(safe(this.clubAngle));
+                    ctx.fillStyle = '#111827'; ctx.fillRect(r*.45, -r*.13, r*2.8, r*.26);
+                    ctx.fillStyle = '#fb923c'; ctx.font = `bold ${Math.floor(r*.52)}px serif`; ctx.fillText('🔥', r*3.15, 0);
+                    ctx.restore(); return;
+                } else if (this.type === 7) { 
                     ctx.translate(px, py);
                     ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = '#4a0404'; ctx.shadowBlur = 50; ctx.shadowColor = '#f00'; ctx.fill();
                     ctx.beginPath(); ctx.arc(0, 0, r*0.7, 0, Math.PI * 2); ctx.fillStyle = '#220101'; ctx.fill();
@@ -4823,7 +5070,7 @@
                 ctx.lineWidth = 2; ctx.strokeStyle = this.color; ctx.fillStyle = this.hp < this.maxHp && Math.random() > 0.8 ? '#fff' : 'rgba(0,0,0,0.8)';
                 
                 // --- 描画の軽量化：ザコ敵は shadowBlur を切る ---
-                if (this.type === 3 || this.type === 4 || this.type === 7) { 
+                if (this.type === 3 || this.type === 4 || this.type === 7 || this.type === 8) { 
                     ctx.shadowBlur = 10; ctx.shadowColor = this.color; 
                 } else {
                     ctx.shadowBlur = 0;
@@ -4864,6 +5111,19 @@
                     if (this.isMonkey && isLavaDomainActive) {
                         triggerDomainCollapse();
                     }
+                    if (this.isApeOverlord && !isOnlineMode) {
+                        const reviveX = this.x, reviveY = this.y;
+                        const nextPower = Math.min(4, (this.overlordPower || 1) + 0.35);
+                        floatingTexts.push(new FloatingText(this.x, this.y - 100, '7秒後に復活...', '#fb923c', 28));
+                        setTimeout(() => {
+                            if (gameState === 'playing' && player && !isOnlineMode) {
+                                enemies.push(new Enemy(reviveX, reviveY, 8, nextPower));
+                                showCustomCutin('復活', '最恐大猿王', '#fb923c');
+                                createParticles(reviveX, reviveY, 90, '#fb923c', 8);
+                                triggerShake(22);
+                            }
+                        }, 7000);
+                    }
                 } else {
                     createParticles(this.x, this.y, 3, this.color, 4);
                 }
@@ -4889,6 +5149,9 @@
                 let spawnInterval = Math.max(5, 40 - Math.floor(gameTime * 0.5));
                 if (frameCount % spawnInterval === 0 && enemies.length < 800) spawnEnemy();
                 
+                if (isLavaDomainActive && !enemies.some(e => e && !e.markedForDeletion && e.isMonkey)) {
+                    triggerDomainCollapse();
+                }
                 if (isLavaDomainActive) {
                     lavaDomainTimer--;
                     document.getElementById('domainDisplay').innerText = (lavaDomainTimer / 60).toFixed(1);
@@ -4907,7 +5170,7 @@
                     {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:vaderSkills, l:50},
                     {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
                     {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10},
-                    {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}
+                    {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}, {a:overlordFlames, l:35}, {a:cosmicSushiStorms, l:6}
                 ];
                 
                 for (let g of groups) {
@@ -5192,7 +5455,7 @@
             if (currentBoss && !isTimeStopped) { 
                 bossHpContainer.classList.remove('hidden'); 
                 document.getElementById('bossHpBar').style.width = `${Math.max(0, (currentBoss.hp / currentBoss.maxHp) * 100)}%`; 
-                document.getElementById('bossNameDisplay').innerText = currentBoss.isMonkey ? "MONKEY KING" : "BOSS";
+                document.getElementById('bossNameDisplay').innerText = currentBoss.isApeOverlord ? "DEMON APE OVERLORD" : (currentBoss.isMonkey ? "MONKEY KING" : "BOSS");
             } else { bossHpContainer.classList.add('hidden'); }
             
             camera.x = player ? player.x - w / 2 : 0; camera.y = player ? player.y - h / 2 : 0;
@@ -5208,7 +5471,7 @@
             for (let y = startY; y <= camera.y + h + gridSize; y += gridSize) { ctx.moveTo(safe(camera.x - gridSize), safe(y)); ctx.lineTo(safe(camera.x + w + gridSize), safe(y)); }
             ctx.stroke();
 
-            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, bananaPeels, onlineLegendaryChests, astralJudgements, harisenNovas, mapBlackholes, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
+            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, bananaPeels, onlineLegendaryChests, astralJudgements, harisenNovas, cosmicSushiStorms, overlordFlames, mapBlackholes, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
             
             for (let group of drawGroups) {
                 for (let obj of group) {
@@ -5254,7 +5517,7 @@
             ctx.save();
             ctx.font = 'bold 12px Orbitron, Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
             ctx.shadowBlur = 10; ctx.shadowColor = '#000';
-            ctx.fillText(boss.isMonkey ? 'MONKEY' : 'BOSS', edgeX, edgeY - 22);
+            ctx.fillText(boss.isApeOverlord ? 'OVERLORD' : (boss.isMonkey ? 'MONKEY' : 'BOSS'), edgeX, edgeY - 22);
             ctx.restore();
         }
 
@@ -5290,6 +5553,7 @@
             if (player.onlineBananaLevel > 0) skills.push({ id: 'onlineBanana', icon: '🍌', p: player.onlineBananaTimer / 360 });
             if (player.onlineAstralLevel > 0) skills.push({ id: 'onlineAstral', icon: '☄️', p: player.onlineAstralTimer / Math.max(300, 540 - player.onlineAstralLevel * 60) });
             if (player.onlineHarisenLevel > 0) skills.push({ id: 'onlineHarisen', icon: '🪭', p: player.onlineHarisenTimer / Math.max(330, 540 - player.onlineHarisenLevel * 70) });
+            if (player.onlineSushiLevel > 0) skills.push({ id: 'onlineSushi', icon: '🍣', p: player.onlineSushiTimer / Math.max(360, 660 - player.onlineSushiLevel * 80) });
             if (player.onlineChestMurasaki) skills.push({ id: 'chestMurasaki', icon: '🟣宝', p: player.hollowMurasakiTimer / 1200 });
             if (player.onlineChestKamehameha) skills.push({ id: 'chestKamehameha', icon: '🌊宝', p: player.kamehamehaTimer / 1200 });
 
@@ -5378,7 +5642,7 @@
                     orbitalStrikeLevel: 0, ironmanSuitLevel: 0, disneyMagicLevel: 0,
                     funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0,
                     evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false,
-                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false, onlineBananaLevel: 0, onlineBananaTimer: 0, onlineAstralLevel: 0, onlineAstralTimer: 0, onlineHarisenLevel: 0, onlineHarisenTimer: 0, onlineChestMurasaki: false, onlineChestKamehameha: false
+                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false, onlineBananaLevel: 0, onlineBananaTimer: 0, onlineAstralLevel: 0, onlineAstralTimer: 0, onlineHarisenLevel: 0, onlineHarisenTimer: 0, onlineSushiLevel: 0, onlineSushiTimer: 0, onlineChestMurasaki: false, onlineChestKamehameha: false
                 });
             } else {
                 player.evoRicochetSniper = false; player.evoToxicAegis = false;
@@ -5392,16 +5656,18 @@
             
             // --- 配列の初期化 ---
             bounceBombs = []; poisonClouds = []; blackholes = []; divineSwords = []; sniperBullets = [];
-            phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = []; onlineLegendaryChests = []; astralJudgements = []; harisenNovas = [];
+            phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = []; onlineLegendaryChests = []; astralJudgements = []; harisenNovas = []; overlordFlames = []; cosmicSushiStorms = [];
             
             bgStars = [];
             const bhAngle = Math.random() * Math.PI * 2;
             const bhDist = MathUtils.random(1300, 2600);
             mapBlackholes.push(new RealisticMapBlackHole(spawn.x + Math.cos(bhAngle) * bhDist, spawn.y + Math.sin(bhAngle) * bhDist));
             if (isOnlineMode) {
+                // 伝説宝箱はレア化：2か所の候補があるが、出現するかは運。距離もかなり遠くする。
                 for (let i = 0; i < 2; i++) {
+                    if (Math.random() > 0.38) continue;
                     const cAngle = Math.random() * Math.PI * 2;
-                    const cDist = MathUtils.random(800, 2400);
+                    const cDist = MathUtils.random(3600, 7200);
                     const cType = Math.random() < 0.5 ? 'murasaki' : 'kamehameha';
                     onlineLegendaryChests.push(new OnlineLegendaryChest(spawn.x + Math.cos(cAngle) * cDist, spawn.y + Math.sin(cAngle) * cDist, cType));
                 }
