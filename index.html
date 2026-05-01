@@ -299,7 +299,7 @@
         // --- 新規追加のグローバル配列 ---
         let bounceBombs = [], poisonClouds = [], blackholes = [], divineSwords = [];
         let sniperBullets = [], phantomDaggers = [], gravityPulsars = [];
-        let mapBlackholes = [], bananaPeels = [];
+        let mapBlackholes = [], bananaPeels = [], onlineLegendaryChests = [], astralJudgements = [], harisenNovas = [];
 
         let player = null;
         let isMuryokushoActive = false;
@@ -406,7 +406,107 @@
             { id:'m047', cat:'LEGEND', title:'全武器解放への道', desc:'伝説武器を4種類解放する', metric:'unlockedWeaponCount', target:4, reward:{coins:6000, aura:'royalHalo'} },
             { id:'m048', cat:'COLLECT', title:'スキンハンター', desc:'スキンを3種類解放する', metric:'unlockedSkinCount', target:3, reward:{coins:1400} },
             { id:'m049', cat:'COLLECT', title:'オーラ使い', desc:'オーラを3種類解放する', metric:'unlockedAuraCount', target:3, reward:{coins:1400} },
-            { id:'m050', cat:'FINAL', title:'ネオンサバイバー', desc:'ミッションを30個達成する', metric:'completedMissionCount', target:30, reward:{coins:10000, skin:'angel', aura:'royalHalo'} }
+            { id:'m050', cat:'FINAL', title:'ネオンサバイバー', desc:'ミッションを30個達成する', metric:'completedMissionCount', target:30, reward:{coins:10000, skin:'angel', aura:'royalHalo'} },
+            { id:'m051', cat:'KILL', title:'討伐ランク1', desc:'敵を合計2500体倒す', metric:'totalKills', target:2500, reward:{coins:720} },
+            { id:'m052', cat:'GEM', title:'ジェムランク1', desc:'ジェムを合計2000個集める', metric:'totalGems', target:2000, reward:{coins:840} },
+            { id:'m053', cat:'TIME', title:'生存ランク1', desc:'1回のプレイで720秒生き残る', metric:'bestTime', target:720, reward:{coins:960} },
+            { id:'m054', cat:'SCORE', title:'スコアランク1', desc:'自己ベスト75000点を超える', metric:'bestScore', target:75000, reward:{coins:1080} },
+            { id:'m055', cat:'LEVEL', title:'覚醒ランク1', desc:'最高レベル30に到達する', metric:'bestLevel', target:30, reward:{coins:1200} },
+            { id:'m056', cat:'BOSS', title:'ボスランク1', desc:'ボス系の敵を合計25体倒す', metric:'totalBossLikeKills', target:25, reward:{coins:1320} },
+            { id:'m057', cat:'PLAY', title:'出撃ランク1', desc:'合計45回プレイする', metric:'totalRuns', target:45, reward:{coins:1440} },
+            { id:'m058', cat:'ONLINE', title:'対戦ランク1', desc:'オンラインで攻撃を合計60回当てる', metric:'totalOnlineHits', target:60, reward:{coins:1560} },
+            { id:'m059', cat:'COIN', title:'コインランク1', desc:'合計15000コイン獲得する', metric:'totalCoinsEarned', target:15000, reward:{coins:1680} },
+            { id:'m060', cat:'RUN', title:'無双ランク1', desc:'1回のプレイで敵を400体倒す', metric:'bestRunKills', target:400, reward:{coins:1800, skin:'ruby'} },
+            { id:'m061', cat:'KILL', title:'討伐ランク2', desc:'敵を合計3500体倒す', metric:'totalKills', target:3500, reward:{coins:2100} },
+            { id:'m062', cat:'GEM', title:'ジェムランク2', desc:'ジェムを合計3000個集める', metric:'totalGems', target:3000, reward:{coins:2220} },
+            { id:'m063', cat:'TIME', title:'生存ランク2', desc:'1回のプレイで840秒生き残る', metric:'bestTime', target:840, reward:{coins:2340} },
+            { id:'m064', cat:'SCORE', title:'スコアランク2', desc:'自己ベスト100000点を超える', metric:'bestScore', target:100000, reward:{coins:2460} },
+            { id:'m065', cat:'LEVEL', title:'覚醒ランク2', desc:'最高レベル35に到達する', metric:'bestLevel', target:35, reward:{coins:2580} },
+            { id:'m066', cat:'BOSS', title:'ボスランク2', desc:'ボス系の敵を合計40体倒す', metric:'totalBossLikeKills', target:40, reward:{coins:2700} },
+            { id:'m067', cat:'PLAY', title:'出撃ランク2', desc:'合計60回プレイする', metric:'totalRuns', target:60, reward:{coins:2820} },
+            { id:'m068', cat:'ONLINE', title:'対戦ランク2', desc:'オンラインで攻撃を合計100回当てる', metric:'totalOnlineHits', target:100, reward:{coins:2940} },
+            { id:'m069', cat:'COIN', title:'コインランク2', desc:'合計22000コイン獲得する', metric:'totalCoinsEarned', target:22000, reward:{coins:3060} },
+            { id:'m070', cat:'RUN', title:'無双ランク2', desc:'1回のプレイで敵を550体倒す', metric:'bestRunKills', target:550, reward:{coins:3180, aura:'cyanFlame'} },
+            { id:'m071', cat:'KILL', title:'討伐ランク3', desc:'敵を合計5000体倒す', metric:'totalKills', target:5000, reward:{coins:3480} },
+            { id:'m072', cat:'GEM', title:'ジェムランク3', desc:'ジェムを合計4500個集める', metric:'totalGems', target:4500, reward:{coins:3600} },
+            { id:'m073', cat:'TIME', title:'生存ランク3', desc:'1回のプレイで960秒生き残る', metric:'bestTime', target:960, reward:{coins:3720} },
+            { id:'m074', cat:'SCORE', title:'スコアランク3', desc:'自己ベスト140000点を超える', metric:'bestScore', target:140000, reward:{coins:3840} },
+            { id:'m075', cat:'LEVEL', title:'覚醒ランク3', desc:'最高レベル40に到達する', metric:'bestLevel', target:40, reward:{coins:3960} },
+            { id:'m076', cat:'BOSS', title:'ボスランク3', desc:'ボス系の敵を合計60体倒す', metric:'totalBossLikeKills', target:60, reward:{coins:4080} },
+            { id:'m077', cat:'PLAY', title:'出撃ランク3', desc:'合計80回プレイする', metric:'totalRuns', target:80, reward:{coins:4200} },
+            { id:'m078', cat:'ONLINE', title:'対戦ランク3', desc:'オンラインで攻撃を合計160回当てる', metric:'totalOnlineHits', target:160, reward:{coins:4320} },
+            { id:'m079', cat:'COIN', title:'コインランク3', desc:'合計32000コイン獲得する', metric:'totalCoinsEarned', target:32000, reward:{coins:4440} },
+            { id:'m080', cat:'RUN', title:'無双ランク3', desc:'1回のプレイで敵を750体倒す', metric:'bestRunKills', target:750, reward:{coins:4560, weapon:'neonLance'} },
+            { id:'m081', cat:'KILL', title:'討伐ランク4', desc:'敵を合計7000体倒す', metric:'totalKills', target:7000, reward:{coins:4860} },
+            { id:'m082', cat:'GEM', title:'ジェムランク4', desc:'ジェムを合計6500個集める', metric:'totalGems', target:6500, reward:{coins:4980} },
+            { id:'m083', cat:'TIME', title:'生存ランク4', desc:'1回のプレイで1080秒生き残る', metric:'bestTime', target:1080, reward:{coins:5100} },
+            { id:'m084', cat:'SCORE', title:'スコアランク4', desc:'自己ベスト180000点を超える', metric:'bestScore', target:180000, reward:{coins:5220} },
+            { id:'m085', cat:'LEVEL', title:'覚醒ランク4', desc:'最高レベル45に到達する', metric:'bestLevel', target:45, reward:{coins:5340} },
+            { id:'m086', cat:'BOSS', title:'ボスランク4', desc:'ボス系の敵を合計85体倒す', metric:'totalBossLikeKills', target:85, reward:{coins:5460} },
+            { id:'m087', cat:'PLAY', title:'出撃ランク4', desc:'合計100回プレイする', metric:'totalRuns', target:100, reward:{coins:5580} },
+            { id:'m088', cat:'ONLINE', title:'対戦ランク4', desc:'オンラインで攻撃を合計240回当てる', metric:'totalOnlineHits', target:240, reward:{coins:5700} },
+            { id:'m089', cat:'COIN', title:'コインランク4', desc:'合計45000コイン獲得する', metric:'totalCoinsEarned', target:45000, reward:{coins:5820} },
+            { id:'m090', cat:'RUN', title:'無双ランク4', desc:'1回のプレイで敵を950体倒す', metric:'bestRunKills', target:950, reward:{coins:5940, skin:'gold'} },
+            { id:'m091', cat:'KILL', title:'討伐ランク5', desc:'敵を合計9000体倒す', metric:'totalKills', target:9000, reward:{coins:6240} },
+            { id:'m092', cat:'GEM', title:'ジェムランク5', desc:'ジェムを合計9000個集める', metric:'totalGems', target:9000, reward:{coins:6360} },
+            { id:'m093', cat:'TIME', title:'生存ランク5', desc:'1回のプレイで1200秒生き残る', metric:'bestTime', target:1200, reward:{coins:6480} },
+            { id:'m094', cat:'SCORE', title:'スコアランク5', desc:'自己ベスト240000点を超える', metric:'bestScore', target:240000, reward:{coins:6600} },
+            { id:'m095', cat:'LEVEL', title:'覚醒ランク5', desc:'最高レベル50に到達する', metric:'bestLevel', target:50, reward:{coins:6720} },
+            { id:'m096', cat:'BOSS', title:'ボスランク5', desc:'ボス系の敵を合計115体倒す', metric:'totalBossLikeKills', target:115, reward:{coins:6840} },
+            { id:'m097', cat:'PLAY', title:'出撃ランク5', desc:'合計130回プレイする', metric:'totalRuns', target:130, reward:{coins:6960} },
+            { id:'m098', cat:'ONLINE', title:'対戦ランク5', desc:'オンラインで攻撃を合計340回当てる', metric:'totalOnlineHits', target:340, reward:{coins:7080} },
+            { id:'m099', cat:'COIN', title:'コインランク5', desc:'合計62000コイン獲得する', metric:'totalCoinsEarned', target:62000, reward:{coins:7200} },
+            { id:'m100', cat:'RUN', title:'無双ランク5', desc:'1回のプレイで敵を1200体倒す', metric:'bestRunKills', target:1200, reward:{coins:7320, aura:'voidMist'} },
+            { id:'m101', cat:'KILL', title:'討伐ランク6', desc:'敵を合計12000体倒す', metric:'totalKills', target:12000, reward:{coins:7620} },
+            { id:'m102', cat:'GEM', title:'ジェムランク6', desc:'ジェムを合計12000個集める', metric:'totalGems', target:12000, reward:{coins:7740} },
+            { id:'m103', cat:'TIME', title:'生存ランク6', desc:'1回のプレイで1350秒生き残る', metric:'bestTime', target:1350, reward:{coins:7860} },
+            { id:'m104', cat:'SCORE', title:'スコアランク6', desc:'自己ベスト320000点を超える', metric:'bestScore', target:320000, reward:{coins:7980} },
+            { id:'m105', cat:'LEVEL', title:'覚醒ランク6', desc:'最高レベル55に到達する', metric:'bestLevel', target:55, reward:{coins:8100} },
+            { id:'m106', cat:'BOSS', title:'ボスランク6', desc:'ボス系の敵を合計150体倒す', metric:'totalBossLikeKills', target:150, reward:{coins:8220} },
+            { id:'m107', cat:'PLAY', title:'出撃ランク6', desc:'合計160回プレイする', metric:'totalRuns', target:160, reward:{coins:8340} },
+            { id:'m108', cat:'ONLINE', title:'対戦ランク6', desc:'オンラインで攻撃を合計460回当てる', metric:'totalOnlineHits', target:460, reward:{coins:8460} },
+            { id:'m109', cat:'COIN', title:'コインランク6', desc:'合計85000コイン獲得する', metric:'totalCoinsEarned', target:85000, reward:{coins:8580} },
+            { id:'m110', cat:'RUN', title:'無双ランク6', desc:'1回のプレイで敵を1500体倒す', metric:'bestRunKills', target:1500, reward:{coins:8700, weapon:'phoenixCore'} },
+            { id:'m111', cat:'KILL', title:'討伐ランク7', desc:'敵を合計15000体倒す', metric:'totalKills', target:15000, reward:{coins:9000} },
+            { id:'m112', cat:'GEM', title:'ジェムランク7', desc:'ジェムを合計16000個集める', metric:'totalGems', target:16000, reward:{coins:9120} },
+            { id:'m113', cat:'TIME', title:'生存ランク7', desc:'1回のプレイで1500秒生き残る', metric:'bestTime', target:1500, reward:{coins:9240} },
+            { id:'m114', cat:'SCORE', title:'スコアランク7', desc:'自己ベスト420000点を超える', metric:'bestScore', target:420000, reward:{coins:9360} },
+            { id:'m115', cat:'LEVEL', title:'覚醒ランク7', desc:'最高レベル60に到達する', metric:'bestLevel', target:60, reward:{coins:9480} },
+            { id:'m116', cat:'BOSS', title:'ボスランク7', desc:'ボス系の敵を合計190体倒す', metric:'totalBossLikeKills', target:190, reward:{coins:9600} },
+            { id:'m117', cat:'PLAY', title:'出撃ランク7', desc:'合計200回プレイする', metric:'totalRuns', target:200, reward:{coins:9720} },
+            { id:'m118', cat:'ONLINE', title:'対戦ランク7', desc:'オンラインで攻撃を合計620回当てる', metric:'totalOnlineHits', target:620, reward:{coins:9840} },
+            { id:'m119', cat:'COIN', title:'コインランク7', desc:'合計115000コイン獲得する', metric:'totalCoinsEarned', target:115000, reward:{coins:9960} },
+            { id:'m120', cat:'RUN', title:'無双ランク7', desc:'1回のプレイで敵を1850体倒す', metric:'bestRunKills', target:1850, reward:{coins:10080, skin:'void'} },
+            { id:'m121', cat:'KILL', title:'討伐ランク8', desc:'敵を合計20000体倒す', metric:'totalKills', target:20000, reward:{coins:10380} },
+            { id:'m122', cat:'GEM', title:'ジェムランク8', desc:'ジェムを合計21000個集める', metric:'totalGems', target:21000, reward:{coins:10500} },
+            { id:'m123', cat:'TIME', title:'生存ランク8', desc:'1回のプレイで1680秒生き残る', metric:'bestTime', target:1680, reward:{coins:10620} },
+            { id:'m124', cat:'SCORE', title:'スコアランク8', desc:'自己ベスト550000点を超える', metric:'bestScore', target:550000, reward:{coins:10740} },
+            { id:'m125', cat:'LEVEL', title:'覚醒ランク8', desc:'最高レベル70に到達する', metric:'bestLevel', target:70, reward:{coins:10860} },
+            { id:'m126', cat:'BOSS', title:'ボスランク8', desc:'ボス系の敵を合計240体倒す', metric:'totalBossLikeKills', target:240, reward:{coins:10980} },
+            { id:'m127', cat:'PLAY', title:'出撃ランク8', desc:'合計250回プレイする', metric:'totalRuns', target:250, reward:{coins:11100} },
+            { id:'m128', cat:'ONLINE', title:'対戦ランク8', desc:'オンラインで攻撃を合計800回当てる', metric:'totalOnlineHits', target:800, reward:{coins:11220} },
+            { id:'m129', cat:'COIN', title:'コインランク8', desc:'合計150000コイン獲得する', metric:'totalCoinsEarned', target:150000, reward:{coins:11340} },
+            { id:'m130', cat:'RUN', title:'無双ランク8', desc:'1回のプレイで敵を2250体倒す', metric:'bestRunKills', target:2250, reward:{coins:11460, weapon:'starfallCrown'} },
+            { id:'m131', cat:'KILL', title:'討伐ランク9', desc:'敵を合計26000体倒す', metric:'totalKills', target:26000, reward:{coins:11760} },
+            { id:'m132', cat:'GEM', title:'ジェムランク9', desc:'ジェムを合計27000個集める', metric:'totalGems', target:27000, reward:{coins:11880} },
+            { id:'m133', cat:'TIME', title:'生存ランク9', desc:'1回のプレイで1860秒生き残る', metric:'bestTime', target:1860, reward:{coins:12000} },
+            { id:'m134', cat:'SCORE', title:'スコアランク9', desc:'自己ベスト700000点を超える', metric:'bestScore', target:700000, reward:{coins:12120} },
+            { id:'m135', cat:'LEVEL', title:'覚醒ランク9', desc:'最高レベル80に到達する', metric:'bestLevel', target:80, reward:{coins:12240} },
+            { id:'m136', cat:'BOSS', title:'ボスランク9', desc:'ボス系の敵を合計300体倒す', metric:'totalBossLikeKills', target:300, reward:{coins:12360} },
+            { id:'m137', cat:'PLAY', title:'出撃ランク9', desc:'合計320回プレイする', metric:'totalRuns', target:320, reward:{coins:12480} },
+            { id:'m138', cat:'ONLINE', title:'対戦ランク9', desc:'オンラインで攻撃を合計1050回当てる', metric:'totalOnlineHits', target:1050, reward:{coins:12600} },
+            { id:'m139', cat:'COIN', title:'コインランク9', desc:'合計200000コイン獲得する', metric:'totalCoinsEarned', target:200000, reward:{coins:12720} },
+            { id:'m140', cat:'RUN', title:'無双ランク9', desc:'1回のプレイで敵を2700体倒す', metric:'bestRunKills', target:2700, reward:{coins:12840, aura:'royalHalo'} },
+            { id:'m141', cat:'KILL', title:'討伐ランク10', desc:'敵を合計33000体倒す', metric:'totalKills', target:33000, reward:{coins:13140} },
+            { id:'m142', cat:'GEM', title:'ジェムランク10', desc:'ジェムを合計35000個集める', metric:'totalGems', target:35000, reward:{coins:13260} },
+            { id:'m143', cat:'TIME', title:'生存ランク10', desc:'1回のプレイで2100秒生き残る', metric:'bestTime', target:2100, reward:{coins:13380} },
+            { id:'m144', cat:'SCORE', title:'スコアランク10', desc:'自己ベスト900000点を超える', metric:'bestScore', target:900000, reward:{coins:13500} },
+            { id:'m145', cat:'LEVEL', title:'覚醒ランク10', desc:'最高レベル90に到達する', metric:'bestLevel', target:90, reward:{coins:13620} },
+            { id:'m146', cat:'BOSS', title:'ボスランク10', desc:'ボス系の敵を合計380体倒す', metric:'totalBossLikeKills', target:380, reward:{coins:13740} },
+            { id:'m147', cat:'PLAY', title:'出撃ランク10', desc:'合計400回プレイする', metric:'totalRuns', target:400, reward:{coins:13860} },
+            { id:'m148', cat:'ONLINE', title:'対戦ランク10', desc:'オンラインで攻撃を合計1350回当てる', metric:'totalOnlineHits', target:1350, reward:{coins:13980} },
+            { id:'m149', cat:'COIN', title:'コインランク10', desc:'合計260000コイン獲得する', metric:'totalCoinsEarned', target:260000, reward:{coins:14100} },
+            { id:'m150', cat:'RUN', title:'銀河を制した者', desc:'1回のプレイで敵を3300体倒す', metric:'bestRunKills', target:3300, reward:{coins:20000, weapon:'voidCollector', skin:'angel', aura:'royalHalo'} }
         ];
 
         function ensureProgressionData() {
@@ -986,7 +1086,7 @@
         function endRunAndReturnToMenu() {
             if (!player) { gameState = 'start'; showScreen('startScreen'); return; }
             const finalScoreVal = Math.floor(score || 0);
-            const earnedCoins = Math.max(0, Math.floor(finalScoreVal / 100) + Math.floor(gameTime || 0));
+            const earnedCoins = Math.max(0, Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime || 0)) / 2));
             userData.coins = Number(userData.coins || 0) + earnedCoins;
             finishMissionRun(earnedCoins);
             if (finalScoreVal > Number(userData.score || 0)) userData.score = finalScoreVal;
@@ -1255,18 +1355,32 @@
             if ((player.onlineBounceBombLevel || 0) === 0) pool.push({ name:'【反射】バウンスボム', desc:'画面端で反射する爆弾を放つ', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel = 1; }});
             else if (player.onlineBounceBombLevel < 3) pool.push({ name:'バウンスボム強化', desc:'反射爆弾の威力とサイズがUP', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel += 1; }});
             
-            if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'大きさ2倍・ダメージ2倍の毒沼を定期設置', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
+            if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'毒の沼を定期的に設置し、近づいた相手に継続ダメージを与える', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
             else if (player.onlinePoisonLevel < 3) pool.push({ name:'トキシックトラップ強化', desc:'毒沼のサイズとダメージがUP', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel += 1; }});
 
             // --- 新規オンライン武器 ---
             if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'10秒ごとに70ダメージの誘導弾を5発放つ', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
-            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'誘導性能が少しUP。5発・10秒・70ダメージ仕様', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
+            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'誘導性能が少しUPし、まとまった弾幕で相手を追い込む', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
 
-            if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に継続ダメージ2倍・大きさ2倍の重力場を生成', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
-            else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場の安定性がUP。大きさとダメージは2倍仕様', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
+            if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に重力場を生成し、範囲内の相手を削る', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
+            else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場の安定性・範囲・威力がさらにUP', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
 
             if ((player.onlineBananaLevel || 0) === 0) pool.push({ name:'【爆笑】バナナスリップ砲', desc:'すべるバナナをばらまくネタ武器。命中すると意外と痛い。', color:'#fde047', icon:'🍌', apply:()=>{ player.onlineBananaLevel = 1; }});
             else if (player.onlineBananaLevel < 3) pool.push({ name:'バナナスリップ砲 強化', desc:'バナナの数と威力がUP。画面がふざけ始める。', color:'#fde047', icon:'🍌', apply:()=>{ player.onlineBananaLevel += 1; }});
+
+
+            // --- ソロ武器をオンラインにも追加 ---
+            if ((player.electricFieldLevel || 0) === 0) pool.push({ name:'【雷鳴】破滅の雷域', desc:'周囲に電撃フィールドを発生させ、近づいた敵を感電させる', color:'#00ffff', icon:'🌩️', apply:()=>{ player.electricFieldLevel = 1; }});
+            else if (player.electricFieldLevel < 3) pool.push({ name:'破滅の雷域 強化', desc:'電撃フィールドの範囲と威力がUP', color:'#00ffff', icon:'🌩️', apply:()=>{ player.electricFieldLevel += 1; }});
+
+            if ((player.voidTempestLevel || 0) === 0) pool.push({ name:'【悟空の暴風】虚空次元の暴風', desc:'暴風を呼び出し、敵や相手を巻き込むオンライン対応武器', color:'#38bdf8', icon:'🌪️', apply:()=>{ player.voidTempestLevel = 1; }});
+            else if (player.voidTempestLevel < 3) pool.push({ name:'虚空次元の暴風 強化', desc:'暴風の威力と持続力がUP', color:'#38bdf8', icon:'🌪️', apply:()=>{ player.voidTempestLevel += 1; }});
+
+            if ((player.onlineAstralLevel || 0) === 0) pool.push({ name:'【星骸】アストラル・ジャッジメント', desc:'星の槍を落として広範囲を切り裂く、強めのオンライン専用武器', color:'#818cf8', icon:'☄️', apply:()=>{ player.onlineAstralLevel = 1; }});
+            else if (player.onlineAstralLevel < 3) pool.push({ name:'アストラル・ジャッジメント 強化', desc:'星槍の範囲・威力・演出がさらにUP', color:'#818cf8', icon:'☄️', apply:()=>{ player.onlineAstralLevel += 1; }});
+
+            if ((player.onlineHarisenLevel || 0) === 0) pool.push({ name:'【冥笑】ネビュラ・ハリセンノヴァ', desc:'銀河ハリセンで相手の場所に巨大なツッコミ衝撃波を落とす', color:'#22d3ee', icon:'🪭', apply:()=>{ player.onlineHarisenLevel = 1; }});
+            else if (player.onlineHarisenLevel < 3) pool.push({ name:'ネビュラ・ハリセンノヴァ 強化', desc:'ツッコミ衝撃波の範囲・威力・連発力がUP', color:'#22d3ee', icon:'🪭', apply:()=>{ player.onlineHarisenLevel += 1; }});
 
             let ultimateSkills = [];
             if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
@@ -1853,7 +1967,7 @@
             document.getElementById('finalTime').innerText = document.getElementById('timeDisplay').innerText;
             const finalScoreVal = Math.floor(score); document.getElementById('finalScore').innerText = finalScoreVal;
             
-            let earnedCoins = Math.floor(finalScoreVal / 100) + Math.floor(gameTime);
+            let earnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 2);
             userData.coins += earnedCoins; document.getElementById('earnedCoinsDisplay').innerText = `+${earnedCoins}`;
             finishMissionRun(earnedCoins);
             
@@ -1954,7 +2068,7 @@
         // --- 新規追加：スナイパー用の銃弾クラス ---
         class SniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 35, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 8.75, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
                 this.angle = angle;
             }
             draw(ctx) {
@@ -1984,7 +2098,7 @@
 
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 35, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 8.75, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
                 this.bounces = 6;
                 this.lifeTimer = 0;
                 this.angle = angle;
@@ -3473,55 +3587,239 @@
             }
         }
 
+
+        class OnlineLegendaryChest {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type || (Math.random() < 0.5 ? 'murasaki' : 'kamehameha');
+                this.hp = 180; this.maxHp = 180; this.radius = 42; this.timer = 0; this.markedForDeletion = false;
+                this.hitMarks = new WeakSet();
+            }
+            label() { return this.type === 'murasaki' ? '虚式「茈」' : '龍星・崩命破'; }
+            update() {
+                this.timer++;
+                const hitGroups = [bullets, sniperBullets, bounceBombs, bananaPeels, phantomDaggers];
+                for (const group of hitGroups) {
+                    for (const p of group) {
+                        if (!p || p.markedForDeletion || this.hitMarks.has(p)) continue;
+                        const pr = p.radius || 12;
+                        if (MathUtils.distance(this.x, this.y, p.x, p.y) < this.radius + pr) {
+                            this.hitMarks.add(p);
+                            this.hp -= Math.max(18, Math.min(90, Number(p.damage || 25)));
+                            createParticles(p.x, p.y, 10, '#facc15', 4);
+                            floatingTexts.push(new FloatingText(this.x, this.y - 58, '宝箱 HIT!', '#facc15', 14));
+                            if ('pierce' in p) p.pierce = Math.max(0, (p.pierce || 0) - 1);
+                            if (p.pierce <= 0 && p.constructor.name !== 'RicochetSniperBullet') p.markedForDeletion = true;
+                            if (this.hp <= 0) { this.open(); return; }
+                        }
+                    }
+                }
+            }
+            open() {
+                if (!player) return;
+                this.markedForDeletion = true;
+                if (this.type === 'murasaki') {
+                    player.onlineChestMurasaki = true;
+                    player.hollowMurasakiLevel = Math.max(player.hollowMurasakiLevel || 0, 1);
+                    player.hollowMurasakiTimer = 1100;
+                } else {
+                    player.onlineChestKamehameha = true;
+                    player.kamehamehaLevel = Math.max(player.kamehamehaLevel || 0, 1);
+                    player.kamehamehaTimer = 1100;
+                }
+                showCustomCutin('LEGEND GET', this.label(), this.type === 'murasaki' ? '#a855f7' : '#60a5fa');
+                floatingTexts.push(new FloatingText(player.x, player.y - 110, `${this.label()} GET!!`, this.type === 'murasaki' ? '#c084fc' : '#93c5fd', 34));
+                createParticles(this.x, this.y, 80, this.type === 'murasaki' ? '#a855f7' : '#60a5fa', 7);
+                Sound.levelUp();
+            }
+            draw(ctx) {
+                const pulse = 1 + Math.sin(this.timer * 0.08) * 0.06;
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 1.55 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = this.type === 'murasaki' ? 'rgba(168,85,247,.18)' : 'rgba(96,165,250,.18)'; ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.shadowBlur = 22; ctx.shadowColor = this.type === 'murasaki' ? '#a855f7' : '#60a5fa';
+                ctx.fillStyle = '#111827'; ctx.strokeStyle = this.type === 'murasaki' ? '#c084fc' : '#93c5fd'; ctx.lineWidth = 4;
+                if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(-42, -30, 84, 60, 10); ctx.fill(); ctx.stroke(); }
+                else { ctx.fillRect(-42, -30, 84, 60); ctx.strokeRect(-42, -30, 84, 60); }
+                ctx.fillStyle = '#facc15'; ctx.fillRect(-42, -6, 84, 12); ctx.fillRect(-6, -30, 12, 60);
+                ctx.font = 'bold 24px Noto Sans JP'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#fff'; ctx.shadowBlur = 10;
+                ctx.fillText(this.type === 'murasaki' ? '🟣' : '🌊', 0, 0);
+                ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(-36, -48, 72, 6);
+                ctx.fillStyle = '#22c55e'; ctx.fillRect(-36, -48, 72 * Math.max(0, this.hp / this.maxHp), 6);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Noto Sans JP';
+                ctx.fillText('LEGEND CHEST', 0, 47);
+                ctx.restore();
+            }
+        }
+
+        class AstralJudgement {
+            constructor(x, y, damage, level) {
+                this.x = x; this.y = y; this.damage = damage; this.level = level;
+                this.timer = 0; this.radius = 120 + level * 28; this.markedForDeletion = false;
+                this.remoteHitTick = new Map();
+            }
+            update() {
+                this.timer++;
+                if (this.timer === 24) {
+                    createParticles(this.x, this.y, 45, '#818cf8', 5);
+                    triggerShake(8);
+                }
+                if (this.timer >= 24 && this.timer <= 105 && this.timer % 12 === 0) {
+                    for (const e of enemies) {
+                        if (!e || e.markedForDeletion || e.isCharmed) continue;
+                        if (MathUtils.distance(this.x, this.y, e.x, e.y) < this.radius + e.radius) {
+                            e.takeDamage(this.damage);
+                            createParticles(e.x, e.y, 5, '#c4b5fd', 3);
+                        }
+                    }
+                    if (isOnlineMode) {
+                        remotePlayers.forEach(r => {
+                            if (!r || Number(r.hp || 0) <= 0) return;
+                            const d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                            if (d < this.radius + ONLINE_REMOTE_RADIUS) {
+                                const last = this.remoteHitTick.get(r.id) || -999;
+                                if (this.timer - last >= 24) {
+                                    sendOnlineHit(r.id, this.damage);
+                                    this.remoteHitTick.set(r.id, this.timer);
+                                    floatingTexts.push(new FloatingText(r.x, r.y - 42, `ASTRAL -${Math.floor(this.damage)}`, '#c4b5fd', 14));
+                                }
+                            }
+                        });
+                    }
+                }
+                if (this.timer > 126) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+                const charge = Math.min(1, this.timer / 24);
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * charge, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(129,140,248,.75)'; ctx.lineWidth = 4; ctx.shadowBlur = 24; ctx.shadowColor = '#818cf8'; ctx.stroke();
+                if (this.timer >= 24) {
+                    const alpha = Math.max(0, 1 - (this.timer - 24) / 102);
+                    ctx.globalAlpha = alpha;
+                    for (let i = 0; i < 7; i++) {
+                        const a = (Math.PI * 2 / 7) * i + this.timer * 0.025;
+                        ctx.beginPath();
+                        ctx.moveTo(Math.cos(a) * 18, Math.sin(a) * 18);
+                        ctx.lineTo(Math.cos(a) * this.radius, Math.sin(a) * this.radius);
+                        ctx.strokeStyle = i % 2 ? '#c4b5fd' : '#67e8f9'; ctx.lineWidth = 3; ctx.stroke();
+                    }
+                    ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.75, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(99,102,241,.18)'; ctx.fill();
+                    ctx.font = 'bold 34px Noto Sans JP'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#c4b5fd'; ctx.fillText('☄️', 0, 0);
+                } else {
+                    ctx.font = 'bold 22px Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#e0e7ff';
+                    ctx.fillText('LOCK ON', 0, -this.radius * 0.55);
+                }
+                ctx.restore();
+            }
+        }
+
+
+        class NebulaHarisenNova {
+            constructor(x, y, damage, level) {
+                this.x = x; this.y = y; this.damage = damage; this.level = level;
+                this.timer = 0; this.radius = 150 + level * 34; this.markedForDeletion = false;
+                this.remoteHitDone = new Set(); this.spin = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.timer++;
+                this.spin += 0.13;
+                if (this.timer === 18) {
+                    createParticles(this.x, this.y, 55, '#22d3ee', 5);
+                    createParticles(this.x, this.y, 28, '#f0abfc', 5);
+                    effects.push(new Shockwave(this.x, this.y, '#22d3ee', 18, this.radius * 2.1));
+                    triggerShake(12);
+                    Sound.playNoise(0.25, 0.28);
+                    floatingTexts.push(new FloatingText(this.x, this.y - 84, '銀河ツッコミ炸裂！', '#67e8f9', 24));
+
+                    for (const e of enemies) {
+                        if (!e || e.markedForDeletion || e.isCharmed) continue;
+                        if (MathUtils.distance(this.x, this.y, e.x, e.y) < this.radius + e.radius) {
+                            e.takeDamage(this.damage);
+                            floatingTexts.push(new FloatingText(e.x, e.y - 36, 'バシィィン！', '#f0abfc', 14));
+                        }
+                    }
+                    if (isOnlineMode) {
+                        remotePlayers.forEach(r => {
+                            if (!r || Number(r.hp || 0) <= 0 || this.remoteHitDone.has(r.id)) return;
+                            if (MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius + ONLINE_REMOTE_RADIUS) {
+                                sendOnlineHit(r.id, this.damage);
+                                this.remoteHitDone.add(r.id);
+                                floatingTexts.push(new FloatingText(r.x, r.y - 52, `HARISEN -${Math.floor(this.damage)}`, '#67e8f9', 16));
+                            }
+                        });
+                    }
+                }
+                if (this.timer > 64) this.markedForDeletion = true;
+            }
+            draw(ctx) {
+                const charge = Math.min(1, this.timer / 18);
+                const fade = this.timer < 18 ? 1 : Math.max(0, 1 - (this.timer - 18) / 46);
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.spin);
+                ctx.globalAlpha = fade;
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * charge, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(34,211,238,.86)'; ctx.lineWidth = 6; ctx.shadowBlur = 28; ctx.shadowColor = '#22d3ee'; ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.68 * charge, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(240,171,252,.72)'; ctx.lineWidth = 4; ctx.stroke();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.rotate(-this.spin * 1.8);
+                ctx.font = `bold ${Math.floor(44 + this.level * 8)}px Noto Sans JP`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowBlur = 24; ctx.shadowColor = '#67e8f9';
+                ctx.fillStyle = '#ffffff'; ctx.fillText('🪭', 0, 0);
+                ctx.font = 'bold 20px Orbitron, Noto Sans JP';
+                ctx.fillStyle = '#67e8f9'; ctx.fillText('NEBULA SLAP', 0, -this.radius * 0.62 * charge);
+                ctx.restore();
+            }
+        }
+
         class RealisticMapBlackHole {
             constructor(x, y) {
                 this.x = x; this.y = y;
                 this.timer = 0; this.markedForDeletion = false;
-                this.radius = 360; this.eventRadius = 54;
-                this.remoteHitTick = new Map();
-                this.starDust = Array.from({ length: 70 }, () => ({
+                // 今回の調整：見た目・当たり判定を3倍サイズにする
+                this.radius = 1080;
+                this.eventRadius = 162;
+                this.damageTick = -999;
+                this.starDust = Array.from({ length: 140 }, () => ({
                     a: Math.random() * Math.PI * 2,
-                    d: MathUtils.random(80, 340),
-                    s: MathUtils.random(0.004, 0.018),
-                    z: MathUtils.random(1, 3)
+                    d: MathUtils.random(140, 1000),
+                    s: MathUtils.random(0.003, 0.016),
+                    z: MathUtils.random(1, 3.4)
                 }));
             }
             update() {
                 this.timer++;
-                const pull = (obj, power = 1, canDamage = false) => {
-                    if (!obj || obj.markedForDeletion) return;
-                    const d = MathUtils.distance(this.x, this.y, obj.x, obj.y);
-                    if (d > this.radius || d < 1) return;
-                    const a = MathUtils.angle(obj.x, obj.y, this.x, this.y);
-                    const force = ((this.radius - d) / this.radius) * power;
-                    obj.x += Math.cos(a) * force;
-                    obj.y += Math.sin(a) * force;
-                    if (canDamage && d < this.eventRadius + 22 && this.timer % 30 === 0 && typeof obj.takeDamage === 'function') obj.takeDamage(4);
-                };
-                if (player) pull(player, 1.4, true);
-                for (const e of enemies) {
-                    if (e && !e.isCharmed && !e.markedForDeletion) {
-                        pull(e, 5.5, false);
-                        if (MathUtils.distance(this.x, this.y, e.x, e.y) < this.eventRadius + e.radius) e.takeDamage(12);
+
+                // ブラックホールはプレイヤーだけを吸い込む。敵・宝箱・弾・ジェムには影響させない。
+                if (player && gameState === 'playing') {
+                    const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                    if (d < this.radius && d > 1) {
+                        const a = MathUtils.angle(player.x, player.y, this.x, this.y);
+                        const t = Math.max(0, (this.radius - d) / this.radius);
+                        const pullPower = 5.2 + t * 18.5;
+                        player.x += Math.cos(a) * pullPower;
+                        player.y += Math.sin(a) * pullPower;
+
+                        if (d < this.eventRadius + player.radius && this.timer - this.damageTick >= 30) {
+                            this.damageTick = this.timer;
+                            player.takeDamage(60);
+                            floatingTexts.push(new FloatingText(player.x, player.y - 50, 'BLACK HOLE -60', '#a855f7', 18));
+                            createParticles(player.x, player.y, 24, '#a855f7', 4);
+                            triggerShake(8);
+                        }
                     }
                 }
-                if (isOnlineMode) {
-                    remotePlayers.forEach(r => {
-                        if (!r || Number(r.hp || 0) <= 0) return;
-                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
-                        if (d < this.eventRadius + 30) {
-                            const last = this.remoteHitTick.get(r.id) || -999;
-                            if (this.timer - last >= 60) {
-                                sendOnlineHit(r.id, 12);
-                                this.remoteHitTick.set(r.id, this.timer);
-                                floatingTexts.push(new FloatingText(r.x, r.y - 42, 'BLACK HOLE -12', '#a855f7', 14));
-                            }
-                        }
-                    });
-                }
-                if (this.timer % 12 === 0) {
+
+                if (this.timer % 8 === 0) {
                     const a = Math.random() * Math.PI * 2;
-                    const d = MathUtils.random(this.eventRadius + 50, this.radius);
+                    const d = MathUtils.random(this.eventRadius + 80, this.radius);
                     createParticles(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d, 2, Math.random() > 0.5 ? '#f59e0b' : '#60a5fa', 2);
                 }
             }
@@ -3532,42 +3830,45 @@
                 ctx.globalCompositeOperation = 'screen';
                 const lens = ctx.createRadialGradient(0, 0, this.eventRadius, 0, 0, this.radius * pulse);
                 lens.addColorStop(0, 'rgba(0,0,0,0)');
-                lens.addColorStop(0.35, 'rgba(88,28,135,0.16)');
-                lens.addColorStop(0.72, 'rgba(14,165,233,0.09)');
+                lens.addColorStop(0.25, 'rgba(88,28,135,0.22)');
+                lens.addColorStop(0.64, 'rgba(14,165,233,0.10)');
                 lens.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = lens;
                 ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * pulse), 0, Math.PI * 2); ctx.fill();
+
                 for (const dust of this.starDust) {
                     const a = dust.a + this.timer * dust.s;
-                    const squeeze = 0.28 + 0.08 * Math.sin(a * 2 + this.timer * 0.01);
+                    const squeeze = 0.22 + 0.07 * Math.sin(a * 2 + this.timer * 0.01);
                     const x = Math.cos(a) * dust.d;
                     const y = Math.sin(a) * dust.d * squeeze;
                     ctx.beginPath(); ctx.arc(x, y, dust.z, 0, Math.PI * 2);
-                    ctx.fillStyle = dust.d % 2 > 1 ? 'rgba(255,255,255,.75)' : 'rgba(96,165,250,.65)';
+                    ctx.fillStyle = dust.d % 2 > 1 ? 'rgba(255,255,255,.78)' : 'rgba(96,165,250,.68)';
                     ctx.fill();
                 }
+
                 ctx.save();
                 ctx.rotate(this.timer * 0.018);
-                for (let i = 0; i < 7; i++) {
+                for (let i = 0; i < 9; i++) {
                     ctx.beginPath();
                     ctx.ellipse(0, 0, this.eventRadius * (2.2 + i * 0.22), this.eventRadius * (0.35 + i * 0.04), 0, 0, Math.PI * 2);
-                    ctx.strokeStyle = i < 3 ? `rgba(255,244,190,${0.55 - i * 0.08})` : `rgba(249,115,22,${0.36 - i * 0.035})`;
-                    ctx.lineWidth = Math.max(1.5, 9 - i);
-                    ctx.shadowBlur = 24;
-                    ctx.shadowColor = i < 3 ? '#fde68a' : '#fb923c';
+                    ctx.strokeStyle = i < 4 ? `rgba(255,244,190,${0.58 - i * 0.07})` : `rgba(249,115,22,${0.38 - i * 0.03})`;
+                    ctx.lineWidth = Math.max(2, 15 - i);
+                    ctx.shadowBlur = 32;
+                    ctx.shadowColor = i < 4 ? '#fde68a' : '#fb923c';
                     ctx.stroke();
                 }
                 ctx.restore();
+
                 ctx.beginPath(); ctx.arc(0, 0, this.eventRadius * 1.16, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.shadowBlur = 28; ctx.shadowColor = '#ffffff'; ctx.stroke();
+                ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 5; ctx.shadowBlur = 40; ctx.shadowColor = '#ffffff'; ctx.stroke();
                 const core = ctx.createRadialGradient(0, 0, 2, 0, 0, this.eventRadius);
-                core.addColorStop(0, '#000'); core.addColorStop(0.72, '#000'); core.addColorStop(1, 'rgba(20,0,30,.95)');
+                core.addColorStop(0, '#000'); core.addColorStop(0.72, '#000'); core.addColorStop(1, 'rgba(20,0,30,.96)');
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.beginPath(); ctx.arc(0, 0, safeR(this.eventRadius), 0, Math.PI * 2);
-                ctx.fillStyle = core; ctx.shadowBlur = 35; ctx.shadowColor = '#000'; ctx.fill();
+                ctx.fillStyle = core; ctx.shadowBlur = 45; ctx.shadowColor = '#000'; ctx.fill();
                 ctx.globalCompositeOperation = 'screen';
                 ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius), 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(168,85,247,.18)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.strokeStyle = 'rgba(168,85,247,.22)'; ctx.lineWidth = 3; ctx.stroke();
                 ctx.restore();
             }
         }
@@ -3712,6 +4013,9 @@
                 this.onlinePhantomLevel = 0; this.onlinePhantomTimer = 0;
                 this.onlineGravityLevel = 0; this.onlineGravityTimer = 0;
                 this.onlineBananaLevel = 0; this.onlineBananaTimer = 0;
+                this.onlineAstralLevel = 0; this.onlineAstralTimer = 0;
+                this.onlineHarisenLevel = 0; this.onlineHarisenTimer = 0;
+                this.onlineChestMurasaki = false; this.onlineChestKamehameha = false;
                 this.evoBlackhole = false; this.evoDivineSword = false;
                 this.evoRicochetSniper = false; this.evoToxicAegis = false;
                 this.evoGravityBeam = false; this.evoThunderBlade = false;
@@ -3905,6 +4209,34 @@
                             this.fireOnlineBanana(); this.onlineBananaTimer = 0;
                         }
                     }
+                    if (this.onlineAstralLevel > 0) {
+                        this.onlineAstralTimer++;
+                        const astralCd = Math.max(300, 540 - this.onlineAstralLevel * 60);
+                        if (this.onlineAstralTimer >= astralCd) {
+                            this.fireOnlineAstralJudgement(); this.onlineAstralTimer = 0;
+                        }
+                    }
+                    if (this.onlineHarisenLevel > 0) {
+                        this.onlineHarisenTimer++;
+                        const harisenCd = Math.max(330, 540 - this.onlineHarisenLevel * 70);
+                        if (this.onlineHarisenTimer >= harisenCd) {
+                            this.fireOnlineHarisenNova(); this.onlineHarisenTimer = 0;
+                        }
+                    }
+                    if (this.onlineChestMurasaki) {
+                        this.hollowMurasakiLevel = Math.max(this.hollowMurasakiLevel || 0, 1);
+                        this.hollowMurasakiTimer++;
+                        if (this.hollowMurasakiTimer >= 1200) {
+                            this.startHollowMurasakiCharge(); this.hollowMurasakiTimer = 0;
+                        }
+                    }
+                    if (this.onlineChestKamehameha) {
+                        this.kamehamehaLevel = Math.max(this.kamehamehaLevel || 0, 1);
+                        this.kamehamehaTimer++;
+                        if (this.kamehamehaTimer >= 1200) {
+                            this.startKamehameha(); this.kamehamehaTimer = 0;
+                        }
+                    }
                 }
             }
 
@@ -4020,9 +4352,45 @@
                 floatingTexts.push(new FloatingText(this.x, this.y - 64, 'バナナ発射！', '#fde047', 16));
             }
 
+
+            fireOnlineAstralJudgement() {
+                let target = null; let minDist = Infinity;
+                remotePlayers.forEach(r => {
+                    if (r && Number(r.hp || 0) > 0) {
+                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (d < minDist) { minDist = d; target = r; }
+                    }
+                });
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                const tx = target ? target.x : this.x + Math.cos(this.faceAngle) * 280;
+                const ty = target ? target.y : this.y + Math.sin(this.faceAngle) * 280;
+                if (astralJudgements.length < 8) astralJudgements.push(new AstralJudgement(tx, ty, 42 + this.onlineAstralLevel * 18, this.onlineAstralLevel));
+                floatingTexts.push(new FloatingText(this.x, this.y - 70, 'ASTRAL JUDGEMENT', '#818cf8', 18));
+                Sound.playTone(220, 'sawtooth', 0.16, 0.08);
+                setTimeout(() => Sound.playTone(880, 'triangle', 0.20, 0.05), 120);
+            }
+
+            fireOnlineHarisenNova() {
+                let target = null; let minDist = Infinity;
+                remotePlayers.forEach(r => {
+                    if (r && Number(r.hp || 0) > 0) {
+                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (d < minDist) { minDist = d; target = r; }
+                    }
+                });
+                if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
+                const tx = target ? target.x : this.x + Math.cos(this.faceAngle) * 340;
+                const ty = target ? target.y : this.y + Math.sin(this.faceAngle) * 340;
+                const damage = 70 + this.onlineHarisenLevel * 30;
+                if (harisenNovas.length < 8) harisenNovas.push(new NebulaHarisenNova(tx, ty, damage, this.onlineHarisenLevel));
+                floatingTexts.push(new FloatingText(this.x, this.y - 74, 'NEBULA HARISEN NOVA', '#22d3ee', 18));
+                Sound.playTone(520, 'sawtooth', 0.10, 0.06);
+                setTimeout(() => Sound.playTone(1040, 'triangle', 0.12, 0.05), 90);
+            }
+
             startShield() { if (isOnlineMode) return; if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 3)); }
-            startHollowMurasakiCharge() { if (isOnlineMode) return; if (hollowMurasakiCharges.length < 10) hollowMurasakiCharges.push(new HollowMurasakiCharge(this.x, this.y, this.faceAngle, 999999999, this.hollowMurasakiLevel)); }
-            startKamehameha() { if (isOnlineMode) return; if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel, this.evoGravityBeam)); }
+            startHollowMurasakiCharge() { if (isOnlineMode && !this.onlineChestMurasaki) return; if (hollowMurasakiCharges.length < 10) hollowMurasakiCharges.push(new HollowMurasakiCharge(this.x, this.y, this.faceAngle, 999999999, this.hollowMurasakiLevel)); }
+            startKamehameha() { if (isOnlineMode && !this.onlineChestKamehameha) return; if (kamehamehas.length < 10) kamehamehas.push(new Kamehameha(this.x, this.y, this.faceAngle, 999999999, this.kamehamehaLevel, this.evoGravityBeam)); }
             startInfiniteBlade() { if (isOnlineMode) return; if (infiniteBladeCharges.length < 10) infiniteBladeCharges.push(new InfiniteBladeCharge(this.x, this.y, this.faceAngle, 999999999, this.infiniteBladeLevel)); }
             startKeraunos() { if (isOnlineMode) return; if (keraunosCharges.length < 10) keraunosCharges.push(new KeraunosCharge(1000 * this.keraunosLevel, this.keraunosLevel)); }
             startFunnel() { 
@@ -4075,6 +4443,14 @@
                         let kb = (t.isBoss || t.isMonkey) ? 1 : 15;
                         t.x += Math.cos(a) * kb; t.y += Math.sin(a) * kb;
                     }
+                }
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) <= radius) {
+                            sendOnlineHit(r.id, damage * 0.45);
+                            floatingTexts.push(new FloatingText(r.x, r.y - 38, 'SHOCK!', '#67e8f9', 14));
+                        }
+                    });
                 }
             }
 
@@ -4531,7 +4907,7 @@
                     {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:vaderSkills, l:50},
                     {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
                     {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10},
-                    {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}
+                    {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}
                 ];
                 
                 for (let g of groups) {
@@ -4544,6 +4920,44 @@
                 
                 try { player.update(); } catch(e) {}
                 try { updateOnlineOpponents(); } catch(e) {}
+                if (isOnlineMode && frameCount % 20 === 0 && Array.isArray(voidTempests)) {
+                    for (const vt of voidTempests) {
+                        if (!vt || vt.markedForDeletion) continue;
+                        remotePlayers.forEach(r => {
+                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(vt.x || player.x, vt.y || player.y, r.x, r.y) < 260) {
+                                sendOnlineHit(r.id, 18 + (player.voidTempestLevel || 1) * 8);
+                            }
+                        });
+                    }
+                }
+                if (isOnlineMode && frameCount % 20 === 0) {
+                    for (const hm of hollowMurasakis) {
+                        if (!hm || hm.markedForDeletion) continue;
+                        const rr = (hm.baseRadius || 300) * (hm.scale || 1);
+                        remotePlayers.forEach(r => {
+                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(hm.x, hm.y, r.x, r.y) < rr + ONLINE_REMOTE_RADIUS) {
+                                sendOnlineHit(r.id, 999);
+                                floatingTexts.push(new FloatingText(r.x, r.y - 50, '虚式「茈」HIT!', '#c084fc', 15));
+                            }
+                        });
+                    }
+                    for (const km of kamehamehas) {
+                        if (!km || km.markedForDeletion || !player) continue;
+                        const angle = player.faceAngle;
+                        const cos = Math.cos(angle), sin = Math.sin(angle);
+                        const halfWidth = (km.width || 80) * 0.5;
+                        remotePlayers.forEach(r => {
+                            if (!r || Number(r.hp || 0) <= 0) return;
+                            const dx = r.x - player.x, dy = r.y - player.y;
+                            const forward = dx * cos + dy * sin;
+                            const side = Math.abs(-dx * sin + dy * cos);
+                            if (forward > -ONLINE_REMOTE_RADIUS && forward < (km.length || 1800) && side < halfWidth + ONLINE_REMOTE_RADIUS) {
+                                sendOnlineHit(r.id, 999);
+                                floatingTexts.push(new FloatingText(r.x, r.y - 50, '崩命破 HIT!', '#93c5fd', 15));
+                            }
+                        });
+                    }
+                }
                 
                 for (let i = enemyBullets.length - 1; i >= 0; i--) {
                     let b = enemyBullets[i];
@@ -4794,7 +5208,7 @@
             for (let y = startY; y <= camera.y + h + gridSize; y += gridSize) { ctx.moveTo(safe(camera.x - gridSize), safe(y)); ctx.lineTo(safe(camera.x + w + gridSize), safe(y)); }
             ctx.stroke();
 
-            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, bananaPeels, mapBlackholes, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
+            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, bananaPeels, onlineLegendaryChests, astralJudgements, harisenNovas, mapBlackholes, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
             
             for (let group of drawGroups) {
                 for (let obj of group) {
@@ -4811,7 +5225,37 @@
             
             ctx.restore(); 
             try { drawOnlineArrows(); } catch(e) {}
+            try { drawBossPointer(); } catch(e) {}
             try { drawSkillCooldowns(); } catch(e) {}
+        }
+
+        function drawBossPointer() {
+            if (!player || !Array.isArray(enemies)) return;
+            const boss = enemies.find(e => e && !e.markedForDeletion && (e.isBoss || e.isMidBoss || e.isMonkey));
+            if (!boss) return;
+            const sx = boss.x - camera.x;
+            const sy = boss.y - camera.y;
+            const margin = 46;
+            const onScreen = sx >= margin && sx <= width - margin && sy >= margin && sy <= height - margin;
+            if (onScreen) return;
+            const cx = width / 2, cy = height / 2;
+            const angle = Math.atan2(sy - cy, sx - cx);
+            const edgeX = Math.max(margin, Math.min(width - margin, cx + Math.cos(angle) * (Math.min(width, height) * 0.44)));
+            const edgeY = Math.max(margin, Math.min(height - margin, cy + Math.sin(angle) * (Math.min(width, height) * 0.44)));
+            ctx.save();
+            ctx.translate(edgeX, edgeY); ctx.rotate(angle);
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = boss.isMonkey ? '#fb923c' : '#ef4444';
+            ctx.shadowBlur = 18; ctx.shadowColor = boss.isMonkey ? '#fb923c' : '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(26, 0); ctx.lineTo(-16, -14); ctx.lineTo(-8, 0); ctx.lineTo(-16, 14); ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+            ctx.save();
+            ctx.font = 'bold 12px Orbitron, Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+            ctx.shadowBlur = 10; ctx.shadowColor = '#000';
+            ctx.fillText(boss.isMonkey ? 'MONKEY' : 'BOSS', edgeX, edgeY - 22);
+            ctx.restore();
         }
 
         function drawMapBlackHoleCompass() {
@@ -4844,6 +5288,10 @@
             if (player.onlinePhantomLevel > 0) skills.push({ id: 'onlinePhantom', icon: '🗡️×5', p: player.onlinePhantomTimer / 600 });
             if (player.onlineGravityLevel > 0) skills.push({ id: 'onlineGravity', icon: '🌌', p: player.onlineGravityTimer / 300 });
             if (player.onlineBananaLevel > 0) skills.push({ id: 'onlineBanana', icon: '🍌', p: player.onlineBananaTimer / 360 });
+            if (player.onlineAstralLevel > 0) skills.push({ id: 'onlineAstral', icon: '☄️', p: player.onlineAstralTimer / Math.max(300, 540 - player.onlineAstralLevel * 60) });
+            if (player.onlineHarisenLevel > 0) skills.push({ id: 'onlineHarisen', icon: '🪭', p: player.onlineHarisenTimer / Math.max(330, 540 - player.onlineHarisenLevel * 70) });
+            if (player.onlineChestMurasaki) skills.push({ id: 'chestMurasaki', icon: '🟣宝', p: player.hollowMurasakiTimer / 1200 });
+            if (player.onlineChestKamehameha) skills.push({ id: 'chestKamehameha', icon: '🌊宝', p: player.kamehamehaTimer / 1200 });
 
             if (skills.length === 0) return;
 
@@ -4930,7 +5378,7 @@
                     orbitalStrikeLevel: 0, ironmanSuitLevel: 0, disneyMagicLevel: 0,
                     funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0,
                     evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false,
-                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false, onlineBananaLevel: 0, onlineBananaTimer: 0
+                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false, onlineBananaLevel: 0, onlineBananaTimer: 0, onlineAstralLevel: 0, onlineAstralTimer: 0, onlineHarisenLevel: 0, onlineHarisenTimer: 0, onlineChestMurasaki: false, onlineChestKamehameha: false
                 });
             } else {
                 player.evoRicochetSniper = false; player.evoToxicAegis = false;
@@ -4944,12 +5392,20 @@
             
             // --- 配列の初期化 ---
             bounceBombs = []; poisonClouds = []; blackholes = []; divineSwords = []; sniperBullets = [];
-            phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = [];
+            phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = []; onlineLegendaryChests = []; astralJudgements = []; harisenNovas = [];
             
             bgStars = [];
             const bhAngle = Math.random() * Math.PI * 2;
             const bhDist = MathUtils.random(1300, 2600);
             mapBlackholes.push(new RealisticMapBlackHole(spawn.x + Math.cos(bhAngle) * bhDist, spawn.y + Math.sin(bhAngle) * bhDist));
+            if (isOnlineMode) {
+                for (let i = 0; i < 2; i++) {
+                    const cAngle = Math.random() * Math.PI * 2;
+                    const cDist = MathUtils.random(800, 2400);
+                    const cType = Math.random() < 0.5 ? 'murasaki' : 'kamehameha';
+                    onlineLegendaryChests.push(new OnlineLegendaryChest(spawn.x + Math.cos(cAngle) * cDist, spawn.y + Math.sin(cAngle) * cDist, cType));
+                }
+            }
             
             frameCount = 0; gameTime = 0; score = 0; isTimeStopped = false; isMuryokushoActive = false;
             if (isOnlineMode) startOnlineMode(); else stopOnlineMode();
