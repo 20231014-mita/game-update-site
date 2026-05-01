@@ -38,6 +38,22 @@
         .btn-gold:hover { background: #facc15; color: #000; box-shadow: 0 0 20px #facc15; }
         .btn-red { background: transparent; color: #ff5f6d; border: 2px solid #ff5f6d; box-shadow: 0 0 10px rgba(255,95,109,.8), inset 0 0 8px rgba(255,95,109,.35); transition: all .2s; }
         .btn-red:hover { background: #ff5f6d; color: #000; box-shadow: 0 0 20px #ff5f6d; }
+
+        /* ===== Mission / Collection Expansion ===== */
+        .btn-purple { background: transparent; color: #c084fc; border: 2px solid #c084fc; box-shadow: 0 0 10px #c084fc, inset 0 0 8px rgba(192,132,252,.45); transition: all .2s; }
+        .btn-purple:hover { background: #c084fc; color: #000; box-shadow: 0 0 20px #c084fc; }
+        .btn-green { background: transparent; color: #86efac; border: 2px solid #86efac; box-shadow: 0 0 10px #22c55e, inset 0 0 8px rgba(34,197,94,.35); transition: all .2s; }
+        .btn-green:hover { background: #86efac; color: #000; box-shadow: 0 0 20px #22c55e; }
+        .mission-card { background: rgba(2, 6, 23, .88); border: 1px solid rgba(6,182,212,.45); border-radius: 16px; padding: 14px; box-shadow: 0 0 14px rgba(6,182,212,.18); }
+        .mission-card.done { border-color: rgba(250,204,21,.8); box-shadow: 0 0 18px rgba(250,204,21,.25); }
+        .mission-card.claimed { opacity: .58; filter: grayscale(.2); }
+        .mini-progress { height: 8px; border-radius: 999px; background: rgba(15,23,42,.95); overflow: hidden; border: 1px solid rgba(148,163,184,.25); }
+        .mini-progress > div { height: 100%; background: linear-gradient(90deg, #06b6d4, #facc15); box-shadow: 0 0 10px #06b6d4; }
+        .collection-card { background: rgba(2, 6, 23, .9); border: 1px solid rgba(148,163,184,.35); border-radius: 16px; padding: 14px; }
+        .collection-card.unlocked { border-color: rgba(34,197,94,.75); box-shadow: 0 0 16px rgba(34,197,94,.18); }
+        #missionToast { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); z-index: 300; min-width: min(90vw, 480px); pointer-events: none; }
+        .toast-card { background: rgba(0,0,0,.86); border: 2px solid #facc15; border-radius: 18px; padding: 14px 18px; box-shadow: 0 0 28px rgba(250,204,21,.45); animation: toastPop 3.1s ease forwards; }
+        @keyframes toastPop { 0%{opacity:0;transform:translateY(-20px) scale(.96)} 10%{opacity:1;transform:translateY(0) scale(1)} 84%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-12px) scale(.98)} }
     </style>
 </head>
 <body class="text-white">
@@ -45,6 +61,7 @@
     <div id="lavaOverlay" class="lava-bg"></div>
     <canvas id="gameCanvas" class="relative z-10"></canvas>
     <div id="shatterEffect" class="shatter-glass hidden"></div>
+    <div id="missionToast"></div>
 
     <div id="joystickZone" class="fixed bottom-8 right-8 md:bottom-16 md:right-16 w-32 h-32 bg-gray-800/60 rounded-full border-2 border-cyan-500/50 touch-none z-[100] flex items-center justify-center hidden">
         <div id="joystickStick" class="w-12 h-12 bg-cyan-400/90 rounded-full shadow-[0_0_15px_cyan] pointer-events-none transform translate-x-0 translate-y-0"></div>
@@ -61,6 +78,7 @@
                     <div>PLAYERS: <span id="onlinePlayerCount">1</span></div>
                     <div>NAME: <span id="onlineNickLabel">PLAYER</span></div>
                 </div>
+                <div id="missionMiniHud" class="hidden mt-2 text-xs md:text-sm bg-black/55 border border-yellow-400/60 rounded-lg px-3 py-2 shadow-[0_0_10px_rgba(250,204,21,.25)] max-w-xs"></div>
             </div>
             <div class="text-right flex flex-col items-end gap-2 pointer-events-auto">
                 <button id="pauseBtn" class="btn-neon px-3 py-1 text-sm font-bold rounded cursor-pointer flex items-center justify-center gap-1">
@@ -155,6 +173,8 @@
                 <button id="startBtn" class="btn-neon px-6 py-4 text-xl md:text-2xl font-bold rounded cursor-pointer">SOLO START</button>
                 <button id="onlineStartBtn" class="btn-gold px-6 py-4 text-xl md:text-2xl font-bold rounded cursor-pointer">ONLINE BATTLE</button>
                 <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] px-6 py-4 text-xl font-bold rounded cursor-pointer transition-all">UPGRADE</button>
+                <button id="openMissionBtn" class="btn-purple px-6 py-4 text-xl font-bold rounded cursor-pointer">MISSIONS</button>
+                <button id="openCollectionBtn" class="btn-green px-6 py-4 text-xl font-bold rounded cursor-pointer">COLLECTION</button>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
                     <span class="text-cyan-300 font-bold text-sm tracking-wider">ジョイスティック</span>
                     <label class="flex items-center cursor-pointer gap-3">
@@ -186,6 +206,37 @@
         <p class="text-2xl text-white mb-8 font-bold">COINS: <span id="metaCoinsDisplay" class="text-yellow-400 text-3xl">0</span></p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl px-4 overflow-y-auto max-h-[60vh] pb-4" id="upgradeListContainer"></div>
         <button id="closeUpgradeBtn" class="btn-neon mt-8 px-8 py-3 text-xl font-bold rounded cursor-pointer">BACK TO MENU</button>
+    </div>
+
+
+
+    <div id="missionsScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[55] hidden p-3">
+        <div class="menu-panel w-full flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #facc15;">MISSIONS</h2>
+                    <p class="text-gray-300 text-sm mt-2">ミッションを達成して、コイン・伝説武器・スキン・オーラを解放しよう。</p>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <button id="claimAllMissionsBtn" class="btn-gold px-4 py-2 rounded font-bold">CLAIM ALL</button>
+                    <button id="closeMissionsBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[68vh] pr-1" id="missionsListContainer"></div>
+        </div>
+    </div>
+
+    <div id="collectionScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[55] hidden p-3">
+        <div class="menu-panel w-full flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-green-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #22c55e;">COLLECTION</h2>
+                    <p class="text-gray-300 text-sm mt-2">解放した伝説武器・スキン・オーラを確認できます。</p>
+                </div>
+                <button id="closeCollectionBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+            </div>
+            <div id="collectionListContainer" class="overflow-y-auto max-h-[70vh] pr-1 space-y-4"></div>
+        </div>
     </div>
 
     <div id="levelUpScreen" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-md z-50 hidden">
@@ -248,6 +299,7 @@
         // --- 新規追加のグローバル配列 ---
         let bounceBombs = [], poisonClouds = [], blackholes = [], divineSwords = [];
         let sniperBullets = [], phantomDaggers = [], gravityPulsars = [];
+        let mapBlackholes = [], bananaPeels = [];
 
         let player = null;
         let isMuryokushoActive = false;
@@ -275,6 +327,425 @@
         ];
 
         let userData = { score: 0, coins: 0, nickname: '', upgrades: { hp: 0, damage: 0, speed: 0, exp: 0 } };
+
+        // ==========================================
+        // ミッション・報酬・コレクション拡張
+        // ==========================================
+        const SKIN_DEFS = [
+            { id:'classic', name:'クラシックネオン', icon:'🔵', color:'#0ff', desc:'最初から使える基本スキン' },
+            { id:'ruby', name:'ルビーブレイカー', icon:'🔴', color:'#fb7185', desc:'敵をたくさん倒すと解放' },
+            { id:'gold', name:'ゴールドサバイバー', icon:'🟡', color:'#facc15', desc:'コインを集めると解放' },
+            { id:'void', name:'ヴォイドランナー', icon:'🟣', color:'#a855f7', desc:'長く生き残ると解放' },
+            { id:'emerald', name:'エメラルドガーディアン', icon:'🟢', color:'#22c55e', desc:'ボス討伐で解放' },
+            { id:'angel', name:'エンジェルコア', icon:'⚪', color:'#e2e8f0', desc:'高難度ミッションで解放' }
+        ];
+
+        const AURA_DEFS = [
+            { id:'none', name:'オーラなし', icon:'○', color:'#ffffff', desc:'軽量で見やすい標準状態' },
+            { id:'cyanFlame', name:'蒼炎オーラ', icon:'🔥', color:'#06b6d4', desc:'近くに青い炎が出る' },
+            { id:'goldSpark', name:'黄金スパーク', icon:'✨', color:'#facc15', desc:'小さな星が周囲に出る' },
+            { id:'voidMist', name:'虚空ミスト', icon:'🌌', color:'#8b5cf6', desc:'紫の霧をまとえる' },
+            { id:'toxicPulse', name:'猛毒パルス', icon:'☣️', color:'#84cc16', desc:'緑の波紋が出る' },
+            { id:'royalHalo', name:'王者の光輪', icon:'👑', color:'#fef3c7', desc:'伝説級の光輪' }
+        ];
+
+        const LEGENDARY_WEAPON_DEFS = [
+            { id:'neonLance', name:'伝説武器：ネオンランス', icon:'🔱', desc:'通常弾が黄金の貫通弾になる。ソロ専用。' },
+            { id:'phoenixCore', name:'伝説武器：フェニックスコア', icon:'🔥', desc:'1回だけ復活し、周囲に大爆発を起こす。ソロ専用。' },
+            { id:'starfallCrown', name:'伝説武器：星落としの王冠', icon:'👑', desc:'一定間隔で星の爆発を起こす。ソロ専用。' },
+            { id:'voidCollector', name:'伝説武器：虚空コレクター', icon:'🌌', desc:'経験値回収と成長速度が大きく上がる。ソロ専用。' }
+        ];
+
+        const MISSION_DEFS = [
+            { id:'m001', cat:'START', title:'はじめての出撃', desc:'ゲームを1回プレイする', metric:'totalRuns', target:1, reward:{coins:100} },
+            { id:'m002', cat:'START', title:'最初の討伐', desc:'敵を合計10体倒す', metric:'totalKills', target:10, reward:{coins:120} },
+            { id:'m003', cat:'START', title:'経験値ハンター', desc:'ジェムを合計30個集める', metric:'totalGems', target:30, reward:{coins:150} },
+            { id:'m004', cat:'START', title:'レベルアップ入門', desc:'合計3回レベルアップする', metric:'totalLevelUps', target:3, reward:{coins:160} },
+            { id:'m005', cat:'START', title:'1分サバイバー', desc:'1回のプレイで60秒生き残る', metric:'bestTime', target:60, reward:{coins:180} },
+            { id:'m006', cat:'KILL', title:'ザコ狩り職人', desc:'敵を合計100体倒す', metric:'totalKills', target:100, reward:{coins:250, skin:'ruby'} },
+            { id:'m007', cat:'KILL', title:'ネオンスレイヤー', desc:'敵を合計300体倒す', metric:'totalKills', target:300, reward:{coins:400, weapon:'neonLance'} },
+            { id:'m008', cat:'KILL', title:'殲滅モード', desc:'敵を合計700体倒す', metric:'totalKills', target:700, reward:{coins:700, aura:'cyanFlame'} },
+            { id:'m009', cat:'KILL', title:'1000体斬り', desc:'敵を合計1000体倒す', metric:'totalKills', target:1000, reward:{coins:1200} },
+            { id:'m010', cat:'KILL', title:'伝説の討伐者', desc:'敵を合計2000体倒す', metric:'totalKills', target:2000, reward:{coins:2000, aura:'goldSpark'} },
+            { id:'m011', cat:'RUN', title:'一戦集中', desc:'1回のプレイで敵を50体倒す', metric:'bestRunKills', target:50, reward:{coins:250} },
+            { id:'m012', cat:'RUN', title:'止まらない刃', desc:'1回のプレイで敵を150体倒す', metric:'bestRunKills', target:150, reward:{coins:500} },
+            { id:'m013', cat:'RUN', title:'無双開始', desc:'1回のプレイで敵を300体倒す', metric:'bestRunKills', target:300, reward:{coins:900, weapon:'starfallCrown'} },
+            { id:'m014', cat:'TIME', title:'3分の壁', desc:'1回のプレイで180秒生き残る', metric:'bestTime', target:180, reward:{coins:400} },
+            { id:'m015', cat:'TIME', title:'5分サバイバー', desc:'1回のプレイで300秒生き残る', metric:'bestTime', target:300, reward:{coins:800, skin:'void'} },
+            { id:'m016', cat:'TIME', title:'10分の王', desc:'1回のプレイで600秒生き残る', metric:'bestTime', target:600, reward:{coins:1800, aura:'royalHalo'} },
+            { id:'m017', cat:'BOSS', title:'初ボス撃破', desc:'ボス系の敵を合計1体倒す', metric:'totalBossLikeKills', target:1, reward:{coins:350} },
+            { id:'m018', cat:'BOSS', title:'ボスハンター', desc:'ボス系の敵を合計5体倒す', metric:'totalBossLikeKills', target:5, reward:{coins:800, skin:'emerald'} },
+            { id:'m019', cat:'BOSS', title:'ボスブレイカー', desc:'ボス系の敵を合計15体倒す', metric:'totalBossLikeKills', target:15, reward:{coins:1600, weapon:'phoenixCore'} },
+            { id:'m020', cat:'BOSS', title:'猿王に勝て', desc:'MONKEY KINGを合計1体倒す', metric:'totalMonkeyKills', target:1, reward:{coins:1000, aura:'voidMist'} },
+            { id:'m021', cat:'BOSS', title:'猿王キラー', desc:'MONKEY KINGを合計3体倒す', metric:'totalMonkeyKills', target:3, reward:{coins:2200, weapon:'voidCollector'} },
+            { id:'m022', cat:'LEVEL', title:'成長する力', desc:'最高レベル5に到達する', metric:'bestLevel', target:5, reward:{coins:300} },
+            { id:'m023', cat:'LEVEL', title:'覚醒の始まり', desc:'最高レベル10に到達する', metric:'bestLevel', target:10, reward:{coins:700} },
+            { id:'m024', cat:'LEVEL', title:'限界突破', desc:'最高レベル15に到達する', metric:'bestLevel', target:15, reward:{coins:1300, aura:'toxicPulse'} },
+            { id:'m025', cat:'LEVEL', title:'伝説の領域', desc:'最高レベル25に到達する', metric:'bestLevel', target:25, reward:{coins:3000, skin:'angel'} },
+            { id:'m026', cat:'SCORE', title:'スコア1000', desc:'自己ベスト1000点を超える', metric:'bestScore', target:1000, reward:{coins:250} },
+            { id:'m027', cat:'SCORE', title:'スコア5000', desc:'自己ベスト5000点を超える', metric:'bestScore', target:5000, reward:{coins:700} },
+            { id:'m028', cat:'SCORE', title:'スコア15000', desc:'自己ベスト15000点を超える', metric:'bestScore', target:15000, reward:{coins:1500} },
+            { id:'m029', cat:'SCORE', title:'スコア50000', desc:'自己ベスト50000点を超える', metric:'bestScore', target:50000, reward:{coins:5000} },
+            { id:'m030', cat:'COIN', title:'貯金開始', desc:'合計500コイン獲得する', metric:'totalCoinsEarned', target:500, reward:{coins:250} },
+            { id:'m031', cat:'COIN', title:'ネオン富豪', desc:'合計3000コイン獲得する', metric:'totalCoinsEarned', target:3000, reward:{coins:900, skin:'gold'} },
+            { id:'m032', cat:'COIN', title:'コイン王', desc:'合計10000コイン獲得する', metric:'totalCoinsEarned', target:10000, reward:{coins:2500} },
+            { id:'m033', cat:'GEM', title:'ジェム好き', desc:'ジェムを合計100個集める', metric:'totalGems', target:100, reward:{coins:250} },
+            { id:'m034', cat:'GEM', title:'ジェムコレクター', desc:'ジェムを合計500個集める', metric:'totalGems', target:500, reward:{coins:900} },
+            { id:'m035', cat:'GEM', title:'宝石の王', desc:'ジェムを合計1500個集める', metric:'totalGems', target:1500, reward:{coins:2500, aura:'goldSpark'} },
+            { id:'m036', cat:'PLAY', title:'継続は力', desc:'合計10回プレイする', metric:'totalRuns', target:10, reward:{coins:600} },
+            { id:'m037', cat:'PLAY', title:'毎日遊びたくなる', desc:'合計30回プレイする', metric:'totalRuns', target:30, reward:{coins:1800} },
+            { id:'m038', cat:'PLAY', title:'ソロ修行', desc:'ソロを合計10回プレイする', metric:'totalSoloRuns', target:10, reward:{coins:800} },
+            { id:'m039', cat:'ONLINE', title:'オンライン初参戦', desc:'オンラインを1回プレイする', metric:'totalOnlineRuns', target:1, reward:{coins:300} },
+            { id:'m040', cat:'ONLINE', title:'対人練習', desc:'オンラインで攻撃を合計5回当てる', metric:'totalOnlineHits', target:5, reward:{coins:700} },
+            { id:'m041', cat:'ONLINE', title:'オンラインファイター', desc:'オンラインで攻撃を合計30回当てる', metric:'totalOnlineHits', target:30, reward:{coins:1600, aura:'cyanFlame'} },
+            { id:'m042', cat:'HARD', title:'1回でレベル10', desc:'1回のプレイでレベル10に到達する', metric:'bestRunLevel', target:10, reward:{coins:1200} },
+            { id:'m043', cat:'HARD', title:'1回でボス3体', desc:'1回のプレイでボス系を3体倒す', metric:'bestRunBossKills', target:3, reward:{coins:1800} },
+            { id:'m044', cat:'HARD', title:'ジェム大回収', desc:'1回のプレイでジェムを200個集める', metric:'bestRunGems', target:200, reward:{coins:1800} },
+            { id:'m045', cat:'HARD', title:'危険を超えて', desc:'合計1000ダメージ受ける', metric:'totalDamageTaken', target:1000, reward:{coins:1000} },
+            { id:'m046', cat:'LEGEND', title:'伝説武器コレクター', desc:'伝説武器を2種類解放する', metric:'unlockedWeaponCount', target:2, reward:{coins:2500} },
+            { id:'m047', cat:'LEGEND', title:'全武器解放への道', desc:'伝説武器を4種類解放する', metric:'unlockedWeaponCount', target:4, reward:{coins:6000, aura:'royalHalo'} },
+            { id:'m048', cat:'COLLECT', title:'スキンハンター', desc:'スキンを3種類解放する', metric:'unlockedSkinCount', target:3, reward:{coins:1400} },
+            { id:'m049', cat:'COLLECT', title:'オーラ使い', desc:'オーラを3種類解放する', metric:'unlockedAuraCount', target:3, reward:{coins:1400} },
+            { id:'m050', cat:'FINAL', title:'ネオンサバイバー', desc:'ミッションを30個達成する', metric:'completedMissionCount', target:30, reward:{coins:10000, skin:'angel', aura:'royalHalo'} }
+        ];
+
+        function ensureProgressionData() {
+            if (!userData || typeof userData !== 'object') userData = {};
+            userData.score = Number(userData.score || 0);
+            userData.coins = Number(userData.coins || 0);
+            userData.nickname = normalizeNickname(userData.nickname || localStorage.getItem('neon_survivor_nickname') || '');
+            userData.upgrades = userData.upgrades || {};
+            ['hp','damage','speed','exp'].forEach(k => userData.upgrades[k] = Number(userData.upgrades[k] || 0));
+            const baseStats = {
+                totalKills:0,totalBossKills:0,totalMidBossKills:0,totalMonkeyKills:0,totalBossLikeKills:0,
+                totalGems:0,totalLevelUps:0,totalPlayTime:0,totalRuns:0,totalSoloRuns:0,totalOnlineRuns:0,
+                totalOnlineHits:0,totalDamageTaken:0,totalCoinsEarned:0,bestTime:0,bestLevel:1,
+                bestRunKills:0,bestRunBossKills:0,bestRunGems:0,bestRunLevel:1
+            };
+            userData.stats = Object.assign(baseStats, userData.stats || {});
+            for (const k of Object.keys(baseStats)) userData.stats[k] = Number(userData.stats[k] || 0);
+            userData.missions = userData.missions || {};
+            userData.missions.completed = userData.missions.completed || {};
+            userData.missions.claimed = userData.missions.claimed || {};
+            userData.unlocks = userData.unlocks || {};
+            userData.unlocks.legendaryWeapons = userData.unlocks.legendaryWeapons || {};
+            userData.unlocks.skins = Object.assign({ classic:true }, userData.unlocks.skins || {});
+            userData.unlocks.auras = Object.assign({ none:true }, userData.unlocks.auras || {});
+            userData.equippedSkin = userData.equippedSkin || 'classic';
+            userData.equippedAura = userData.equippedAura || 'none';
+            if (!userData.unlocks.skins[userData.equippedSkin]) userData.equippedSkin = 'classic';
+            if (!userData.unlocks.auras[userData.equippedAura]) userData.equippedAura = 'none';
+        }
+
+        let runStats = null;
+        function startMissionRun(mode) {
+            ensureProgressionData();
+            runStats = { mode, kills:0, bossKills:0, gems:0, levelUps:0, maxLevel:1, damageTaken:0, onlineHits:0 };
+            userData.stats.totalRuns++;
+            if (mode === 'online') userData.stats.totalOnlineRuns++; else userData.stats.totalSoloRuns++;
+            saveData();
+            checkMissionCompletions(false);
+        }
+
+        function finishMissionRun(earnedCoins = 0) {
+            ensureProgressionData();
+            const currentRunTime = Math.floor(gameTime || 0);
+            userData.stats.totalPlayTime += currentRunTime;
+            userData.stats.totalCoinsEarned += Math.max(0, Math.floor(earnedCoins || 0));
+            userData.stats.bestTime = Math.max(userData.stats.bestTime || 0, currentRunTime);
+            if (runStats) {
+                userData.stats.bestRunKills = Math.max(userData.stats.bestRunKills || 0, runStats.kills || 0);
+                userData.stats.bestRunBossKills = Math.max(userData.stats.bestRunBossKills || 0, runStats.bossKills || 0);
+                userData.stats.bestRunGems = Math.max(userData.stats.bestRunGems || 0, runStats.gems || 0);
+                userData.stats.bestRunLevel = Math.max(userData.stats.bestRunLevel || 1, runStats.maxLevel || 1);
+                userData.stats.bestLevel = Math.max(userData.stats.bestLevel || 1, runStats.maxLevel || 1);
+            }
+            checkMissionCompletions(true);
+        }
+
+        function recordEnemyDefeat(enemy) {
+            ensureProgressionData();
+            if (!enemy) return;
+            userData.stats.totalKills++;
+            if (runStats) runStats.kills++;
+            const bossLike = !!(enemy.isBoss || enemy.isMidBoss || enemy.isMonkey);
+            if (bossLike) { userData.stats.totalBossLikeKills++; if (runStats) runStats.bossKills++; }
+            if (enemy.isBoss) userData.stats.totalBossKills++;
+            if (enemy.isMidBoss) userData.stats.totalMidBossKills++;
+            if (enemy.isMonkey) userData.stats.totalMonkeyKills++;
+            checkMissionCompletions(false);
+        }
+
+        function recordGemPickup(value = 1) {
+            ensureProgressionData();
+            userData.stats.totalGems++;
+            if (runStats) runStats.gems++;
+            if ((userData.stats.totalGems % 20) === 0) checkMissionCompletions(false);
+        }
+
+        function recordLevelUp(level) {
+            ensureProgressionData();
+            userData.stats.totalLevelUps++;
+            userData.stats.bestLevel = Math.max(userData.stats.bestLevel || 1, level || 1);
+            if (runStats) { runStats.levelUps++; runStats.maxLevel = Math.max(runStats.maxLevel || 1, level || 1); }
+            checkMissionCompletions(false);
+        }
+
+        function recordDamageTaken(amount) {
+            ensureProgressionData();
+            const v = Math.max(0, Math.floor(Number(amount || 0)));
+            userData.stats.totalDamageTaken += v;
+            if (runStats) runStats.damageTaken += v;
+        }
+
+        function recordOnlineHit(amount = 1) {
+            ensureProgressionData();
+            userData.stats.totalOnlineHits++;
+            if (runStats) runStats.onlineHits++;
+            checkMissionCompletions(false);
+        }
+
+        function getUnlockCount(obj) { return Object.values(obj || {}).filter(Boolean).length; }
+        function getMissionProgress(m) {
+            ensureProgressionData();
+            if (userData.missions.completed[m.id]) return m.target;
+            const s = userData.stats || {};
+            switch (m.metric) {
+                case 'bestScore': return Math.max(userData.score || 0, score || 0);
+                case 'bestTime': return Math.max(s.bestTime || 0, Math.floor(gameTime || 0));
+                case 'bestLevel': return Math.max(s.bestLevel || 1, player ? player.level : 1);
+                case 'bestRunKills': return Math.max(s.bestRunKills || 0, runStats ? runStats.kills || 0 : 0);
+                case 'bestRunBossKills': return Math.max(s.bestRunBossKills || 0, runStats ? runStats.bossKills || 0 : 0);
+                case 'bestRunGems': return Math.max(s.bestRunGems || 0, runStats ? runStats.gems || 0 : 0);
+                case 'bestRunLevel': return Math.max(s.bestRunLevel || 1, runStats ? runStats.maxLevel || 1 : 1, player ? player.level : 1);
+                case 'unlockedWeaponCount': return getUnlockCount(userData.unlocks.legendaryWeapons);
+                case 'unlockedSkinCount': return getUnlockCount(userData.unlocks.skins);
+                case 'unlockedAuraCount': return getUnlockCount(userData.unlocks.auras);
+                case 'completedMissionCount': return Object.keys(userData.missions.completed || {}).length;
+                default: return Number(s[m.metric] || 0);
+            }
+        }
+
+        function rewardText(reward = {}) {
+            const parts = [];
+            if (reward.coins) parts.push(`+${reward.coins} COINS`);
+            if (reward.weapon) parts.push((LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon));
+            if (reward.skin) parts.push(`スキン:${SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin}`);
+            if (reward.aura) parts.push(`オーラ:${AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura}`);
+            return parts.join(' / ') || '報酬なし';
+        }
+
+        function showMissionToast(title, body = '') {
+            const box = document.getElementById('missionToast');
+            if (!box) return;
+            box.innerHTML = `<div class="toast-card text-center"><div class="text-yellow-300 font-bold text-lg">${title}</div><div class="text-white text-sm mt-1">${body}</div></div>`;
+            setTimeout(() => { if (box) box.innerHTML = ''; }, 3200);
+        }
+
+        function grantReward(reward = {}, silent = false) {
+            ensureProgressionData();
+            const unlocked = [];
+            if (reward.coins) { userData.coins += reward.coins; userData.stats.totalCoinsEarned += reward.coins; }
+            if (reward.weapon && !userData.unlocks.legendaryWeapons[reward.weapon]) { userData.unlocks.legendaryWeapons[reward.weapon] = true; unlocked.push(LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon); }
+            if (reward.skin && !userData.unlocks.skins[reward.skin]) { userData.unlocks.skins[reward.skin] = true; unlocked.push(SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin); }
+            if (reward.aura && !userData.unlocks.auras[reward.aura]) { userData.unlocks.auras[reward.aura] = true; unlocked.push(AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura); }
+            if (!silent && unlocked.length) showMissionToast('新アイテム解放！', unlocked.join(' / '));
+        }
+
+        function checkMissionCompletions(showToast = false) {
+            ensureProgressionData();
+            let changed = false;
+            for (const m of MISSION_DEFS) {
+                if (!userData.missions.completed[m.id] && getMissionProgress(m) >= m.target) {
+                    userData.missions.completed[m.id] = true;
+                    changed = true;
+                    if (showToast || gameState === 'playing') showMissionToast('MISSION COMPLETE!', `${m.title}｜報酬: ${rewardText(m.reward)}`);
+                }
+            }
+            if (changed) saveData();
+            renderMissionMiniHud();
+        }
+
+        function claimMission(id) {
+            ensureProgressionData();
+            const m = MISSION_DEFS.find(x => x.id === id);
+            if (!m || !userData.missions.completed[id] || userData.missions.claimed[id]) return;
+            userData.missions.claimed[id] = true;
+            grantReward(m.reward);
+            saveData();
+            renderMissionScreen();
+            renderCollectionScreen();
+            renderMissionMiniHud();
+        }
+
+        function claimAllMissions() {
+            ensureProgressionData();
+            let count = 0;
+            for (const m of MISSION_DEFS) {
+                if (userData.missions.completed[m.id] && !userData.missions.claimed[m.id]) {
+                    userData.missions.claimed[m.id] = true;
+                    grantReward(m.reward, true);
+                    count++;
+                }
+            }
+            if (count > 0) showMissionToast('報酬をまとめて受け取りました', `${count}個のミッション報酬を獲得！`);
+            saveData(); renderMissionScreen(); renderCollectionScreen(); renderMissionMiniHud();
+        }
+
+        function renderMissionMiniHud() {
+            const hud = document.getElementById('missionMiniHud');
+            if (!hud) return;
+            ensureProgressionData();
+            const ready = MISSION_DEFS.filter(m => userData.missions.completed[m.id] && !userData.missions.claimed[m.id]);
+            const active = MISSION_DEFS.filter(m => !userData.missions.completed[m.id]).slice(0, 2);
+            if (gameState !== 'playing') { hud.classList.add('hidden'); return; }
+            hud.classList.remove('hidden');
+            if (ready.length) {
+                hud.innerHTML = `<div class="text-yellow-300 font-bold">🎁 受け取り可能: ${ready.length}</div><div class="text-gray-300">タイトルの MISSIONS で報酬GET</div>`;
+            } else {
+                hud.innerHTML = `<div class="text-yellow-300 font-bold">MISSIONS</div>` + active.map(m => {
+                    const p = Math.min(1, getMissionProgress(m) / m.target);
+                    return `<div class="mt-1"><div class="flex justify-between gap-2"><span>${m.title}</span><span>${Math.floor(getMissionProgress(m))}/${m.target}</span></div><div class="mini-progress"><div style="width:${p*100}%"></div></div></div>`;
+                }).join('');
+            }
+        }
+
+        function renderMissionScreen() {
+            ensureProgressionData();
+            checkMissionCompletions(false);
+            const container = document.getElementById('missionsListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            MISSION_DEFS.forEach(m => {
+                const progress = getMissionProgress(m);
+                const complete = !!userData.missions.completed[m.id] || progress >= m.target;
+                const claimed = !!userData.missions.claimed[m.id];
+                const pct = Math.min(100, Math.floor((progress / m.target) * 100));
+                const card = document.createElement('div');
+                card.className = `mission-card ${complete ? 'done' : ''} ${claimed ? 'claimed' : ''}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start gap-2">
+                        <div>
+                            <div class="text-xs text-cyan-300 font-bold">${m.cat}</div>
+                            <h3 class="text-lg font-bold text-white">${complete ? '✅ ' : ''}${m.title}</h3>
+                            <p class="text-sm text-gray-300 mt-1">${m.desc}</p>
+                        </div>
+                        <div class="text-right text-xs text-yellow-300 font-bold min-w-[80px]">${Math.floor(progress)}/${m.target}</div>
+                    </div>
+                    <div class="mini-progress mt-3"><div style="width:${pct}%"></div></div>
+                    <div class="flex justify-between items-center gap-2 mt-3">
+                        <p class="text-xs text-yellow-200">報酬: ${rewardText(m.reward)}</p>
+                        <button class="claim-one px-3 py-1 rounded font-bold text-sm ${complete && !claimed ? 'btn-gold' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? 'CLAIMED' : 'CLAIM'}</button>
+                    </div>`;
+                const btn = card.querySelector('.claim-one');
+                if (btn) btn.addEventListener('click', () => claimMission(m.id));
+                container.appendChild(card);
+            });
+        }
+
+        function renderCollectionScreen() {
+            ensureProgressionData();
+            const container = document.getElementById('collectionListContainer');
+            if (!container) return;
+            const weaponHtml = LEGENDARY_WEAPON_DEFS.map(w => {
+                const on = !!userData.unlocks.legendaryWeapons[w.id];
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
+            }).join('');
+            const skinHtml = SKIN_DEFS.map(sk => {
+                const on = !!userData.unlocks.skins[sk.id];
+                const eq = userData.equippedSkin === sk.id;
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${sk.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?sk.color:'#9ca3af'}">${sk.name}</h3><p class="text-sm text-gray-300">${sk.desc}</p><button class="equip-skin mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-neon':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${sk.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+            }).join('');
+            const auraHtml = AURA_DEFS.map(a => {
+                const on = !!userData.unlocks.auras[a.id];
+                const eq = userData.equippedAura === a.id;
+                return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${a.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?a.color:'#9ca3af'}">${a.name}</h3><p class="text-sm text-gray-300">${a.desc}</p><button class="equip-aura mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-gold':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${a.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+            }).join('');
+            container.innerHTML = `
+                <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>`;
+            container.querySelectorAll('.equip-skin').forEach(btn => btn.addEventListener('click', () => { userData.equippedSkin = btn.dataset.id; saveData(); renderCollectionScreen(); }));
+            container.querySelectorAll('.equip-aura').forEach(btn => btn.addEventListener('click', () => { userData.equippedAura = btn.dataset.id; saveData(); renderCollectionScreen(); }));
+        }
+
+        function addUnlockedLegendarySkills(pool) {
+            if (!player || isOnlineMode) return;
+            ensureProgressionData();
+            const u = userData.unlocks.legendaryWeapons || {};
+            if (u.neonLance) {
+                if (!player.legendaryNeonLanceLevel) pool.push({ name:'【伝説】ネオンランス', desc:'通常弾が貫通する黄金弾になる', color:'#facc15', icon:'🔱', apply:()=>{ player.legendaryNeonLanceLevel = 1; player.damage *= 1.15; }});
+                else if (player.legendaryNeonLanceLevel < 5) pool.push({ name:'ネオンランス強化', desc:'黄金弾の威力・貫通数UP', color:'#facc15', icon:'🔱', apply:()=>{ player.legendaryNeonLanceLevel++; player.damage *= 1.1; }});
+            }
+            if (u.phoenixCore) {
+                if (!player.legendaryPhoenixCoreLevel) pool.push({ name:'【伝説】フェニックスコア', desc:'倒されても1回だけ復活する', color:'#fb7185', icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel = 1; player.phoenixRevived = false; }});
+                else if (player.legendaryPhoenixCoreLevel < 3) pool.push({ name:'フェニックスコア強化', desc:'復活時のHPと爆発威力UP', color:'#fb7185', icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel++; }});
+            }
+            if (u.starfallCrown) {
+                if (!player.legendaryStarfallLevel) pool.push({ name:'【伝説】星落としの王冠', desc:'一定間隔で星の爆発を起こす', color:'#fde68a', icon:'👑', apply:()=>{ player.legendaryStarfallLevel = 1; player.starfallTimer = 0; }});
+                else if (player.legendaryStarfallLevel < 5) pool.push({ name:'星落としの王冠 強化', desc:'星爆発の頻度・威力UP', color:'#fde68a', icon:'👑', apply:()=>{ player.legendaryStarfallLevel++; }});
+            }
+            if (u.voidCollector) {
+                if (!player.legendaryVoidCollectorLevel) pool.push({ name:'【伝説】虚空コレクター', desc:'経験値吸収と成長速度が上がる', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel = 1; player.expBoost *= 1.3; }});
+                else if (player.legendaryVoidCollectorLevel < 5) pool.push({ name:'虚空コレクター強化', desc:'経験値ボーナスと吸収範囲UP', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel++; player.expBoost *= 1.15; }});
+            }
+        }
+
+        function triggerLegendaryStarfall() {
+            if (!player || !player.legendaryStarfallLevel) return;
+            const level = player.legendaryStarfallLevel;
+            const radius = 160 + level * 35;
+            const damage = 220 + level * 120;
+            let target = enemies.find(e => (e.isBoss || e.isMonkey) && !e.markedForDeletion) || enemies.find(e => !e.isCharmed && !e.markedForDeletion);
+            const tx = target ? target.x : player.x + Math.cos(player.faceAngle) * 120;
+            const ty = target ? target.y : player.y + Math.sin(player.faceAngle) * 120;
+            effects.push(new Shockwave(tx, ty, '#facc15', 10, radius));
+            createParticles(tx, ty, 30, '#facc15', 5);
+            for (const e of enemies) {
+                if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(tx, ty, e.x, e.y) < radius) e.takeDamage(damage);
+            }
+            floatingTexts.push(new FloatingText(tx, ty - 30, 'STARFALL', '#facc15', 24));
+        }
+
+        function triggerPhoenixRevive() {
+            if (!player || !player.legendaryPhoenixCoreLevel || player.phoenixRevived) return false;
+            player.phoenixRevived = true;
+            player.hp = player.maxHp * Math.min(0.8, 0.35 + player.legendaryPhoenixCoreLevel * 0.15);
+            player.invincibleTimer = 180;
+            const radius = 260 + player.legendaryPhoenixCoreLevel * 90;
+            const damage = 1200 + player.legendaryPhoenixCoreLevel * 800;
+            effects.push(new Shockwave(player.x, player.y, '#fb7185', 18, radius));
+            createParticles(player.x, player.y, 80, '#fb7185', 8);
+            for (const e of enemies) if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(player.x, player.y, e.x, e.y) < radius) e.takeDamage(damage);
+            floatingTexts.push(new FloatingText(player.x, player.y - 60, 'PHOENIX REVIVE!', '#fb7185', 32));
+            updateUI();
+            return true;
+        }
+
+        function getEquippedSkinColor() {
+            ensureProgressionData();
+            const def = SKIN_DEFS.find(s => s.id === userData.equippedSkin) || SKIN_DEFS[0];
+            return def.color || '#0ff';
+        }
+
+        function drawEquippedAura(ctx, x, y) {
+            ensureProgressionData();
+            const aura = AURA_DEFS.find(a => a.id === userData.equippedAura) || AURA_DEFS[0];
+            if (!aura || aura.id === 'none') return;
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            const t = Date.now() / 180;
+            const r = 34 + Math.sin(t) * 4;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.strokeStyle = aura.color; ctx.lineWidth = aura.id === 'royalHalo' ? 5 : 3; ctx.shadowBlur = 18; ctx.shadowColor = aura.color; ctx.stroke();
+            if (aura.id === 'royalHalo') {
+                ctx.beginPath(); ctx.ellipse(x, y - 30, 28, 8, 0, 0, Math.PI * 2); ctx.strokeStyle = '#fef3c7'; ctx.stroke();
+            } else if (Math.random() < 0.35) {
+                createParticles(x + MathUtils.random(-22, 22), y + MathUtils.random(-22, 22), 1, aura.color, 3);
+            }
+            ctx.restore();
+        }
+
         let dbUserId = null;
         let db = null;
         let appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -384,6 +855,7 @@
         }
 
         function renderUpgradeScreen() {
+            ensureProgressionData();
             const container = document.getElementById('upgradeListContainer');
             const coinsDisplay = document.getElementById('metaCoinsDisplay');
             if (!container || !coinsDisplay) return;
@@ -444,7 +916,7 @@
                 const raw = parsed.userData || parsed;
                 if (!raw || typeof raw !== 'object' || !raw.upgrades) throw new Error('invalid');
                 const nick = normalizeNickname(parsed.nickname || raw.nickname || '');
-                userData = {
+                userData = Object.assign({}, raw, {
                     score: Number(raw.score || 0),
                     coins: Number(raw.coins || 0),
                     nickname: nick,
@@ -454,7 +926,8 @@
                         speed: Number(raw.upgrades.speed || 0),
                         exp: Number(raw.upgrades.exp || 0)
                     }
-                };
+                });
+                ensureProgressionData();
                 if (nick) {
                     localStorage.setItem('neon_survivor_nickname', nick);
                     const input = document.getElementById('nicknameInput');
@@ -515,6 +988,7 @@
             const finalScoreVal = Math.floor(score || 0);
             const earnedCoins = Math.max(0, Math.floor(finalScoreVal / 100) + Math.floor(gameTime || 0));
             userData.coins = Number(userData.coins || 0) + earnedCoins;
+            finishMissionRun(earnedCoins);
             if (finalScoreVal > Number(userData.score || 0)) userData.score = finalScoreVal;
             saveNicknameFromInput();
             saveData();
@@ -685,6 +1159,7 @@
             if (distSq(bullet.x, bullet.y, remote.x, remote.y) >= rSum * rSum) return false;
             const sentDamage = sendOnlineHit(remote.id, bullet.damage);
             if (sentDamage > 0) {
+                recordOnlineHit(sentDamage);
                 remote.hp = Math.max(0, Number(remote.hp || 0) - sentDamage);
                 remote.lastHitFlash = 8;
                 bullet.hitEnemies.add(key);
@@ -780,15 +1255,18 @@
             if ((player.onlineBounceBombLevel || 0) === 0) pool.push({ name:'【反射】バウンスボム', desc:'画面端で反射する爆弾を放つ', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel = 1; }});
             else if (player.onlineBounceBombLevel < 3) pool.push({ name:'バウンスボム強化', desc:'反射爆弾の威力とサイズがUP', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel += 1; }});
             
-            if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'足元に敵にダメージを与える毒沼を定期設置', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
+            if ((player.onlinePoisonLevel || 0) === 0) pool.push({ name:'【罠】トキシックトラップ', desc:'大きさ2倍・ダメージ2倍の毒沼を定期設置', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel = 1; }});
             else if (player.onlinePoisonLevel < 3) pool.push({ name:'トキシックトラップ強化', desc:'毒沼のサイズとダメージがUP', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel += 1; }});
 
             // --- 新規オンライン武器 ---
-            if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'相手を執拗に追いかける短剣を放つ', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
-            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'短剣の威力と発射頻度がUP', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
+            if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'10秒ごとに70ダメージの誘導弾を5発放つ', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
+            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'誘導性能が少しUP。5発・10秒・70ダメージ仕様', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
 
-            if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に継続ダメージの重力場を生成', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
-            else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場のサイズとダメージがUP', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
+            if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に継続ダメージ2倍・大きさ2倍の重力場を生成', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
+            else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場の安定性がUP。大きさとダメージは2倍仕様', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
+
+            if ((player.onlineBananaLevel || 0) === 0) pool.push({ name:'【爆笑】バナナスリップ砲', desc:'すべるバナナをばらまくネタ武器。命中すると意外と痛い。', color:'#fde047', icon:'🍌', apply:()=>{ player.onlineBananaLevel = 1; }});
+            else if (player.onlineBananaLevel < 3) pool.push({ name:'バナナスリップ砲 強化', desc:'バナナの数と威力がUP。画面がふざけ始める。', color:'#fde047', icon:'🍌', apply:()=>{ player.onlineBananaLevel += 1; }});
 
             let ultimateSkills = [];
             if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
@@ -875,7 +1353,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -918,15 +1396,16 @@
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
-                    if (parsed && parsed.upgrades) userData = {
+                    if (parsed && typeof parsed === 'object') userData = Object.assign({}, parsed, {
                         score: Number(parsed.score || 0),
                         coins: Number(parsed.coins || 0),
                         nickname: normalizeNickname(parsed.nickname || localStorage.getItem('neon_survivor_nickname') || ''),
                         upgrades: {
-                            hp: Number(parsed.upgrades.hp || 0), damage: Number(parsed.upgrades.damage || 0),
-                            speed: Number(parsed.upgrades.speed || 0), exp: Number(parsed.upgrades.exp || 0)
+                            hp: Number(parsed.upgrades?.hp || 0), damage: Number(parsed.upgrades?.damage || 0),
+                            speed: Number(parsed.upgrades?.speed || 0), exp: Number(parsed.upgrades?.exp || 0)
                         }
-                    };
+                    });
+                    ensureProgressionData();
                 } catch(e) {}
             }
             const savedNick = normalizeNickname(localStorage.getItem('neon_survivor_nickname') || userData.nickname || '');
@@ -938,6 +1417,7 @@
         }
 
         function saveData() {
+            ensureProgressionData();
             userData.nickname = normalizeNickname(userData.nickname || localStorage.getItem('neon_survivor_nickname') || '');
             localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
             if (userData.nickname) localStorage.setItem('neon_survivor_nickname', userData.nickname);
@@ -1183,6 +1663,8 @@
                 }
             }
 
+            addUnlockedLegendarySkills(pool);
+
             let selected = [];
             if (isLowHp && Math.random() < 0.8) selected.push(healSkill); else pool.push(healSkill);
 
@@ -1262,6 +1744,7 @@
             
             let earnedCoins = Math.floor(finalScoreVal / 100) + Math.floor(gameTime);
             userData.coins += earnedCoins; document.getElementById('earnedCoinsDisplay').innerText = `+${earnedCoins}`;
+            finishMissionRun(earnedCoins);
             
             const newRecordText = document.getElementById('newRecordText');
             if (finalScoreVal > userData.score) { userData.score = finalScoreVal; newRecordText.classList.remove('hidden'); } 
@@ -1309,12 +1792,14 @@
                     this.x += this.vx; this.y += this.vy; this.vx *= 0.9; this.vy *= 0.9; this.scatterTimer--;
                     this.x = Math.max(0, Math.min(width, this.x)); this.y = Math.max(0, Math.min(height, this.y)); return; 
                 }
+                const bonusRange = player && player.legendaryVoidCollectorLevel ? player.legendaryVoidCollectorLevel * 90 : 0;
+                const activePickupRange = this.pickupRange + bonusRange;
                 const dist = MathUtils.distance(this.x, this.y, player.x, player.y);
-                if (dist < this.pickupRange) {
-                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y); const speed = (this.pickupRange - dist) * 0.3; 
+                if (dist < activePickupRange) {
+                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y); const speed = (activePickupRange - dist) * 0.3; 
                     this.vx = this.vx * 0.8 + Math.cos(angle) * speed; this.vy = this.vy * 0.8 + Math.sin(angle) * speed; 
                     this.x += this.vx; this.y += this.vy;
-                    if (dist < player.radius + this.radius) { this.markedForDeletion = true; player.gainExp(this.value); createParticles(this.x, this.y, 2, this.color, 1); Sound.gem(); }
+                    if (dist < player.radius + this.radius) { this.markedForDeletion = true; recordGemPickup(this.value); player.gainExp(this.value); createParticles(this.x, this.y, 2, this.color, 1); Sound.gem(); }
                 }
             }
             draw(ctx) { ctx.save(); ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), safeR(this.radius), 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.shadowBlur = this.radius > 5 ? 15 : 5; ctx.shadowColor = this.color; ctx.fill(); ctx.restore(); }
@@ -1327,6 +1812,12 @@
                 this.color = color; this.shadow = shadow; this.isEnemy = isEnemy;
                 this.markedForDeletion = false; this.hitEnemies = new Set();
                 this.trail = [];
+                this.legendaryNeonLanceLevel = 0;
+                this.legendaryPhoenixCoreLevel = 0;
+                this.legendaryStarfallLevel = 0;
+                this.legendaryVoidCollectorLevel = 0;
+                this.starfallTimer = 0;
+                this.phoenixRevived = false;
             }
             update() {
                 this.trail.push({x: this.x, y: this.y});
@@ -2699,7 +3190,7 @@
 
         class PoisonCloud {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.radius = 60 + level * 15;
+                this.x = x; this.y = y; this.damage = damage; this.radius = (60 + level * 15) * 2;
                 this.timer = 0; this.maxTime = 400; this.markedForDeletion = false;
             }
             update() {
@@ -2824,7 +3315,7 @@
 
         class GravityPulsar {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage; this.radius = 80 + level * 20;
+                this.x = x; this.y = y; this.damage = damage; this.radius = (80 + level * 20) * 2;
                 this.timer = 0; this.maxTime = 240 + level * 60; this.markedForDeletion = false;
             }
             update() {
@@ -2867,6 +3358,157 @@
                 ctx.beginPath(); ctx.arc(safe(this.x), safe(this.y), 10 + Math.sin(this.timer*0.2)*5, 0, Math.PI*2);
                 ctx.fillStyle = '#e0f2fe'; ctx.shadowBlur = 20; ctx.shadowColor = '#0ea5e9'; ctx.fill();
                 
+                ctx.restore();
+            }
+        }
+
+        class RealisticMapBlackHole {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.timer = 0; this.markedForDeletion = false;
+                this.radius = 360; this.eventRadius = 54;
+                this.remoteHitTick = new Map();
+                this.starDust = Array.from({ length: 70 }, () => ({
+                    a: Math.random() * Math.PI * 2,
+                    d: MathUtils.random(80, 340),
+                    s: MathUtils.random(0.004, 0.018),
+                    z: MathUtils.random(1, 3)
+                }));
+            }
+            update() {
+                this.timer++;
+                const pull = (obj, power = 1, canDamage = false) => {
+                    if (!obj || obj.markedForDeletion) return;
+                    const d = MathUtils.distance(this.x, this.y, obj.x, obj.y);
+                    if (d > this.radius || d < 1) return;
+                    const a = MathUtils.angle(obj.x, obj.y, this.x, this.y);
+                    const force = ((this.radius - d) / this.radius) * power;
+                    obj.x += Math.cos(a) * force;
+                    obj.y += Math.sin(a) * force;
+                    if (canDamage && d < this.eventRadius + 22 && this.timer % 30 === 0 && typeof obj.takeDamage === 'function') obj.takeDamage(4);
+                };
+                if (player) pull(player, 1.4, true);
+                for (const e of enemies) {
+                    if (e && !e.isCharmed && !e.markedForDeletion) {
+                        pull(e, 5.5, false);
+                        if (MathUtils.distance(this.x, this.y, e.x, e.y) < this.eventRadius + e.radius) e.takeDamage(12);
+                    }
+                }
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (!r || Number(r.hp || 0) <= 0) return;
+                        const d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                        if (d < this.eventRadius + 30) {
+                            const last = this.remoteHitTick.get(r.id) || -999;
+                            if (this.timer - last >= 60) {
+                                sendOnlineHit(r.id, 12);
+                                this.remoteHitTick.set(r.id, this.timer);
+                                floatingTexts.push(new FloatingText(r.x, r.y - 42, 'BLACK HOLE -12', '#a855f7', 14));
+                            }
+                        }
+                    });
+                }
+                if (this.timer % 12 === 0) {
+                    const a = Math.random() * Math.PI * 2;
+                    const d = MathUtils.random(this.eventRadius + 50, this.radius);
+                    createParticles(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d, 2, Math.random() > 0.5 ? '#f59e0b' : '#60a5fa', 2);
+                }
+            }
+            draw(ctx) {
+                const pulse = 1 + Math.sin(this.timer * 0.035) * 0.035;
+                ctx.save();
+                ctx.translate(safe(this.x), safe(this.y));
+                ctx.globalCompositeOperation = 'screen';
+                const lens = ctx.createRadialGradient(0, 0, this.eventRadius, 0, 0, this.radius * pulse);
+                lens.addColorStop(0, 'rgba(0,0,0,0)');
+                lens.addColorStop(0.35, 'rgba(88,28,135,0.16)');
+                lens.addColorStop(0.72, 'rgba(14,165,233,0.09)');
+                lens.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = lens;
+                ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * pulse), 0, Math.PI * 2); ctx.fill();
+                for (const dust of this.starDust) {
+                    const a = dust.a + this.timer * dust.s;
+                    const squeeze = 0.28 + 0.08 * Math.sin(a * 2 + this.timer * 0.01);
+                    const x = Math.cos(a) * dust.d;
+                    const y = Math.sin(a) * dust.d * squeeze;
+                    ctx.beginPath(); ctx.arc(x, y, dust.z, 0, Math.PI * 2);
+                    ctx.fillStyle = dust.d % 2 > 1 ? 'rgba(255,255,255,.75)' : 'rgba(96,165,250,.65)';
+                    ctx.fill();
+                }
+                ctx.save();
+                ctx.rotate(this.timer * 0.018);
+                for (let i = 0; i < 7; i++) {
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, this.eventRadius * (2.2 + i * 0.22), this.eventRadius * (0.35 + i * 0.04), 0, 0, Math.PI * 2);
+                    ctx.strokeStyle = i < 3 ? `rgba(255,244,190,${0.55 - i * 0.08})` : `rgba(249,115,22,${0.36 - i * 0.035})`;
+                    ctx.lineWidth = Math.max(1.5, 9 - i);
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = i < 3 ? '#fde68a' : '#fb923c';
+                    ctx.stroke();
+                }
+                ctx.restore();
+                ctx.beginPath(); ctx.arc(0, 0, this.eventRadius * 1.16, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.shadowBlur = 28; ctx.shadowColor = '#ffffff'; ctx.stroke();
+                const core = ctx.createRadialGradient(0, 0, 2, 0, 0, this.eventRadius);
+                core.addColorStop(0, '#000'); core.addColorStop(0.72, '#000'); core.addColorStop(1, 'rgba(20,0,30,.95)');
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.beginPath(); ctx.arc(0, 0, safeR(this.eventRadius), 0, Math.PI * 2);
+                ctx.fillStyle = core; ctx.shadowBlur = 35; ctx.shadowColor = '#000'; ctx.fill();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius), 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(168,85,247,.18)'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class BananaPeelShot {
+            constructor(x, y, angle, damage, level) {
+                this.x = x; this.y = y; this.angle = angle; this.damage = damage;
+                this.level = level; this.speed = 8 + level * 1.2;
+                this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
+                this.timer = 0; this.maxTime = 260; this.radius = 22 + level * 3;
+                this.spin = Math.random() * Math.PI * 2; this.markedForDeletion = false;
+                this.hitTargets = new Set();
+            }
+            update() {
+                this.timer++; this.spin += 0.25;
+                this.x += this.vx; this.y += this.vy;
+                this.vx *= 0.992; this.vy *= 0.992;
+                if (this.timer > this.maxTime) this.markedForDeletion = true;
+                let hit = false;
+                if (isOnlineMode) {
+                    remotePlayers.forEach(r => {
+                        if (!r || Number(r.hp || 0) <= 0 || this.hitTargets.has('r:' + r.id)) return;
+                        if (MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius + ONLINE_REMOTE_RADIUS) {
+                            sendOnlineHit(r.id, this.damage);
+                            this.hitTargets.add('r:' + r.id);
+                            floatingTexts.push(new FloatingText(r.x, r.y - 48, 'すってんころりん🍌', '#fde047', 17));
+                            createParticles(this.x, this.y, 18, '#fde047', 4);
+                            hit = true;
+                        }
+                    });
+                }
+                for (const e of enemies) {
+                    if (!e || e.isCharmed || e.markedForDeletion || this.hitTargets.has(e)) continue;
+                    if (MathUtils.distance(this.x, this.y, e.x, e.y) < this.radius + e.radius) {
+                        e.takeDamage(this.damage); this.hitTargets.add(e);
+                        createParticles(this.x, this.y, 12, '#fde047', 3);
+                        hit = true; break;
+                    }
+                }
+                if (hit) {
+                    this.vx *= -0.35; this.vy *= -0.35;
+                    if (this.hitTargets.size >= 2 + this.level) this.markedForDeletion = true;
+                }
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.spin);
+                ctx.globalCompositeOperation = 'screen';
+                ctx.beginPath(); ctx.ellipse(0, 0, safeR(this.radius * 0.9), safeR(this.radius * 0.28), 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(250, 204, 21, .18)'; ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.font = `${24 + this.level * 3}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowBlur = 18; ctx.shadowColor = '#fde047'; ctx.fillText('🍌', 0, 0);
                 ctx.restore();
             }
         }
@@ -2958,6 +3600,7 @@
                 this.onlinePoisonLevel = 0; this.onlinePoisonTimer = 0;
                 this.onlinePhantomLevel = 0; this.onlinePhantomTimer = 0;
                 this.onlineGravityLevel = 0; this.onlineGravityTimer = 0;
+                this.onlineBananaLevel = 0; this.onlineBananaTimer = 0;
                 this.evoBlackhole = false; this.evoDivineSword = false;
                 this.evoRicochetSniper = false; this.evoToxicAegis = false;
                 this.evoGravityBeam = false; this.evoThunderBlade = false;
@@ -3002,6 +3645,14 @@
                 if (this.hp < this.maxHp) {
                     this.regenTimer++;
                     if (this.regenTimer >= this.regenRate) { this.hp = Math.min(this.hp + this.regenAmount, this.maxHp); this.regenTimer = 0; updateUI(); }
+                }
+
+                if (this.legendaryStarfallLevel > 0) {
+                    this.starfallTimer++;
+                    if (this.starfallTimer >= Math.max(120, 360 - this.legendaryStarfallLevel * 45)) {
+                        triggerLegendaryStarfall();
+                        this.starfallTimer = 0;
+                    }
                 }
 
                 if (this.ironmanSuitLevel > 0) {
@@ -3121,13 +3772,13 @@
                     if (this.onlinePoisonLevel > 0) {
                         this.onlinePoisonTimer++;
                         if (this.onlinePoisonTimer >= 180) {
-                            if(poisonClouds.length < 10) poisonClouds.push(new PoisonCloud(this.x, this.y, 5 * this.onlinePoisonLevel, this.onlinePoisonLevel));
+                            if(poisonClouds.length < 10) poisonClouds.push(new PoisonCloud(this.x, this.y, 10 * this.onlinePoisonLevel, this.onlinePoisonLevel));
                             this.onlinePoisonTimer = 0;
                         }
                     }
                     if (this.onlinePhantomLevel > 0) {
                         this.onlinePhantomTimer++;
-                        if (this.onlinePhantomTimer >= Math.max(45, 90 - this.onlinePhantomLevel * 10)) {
+                        if (this.onlinePhantomTimer >= 600) {
                             this.fireOnlinePhantom(); this.onlinePhantomTimer = 0;
                         }
                     }
@@ -3135,6 +3786,12 @@
                         this.onlineGravityTimer++;
                         if (this.onlineGravityTimer >= 300) {
                             this.fireOnlineGravity(); this.onlineGravityTimer = 0;
+                        }
+                    }
+                    if (this.onlineBananaLevel > 0) {
+                        this.onlineBananaTimer++;
+                        if (this.onlineBananaTimer >= 360) {
+                            this.fireOnlineBanana(); this.onlineBananaTimer = 0;
                         }
                     }
                 }
@@ -3210,13 +3867,17 @@
             }
 
             fireOnlinePhantom() {
-                let angle = this.faceAngle + MathUtils.random(-0.5, 0.5);
-                let damage = 30 + this.onlinePhantomLevel * 15;
-                if (this.evoGravitonDagger) {
-                    if(phantomDaggers.length < 30) phantomDaggers.push(new GravitonDagger(this.x, this.y, angle, damage * 1.5, this.onlinePhantomLevel));
-                } else {
-                    if(phantomDaggers.length < 30) phantomDaggers.push(new PhantomDagger(this.x, this.y, angle, damage, this.onlinePhantomLevel));
+                const damage = 70;
+                const spread = [-0.55, -0.27, 0, 0.27, 0.55];
+                for (const offset of spread) {
+                    const angle = this.faceAngle + offset + MathUtils.random(-0.06, 0.06);
+                    if (this.evoGravitonDagger) {
+                        if (phantomDaggers.length < 60) phantomDaggers.push(new GravitonDagger(this.x, this.y, angle, damage, this.onlinePhantomLevel));
+                    } else {
+                        if (phantomDaggers.length < 60) phantomDaggers.push(new PhantomDagger(this.x, this.y, angle, damage, this.onlinePhantomLevel));
+                    }
                 }
+                floatingTexts.push(new FloatingText(this.x, this.y - 62, '追尾弾×5', '#c084fc', 16));
             }
 
             fireOnlineGravity() {
@@ -3230,10 +3891,22 @@
                 if (!target && enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
                 
                 if (target) {
-                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(target.x, target.y, 8 + this.onlineGravityLevel * 4, this.onlineGravityLevel));
+                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(target.x, target.y, 16 + this.onlineGravityLevel * 8, this.onlineGravityLevel));
                 } else {
-                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(this.x, this.y, 8 + this.onlineGravityLevel * 4, this.onlineGravityLevel));
+                    if(gravityPulsars.length < 10) gravityPulsars.push(new GravityPulsar(this.x, this.y, 16 + this.onlineGravityLevel * 8, this.onlineGravityLevel));
                 }
+            }
+
+            fireOnlineBanana() {
+                const count = 3 + this.onlineBananaLevel;
+                const damage = 22 + this.onlineBananaLevel * 10;
+                for (let i = 0; i < count; i++) {
+                    const offset = (i - (count - 1) / 2) * 0.22;
+                    const angle = this.faceAngle + offset + MathUtils.random(-0.15, 0.15);
+                    if (bananaPeels.length < 45) bananaPeels.push(new BananaPeelShot(this.x, this.y, angle, damage, this.onlineBananaLevel));
+                }
+                Sound.playTone(740, 'square', 0.08, 0.04);
+                floatingTexts.push(new FloatingText(this.x, this.y - 64, 'バナナ発射！', '#fde047', 16));
             }
 
             startShield() { if (isOnlineMode) return; if (shields.length < 20) shields.push(new CaptainShield(this.x, this.y, 1000 + (this.shieldLevel - 1) * 1000, 7 + (this.shieldLevel - 1) * 3)); }
@@ -3317,8 +3990,17 @@
                 if (target) {
                     this.fireTimer = 0;
                     const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
-                    const dmg = this.damage * 1.5;
-                    const b = new Bullet(this.x, this.y, angle, dmg, this.bulletSpeed, this.bulletSize, this.pierce);
+                    let dmg = this.damage * 1.5;
+                    let bulletPierce = this.pierce;
+                    let bulletColor = '#0ff';
+                    let bulletShadow = '#0ff';
+                    if (this.legendaryNeonLanceLevel > 0) {
+                        dmg *= (1 + this.legendaryNeonLanceLevel * 0.35);
+                        bulletPierce += this.legendaryNeonLanceLevel;
+                        bulletColor = '#facc15';
+                        bulletShadow = '#f59e0b';
+                    }
+                    const b = new Bullet(this.x, this.y, angle, dmg, this.bulletSpeed + (this.legendaryNeonLanceLevel || 0), this.bulletSize + (this.legendaryNeonLanceLevel || 0), bulletPierce, bulletColor, bulletShadow);
                     if (nearestRemote) b.onlineAimId = nearestRemote.id;
                     if (bullets.length < 200) bullets.push(b);
                     createParticles(this.x + Math.cos(angle)*this.radius, this.y + Math.sin(angle)*this.radius, 3, this.color, 2);
@@ -3343,6 +4025,7 @@
 
             draw(ctx) {
                 ctx.save(); let px = safe(this.x), py = safe(this.y);
+                drawEquippedAura(ctx, px, py);
 
                 if (this.trail.length > 1) {
                     ctx.save();
@@ -3352,7 +4035,7 @@
                         let p2 = this.trail[i + 1];
                         let progress = (i + 1) / this.trail.length; 
                         
-                        let baseColor = this.ironmanSuitLevel > 0 ? '239, 68, 68' : '6, 182, 212';
+                        let baseColor = this.ironmanSuitLevel > 0 ? '239, 68, 68' : (getEquippedSkinColor() === '#facc15' ? '250, 204, 21' : getEquippedSkinColor() === '#fb7185' ? '251, 113, 133' : getEquippedSkinColor() === '#a855f7' ? '168, 85, 247' : getEquippedSkinColor() === '#22c55e' ? '34, 197, 94' : '6, 182, 212');
                         if (this.invincibleTimer > 0) baseColor = '250, 204, 21';
                         
                         ctx.beginPath();
@@ -3382,7 +4065,7 @@
                     ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10; ctx.shadowColor = '#3b82f6'; ctx.fill();
                 } else {
                     ctx.beginPath(); ctx.arc(px, py, safeR(this.radius), 0, Math.PI * 2);
-                    ctx.fillStyle = '#000'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = this.color; ctx.shadowBlur = 15; ctx.shadowColor = this.color; ctx.stroke();
+                    ctx.fillStyle = '#000'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = getEquippedSkinColor(); ctx.shadowBlur = 15; ctx.shadowColor = getEquippedSkinColor(); ctx.stroke();
                     ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill();
                 }
 
@@ -3467,6 +4150,7 @@
             processLevelUp() {
                 Sound.levelUp(); 
                 this.level++;
+                recordLevelUp(this.level);
                 createParticles(this.x, this.y, 50, '#ff0', 5);
                 floatingTexts.push(new FloatingText(this.x, this.y - 30, "LEVEL UP!", '#ff0', 20));
                 
@@ -3490,13 +4174,14 @@
                     const damageRate = Math.max(0.2, 0.8 - this.onlineShieldLevel * 0.1);
                     amount *= damageRate;
                 }
+                recordDamageTaken(amount);
                 this.hp -= amount; 
                 this.invincibleTimer = isOnlineMode ? 32 : 15; // オフライン時の無敵時間を短縮してダメージを受けやすく
                 updateUI(); 
                 triggerShake(15);
                 createParticles(this.x, this.y, 10, '#f00', 4); 
                 Sound.hit();
-                if (this.hp <= 0) gameOver();
+                if (this.hp <= 0) { if (!triggerPhoenixRevive()) gameOver(); }
             }
         }
 
@@ -3672,7 +4357,7 @@
 
             snapKill() {
                 if (this.markedForDeletion || this.isMonkey) return;
-                this.markedForDeletion = true; score += this.maxHp; Sound.enemyDie(); 
+                this.markedForDeletion = true; recordEnemyDefeat(this); score += this.maxHp; Sound.enemyDie(); 
                 createParticles(this.x, this.y, 10, '#777777', 3);
                 if(gems.length < 300) gems.push(new Gem(this.x, this.y, this.expValue * ((this.isBoss || this.isMidBoss) ? 3 : 5)));
                 document.getElementById('scoreDisplay').innerText = Math.floor(score);
@@ -3680,7 +4365,7 @@
 
             die(source = null) {
                 if (this.markedForDeletion) return;
-                this.markedForDeletion = true; score += this.maxHp; Sound.enemyDie();
+                this.markedForDeletion = true; recordEnemyDefeat(this); score += this.maxHp; Sound.enemyDie();
                 
                 if (this.isBoss || this.isMidBoss || this.isMonkey) {
                     player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.5); updateUI();
@@ -3708,7 +4393,10 @@
             if (!player) return; 
             if (!isTimeStopped) {
                 gameTime += 1 / 60; frameCount++;
-                if (frameCount % 60 === 0) document.getElementById('timeDisplay').innerText = `${Math.floor(gameTime / 60).toString().padStart(2, '0')}:${Math.floor(gameTime % 60).toString().padStart(2, '0')}`;
+                if (frameCount % 60 === 0) {
+                    document.getElementById('timeDisplay').innerText = `${Math.floor(gameTime / 60).toString().padStart(2, '0')}:${Math.floor(gameTime % 60).toString().padStart(2, '0')}`;
+                    checkMissionCompletions(false);
+                }
                 
                 // スポーン間隔の調整と最大数の解放
                 let spawnInterval = Math.max(5, 40 - Math.floor(gameTime * 0.5));
@@ -3732,7 +4420,7 @@
                     {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:vaderSkills, l:50},
                     {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
                     {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10},
-                    {a:phantomDaggers, l:50}, {a:gravityPulsars, l:20}
+                    {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}
                 ];
                 
                 for (let g of groups) {
@@ -3995,7 +4683,7 @@
             for (let y = startY; y <= camera.y + h + gridSize; y += gridSize) { ctx.moveTo(safe(camera.x - gridSize), safe(y)); ctx.lineTo(safe(camera.x + w + gridSize), safe(y)); }
             ctx.stroke();
 
-            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
+            const drawGroups = [ gems, effects, voidTempests, orbitalStrikes, kamehamehas, hollowMurasakis, infinitySnaps, infiniteBladeSwords, unibeams, keraunosStorms, vaderSkills, stormbreakers, disneyMagics, muryokushos, shields, ironBlasters, enemyBullets, sniperBullets, bullets, bounceBombs, poisonClouds, phantomDaggers, gravityPulsars, bananaPeels, mapBlackholes, blackholes, divineSwords, enemies, hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges ];
             
             for (let group of drawGroups) {
                 for (let obj of group) {
@@ -4012,7 +4700,28 @@
             
             ctx.restore(); 
             try { drawOnlineArrows(); } catch(e) {}
+            try { drawMapBlackHoleCompass(); } catch(e) {}
             try { drawSkillCooldowns(); } catch(e) {}
+        }
+
+        function drawMapBlackHoleCompass() {
+            if (!player || !mapBlackholes || mapBlackholes.length === 0) return;
+            const bh = mapBlackholes[0];
+            const sx = bh.x - camera.x, sy = bh.y - camera.y;
+            const offscreen = sx < 40 || sx > width - 40 || sy < 40 || sy > height - 40;
+            if (!offscreen) return;
+            const cx = width / 2, cy = height / 2;
+            const angle = Math.atan2(bh.y - player.y, bh.x - player.x);
+            const edgeX = cx + Math.cos(angle) * (Math.min(width, height) * 0.39);
+            const edgeY = cy + Math.sin(angle) * (Math.min(width, height) * 0.39);
+            ctx.save();
+            ctx.translate(edgeX, edgeY); ctx.rotate(angle);
+            ctx.fillStyle = '#a855f7'; ctx.shadowBlur = 18; ctx.shadowColor = '#a855f7';
+            ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-12, -9); ctx.lineTo(-7, 0); ctx.lineTo(-12, 9); ctx.closePath(); ctx.fill();
+            ctx.restore();
+            ctx.save(); ctx.font = 'bold 12px Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.shadowBlur = 8; ctx.shadowColor = '#000';
+            ctx.fillText('BLACK HOLE', edgeX, edgeY - 17);
+            ctx.restore();
         }
 
         function drawSkillCooldowns() {
@@ -4037,8 +4746,9 @@
             if (player.onlineSniperLevel > 0) skills.push({ id: 'onlineSniper', icon: '🎯', p: player.onlineSniperTimer / Math.max(60, 120 - player.onlineSniperLevel * 15) });
             if (player.onlineBounceBombLevel > 0) skills.push({ id: 'onlineBounce', icon: '💣', p: player.onlineBounceTimer / Math.max(120, 240 - player.onlineBounceBombLevel * 20) });
             if (player.onlinePoisonLevel > 0) skills.push({ id: 'onlinePoison', icon: '☣️', p: player.onlinePoisonTimer / 180 });
-            if (player.onlinePhantomLevel > 0) skills.push({ id: 'onlinePhantom', icon: '🗡️', p: player.onlinePhantomTimer / Math.max(45, 90 - player.onlinePhantomLevel * 10) });
+            if (player.onlinePhantomLevel > 0) skills.push({ id: 'onlinePhantom', icon: '🗡️×5', p: player.onlinePhantomTimer / 600 });
             if (player.onlineGravityLevel > 0) skills.push({ id: 'onlineGravity', icon: '🌌', p: player.onlineGravityTimer / 300 });
+            if (player.onlineBananaLevel > 0) skills.push({ id: 'onlineBanana', icon: '🍌', p: player.onlineBananaTimer / 360 });
 
             if (skills.length === 0) return;
 
@@ -4105,6 +4815,7 @@
             showScreen(null); 
             gameState = 'playing';
             isOnlineMode = mode === 'online';
+            startMissionRun(mode);
             
             const jt = document.getElementById('joystickToggle');
             if (jt) isJoystickEnabled = jt.checked; 
@@ -4124,7 +4835,7 @@
                     orbitalStrikeLevel: 0, ironmanSuitLevel: 0, disneyMagicLevel: 0,
                     funnelLevel: 0, thorLevel: 0, vaderLevel: 0, shieldLevel: 0,
                     evoBlackhole: false, evoDivineSword: false, evoGravityBeam: false, evoThunderBlade: false,
-                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false
+                    evoRicochetSniper: false, evoToxicAegis: false, evoGravitonDagger: false, evoSingularityBomb: false, onlineBananaLevel: 0, onlineBananaTimer: 0
                 });
             } else {
                 player.evoRicochetSniper = false; player.evoToxicAegis = false;
@@ -4138,9 +4849,12 @@
             
             // --- 配列の初期化 ---
             bounceBombs = []; poisonClouds = []; blackholes = []; divineSwords = []; sniperBullets = [];
-            phantomDaggers = []; gravityPulsars = [];
+            phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = [];
             
-            bgStars = []; 
+            bgStars = [];
+            const bhAngle = Math.random() * Math.PI * 2;
+            const bhDist = MathUtils.random(1300, 2600);
+            mapBlackholes.push(new RealisticMapBlackHole(spawn.x + Math.cos(bhAngle) * bhDist, spawn.y + Math.sin(bhAngle) * bhDist));
             
             frameCount = 0; gameTime = 0; score = 0; isTimeStopped = false; isMuryokushoActive = false;
             if (isOnlineMode) startOnlineMode(); else stopOnlineMode();
@@ -4162,6 +4876,11 @@
         document.getElementById('closeUpgradeBtn').addEventListener('click', () => {
             showScreen('startScreen');
         });
+        document.getElementById('openMissionBtn').addEventListener('click', () => { renderMissionScreen(); showScreen('missionsScreen'); });
+        document.getElementById('closeMissionsBtn').addEventListener('click', () => { showScreen('startScreen'); });
+        document.getElementById('claimAllMissionsBtn').addEventListener('click', claimAllMissions);
+        document.getElementById('openCollectionBtn').addEventListener('click', () => { renderCollectionScreen(); showScreen('collectionScreen'); });
+        document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('pauseMuteBtn').addEventListener('click', (e) => {
             isMuted = !isMuted; e.target.innerText = isMuted ? '🔇 SOUND: OFF' : '🔊 SOUND: ON';
             if (isMuted) Sound.stopBGM(); else if (gameState === 'playing' || gameState === 'paused') Sound.startBGM();
@@ -4252,6 +4971,8 @@
         window.addEventListener('beforeunload', () => { stopOnlineMode(); });
         resizeCanvas();
         loadData();
+        ensureProgressionData();
+        renderMissionMiniHud();
         syncJoystickVisibility();
         showScreen('startScreen');
 
