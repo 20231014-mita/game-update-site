@@ -54,6 +54,26 @@
         #missionToast { position: fixed; left: 50%; top: 20px; transform: translateX(-50%); z-index: 300; min-width: min(90vw, 480px); pointer-events: none; }
         .toast-card { background: rgba(0,0,0,.86); border: 2px solid #facc15; border-radius: 18px; padding: 14px 18px; box-shadow: 0 0 28px rgba(250,204,21,.45); animation: toastPop 3.1s ease forwards; }
         @keyframes toastPop { 0%{opacity:0;transform:translateY(-20px) scale(.96)} 10%{opacity:1;transform:translateY(0) scale(1)} 84%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-12px) scale(.98)} }
+
+        /* ===== 2026-05-02 Add-on: clearer UI / tabs / tutorial / light mode ===== */
+        .solo-hero { position: relative; min-height: 104px; font-size: clamp(1.8rem, 5vw, 3.1rem) !important; letter-spacing: .08em; transform: translateZ(0); }
+        .solo-hero:hover { transform: translateY(-2px) scale(1.01); }
+        .beginner-badge { position: absolute; left: 14px; top: -14px; background: #facc15; color: #111827; border: 2px solid #fff7ed; border-radius: 999px; padding: 4px 10px; font-size: .8rem; font-weight: 900; box-shadow: 0 0 16px rgba(250,204,21,.8); }
+        .solo-sub { display:block; font-size: .85rem; letter-spacing: 0; margin-top: 4px; color:#cffafe; font-family:'Noto Sans JP',sans-serif; }
+        .menu-secondary { min-height: 72px; font-size: 1.05rem !important; }
+        .menu-help { color:#67e8f9; font-size:.78rem; margin-top:.45rem; }
+        .mission-tabs { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width: thin; }
+        .mission-tab-btn { white-space: nowrap; border:1px solid rgba(6,182,212,.55); border-radius:999px; padding:8px 12px; color:#a5f3fc; background:rgba(15,23,42,.76); font-weight:800; font-size:.85rem; box-shadow: inset 0 0 8px rgba(6,182,212,.12); }
+        .mission-tab-btn.active { color:#111827; background:#facc15; border-color:#fde68a; box-shadow:0 0 16px rgba(250,204,21,.35); }
+        .section-header { grid-column: 1 / -1; margin-top: .5rem; margin-bottom: .25rem; background: rgba(0,0,0,.4); border: 1px solid rgba(6,182,212,.3); border-radius: 14px; padding: 12px 14px; }
+        .result-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; width:100%; margin-top:14px; }
+        .result-pill { background: rgba(15,23,42,.75); border:1px solid rgba(148,163,184,.35); border-radius:12px; padding:8px 10px; font-size:.92rem; }
+        .tutorial-card { width:min(92vw,560px); background:linear-gradient(180deg, rgba(2,6,23,.96), rgba(0,0,0,.92)); border:2px solid #22d3ee; border-radius:24px; box-shadow:0 0 36px rgba(34,211,238,.38); padding:24px; }
+        body.light-mode .neon-text { text-shadow: 0 0 5px #0ff, 0 0 14px rgba(6,182,212,.7); }
+        body.light-mode .btn-neon, body.light-mode .btn-gold, body.light-mode .btn-purple, body.light-mode .btn-green { box-shadow: 0 0 7px currentColor, inset 0 0 5px currentColor; }
+        body.light-mode #lavaOverlay.active { opacity:.16; }
+        body.light-mode .cutin-base { animation-duration: 1.4s; }
+        @media (max-width:720px){ .solo-hero { min-height: 92px; } .result-grid{grid-template-columns:1fr;} .beginner-badge{font-size:.72rem; left:10px;} }
     </style>
 </head>
 <body class="text-white">
@@ -162,19 +182,20 @@
                     <label for="nicknameInput" class="block text-cyan-300 font-bold text-sm mb-2 tracking-wider">ニックネーム <span class="text-red-400">※必須</span></label>
                     <input id="nicknameInput" class="menu-input" maxlength="12" placeholder="" autocomplete="off">
                     <p id="nicknameWarn" class="hidden text-red-300 text-xs mt-2">ニックネームを入れないとゲーム開始できません。</p>
+                    <p class="menu-help">名前を入れるとスタートできます</p>
                 </div>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-yellow-500/40 flex flex-col justify-center">
                     <p class="text-yellow-300 font-bold text-lg drop-shadow-[0_0_10px_yellow]">自己ベスト: <span id="currentBestDisplay">0</span> SCORE</p>
-                    <p class="text-gray-300 text-sm mt-1">敵を倒して経験値を集め、強化して生き残れ！</p>
+                    <p class="text-gray-300 text-sm mt-1">倒す → 集める → 強くなる</p>
                 </div>
             </div>
 
             <div class="menu-grid w-full">
-                <button id="startBtn" class="btn-neon px-6 py-4 text-xl md:text-2xl font-bold rounded cursor-pointer">SOLO START</button>
-                <button id="onlineStartBtn" class="btn-gold px-6 py-4 text-xl md:text-2xl font-bold rounded cursor-pointer">ONLINE BATTLE</button>
-                <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] px-6 py-4 text-xl font-bold rounded cursor-pointer transition-all">UPGRADE</button>
-                <button id="openMissionBtn" class="btn-purple px-6 py-4 text-xl font-bold rounded cursor-pointer">MISSIONS</button>
-                <button id="openCollectionBtn" class="btn-green px-6 py-4 text-xl font-bold rounded cursor-pointer">COLLECTION</button>
+                <button id="startBtn" class="btn-neon solo-hero px-6 py-5 font-bold rounded cursor-pointer"><span class="beginner-badge">🔰 はじめてならここ！</span>SOLO START<span class="solo-sub">1人で練習・ミッション進行</span></button>
+                <button id="onlineStartBtn" class="btn-gold menu-secondary px-6 py-3 font-bold rounded cursor-pointer">ONLINE BATTLE</button>
+                <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] menu-secondary px-6 py-3 font-bold rounded cursor-pointer transition-all">UPGRADE</button>
+                <button id="openMissionBtn" class="btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer">MISSIONS</button>
+                <button id="openCollectionBtn" class="btn-green menu-secondary px-6 py-3 font-bold rounded cursor-pointer">COLLECTION</button>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
                     <span class="text-cyan-300 font-bold text-sm tracking-wider">ジョイスティック</span>
                     <label class="flex items-center cursor-pointer gap-3">
@@ -184,6 +205,20 @@
                             <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow"></div>
                         </div>
                         <span class="text-white select-none font-bold text-sm">使う</span>
+                    </label>
+                </div>
+                <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
+                    <div>
+                        <span class="text-cyan-300 font-bold text-sm tracking-wider">軽量モード</span>
+                        <p class="text-gray-400 text-xs mt-1">スマホ・学校PCでも軽くする</p>
+                    </div>
+                    <label class="flex items-center cursor-pointer gap-3">
+                        <div class="relative">
+                            <input type="checkbox" id="lightModeToggle" class="sr-only" onchange="window.toggleLightMode(this.checked)">
+                            <div class="block bg-gray-600 w-14 h-8 rounded-full transition-colors duration-300"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow"></div>
+                        </div>
+                        <span class="text-white select-none font-bold text-sm">ON</span>
                     </label>
                 </div>
             </div>
@@ -197,6 +232,22 @@
                     <button id="exportBtn" class="bg-blue-900 border border-blue-500 text-blue-200 px-4 py-2 rounded hover:bg-blue-700 text-sm">EXPORT</button>
                     <button id="importBtn" class="bg-green-900 border border-green-500 text-green-200 px-4 py-2 rounded hover:bg-green-700 text-sm">IMPORT</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tutorialOverlay" class="absolute inset-0 bg-black/78 backdrop-blur-md z-[70] hidden items-center justify-center p-4 pointer-events-auto">
+        <div class="tutorial-card text-center">
+            <div class="text-yellow-300 font-bold text-sm mb-2 tracking-widest">FIRST PLAY GUIDE</div>
+            <h2 class="text-3xl md:text-4xl font-bold neon-text mb-5" style="font-family:'Orbitron',sans-serif;">3つだけ覚えればOK</h2>
+            <div class="space-y-3 text-left">
+                <div class="bg-slate-900/80 border border-cyan-400/40 rounded-xl p-4"><b>① 動く</b><br><span class="text-gray-300 text-sm">敵から逃げながら位置を変える</span></div>
+                <div class="bg-slate-900/80 border border-cyan-400/40 rounded-xl p-4"><b>② ジェムを取る</b><br><span class="text-gray-300 text-sm">経験値がたまり、レベルアップする</span></div>
+                <div class="bg-slate-900/80 border border-cyan-400/40 rounded-xl p-4"><b>③ 武器を選ぶ</b><br><span class="text-gray-300 text-sm">レベルアップで強い武器を増やす</span></div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
+                <button id="tutorialStartBtn" class="btn-neon px-7 py-3 rounded font-bold text-xl">PLAY</button>
+                <button id="tutorialSkipBtn" class="bg-gray-800 border border-gray-500 text-gray-200 px-7 py-3 rounded font-bold">SKIP</button>
             </div>
         </div>
     </div>
@@ -222,6 +273,7 @@
                     <button id="closeMissionsBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
                 </div>
             </div>
+            <div id="missionTabs" class="mission-tabs"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[68vh] pr-1" id="missionsListContainer"></div>
         </div>
     </div>
@@ -255,6 +307,7 @@
             <p class="text-lg text-gray-400">自己ベスト</p>
             <p class="text-3xl font-bold text-cyan-400 mb-2" id="bestScore" style="font-family: 'Orbitron', sans-serif;">0</p>
             <p class="text-lg text-yellow-200">獲得コイン: <span id="earnedCoinsDisplay" class="font-bold text-2xl text-yellow-400">+0</span></p>
+            <div id="resultSummary" class="result-grid"></div>
             <p id="newRecordText" class="text-yellow-400 font-bold mt-2 animate-bounce hidden">★ NEW RECORD ★</p>
         </div>
         <button id="restartBtn" class="btn-neon px-10 py-4 text-2xl font-bold rounded cursor-pointer">TITLE MENU</button>
@@ -312,6 +365,8 @@
         const mapSize = 10000;
         let isMuted = false;
         let bgStars = [];
+        let isLightMode = false;
+        let currentMissionFilter = 'RECOMMENDED';
         
         let isLavaDomainActive = false;
         let lavaDomainTimer = 0;
@@ -335,6 +390,9 @@
             { id: 'rapid', name: '連射回路強化', desc: '通常弾の発射間隔が少し短くなる', icon: '⚡' },
             { id: 'pierce', name: '貫通チップ', desc: '通常弾の貫通力が上がる', icon: '💠' }
         ];
+        const UPGRADE_CATEGORY_LABELS = { attack:'攻撃', defense:'防御', move:'移動', exp:'経験値', coin:'コイン', special:'特殊能力' };
+        const UPGRADE_CATEGORY_MAP = { damage:'attack', rapid:'attack', pierce:'attack', hp:'defense', armor:'defense', speed:'move', exp:'exp', magnet:'exp' };
+        upgradeDef.forEach(u => { u.category = UPGRADE_CATEGORY_MAP[u.id] || 'special'; });
 
         let userData = { score: 0, coins: 0, nickname: '', upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 } };
 
@@ -456,6 +514,22 @@
             { name:'星核レールバースト', icon:'🔭', recipe:'レールキャノン Lv3 + ネオンランス Lv3', desc:'超高速の貫通弾が一直線に敵を削る。' },
             { name:'終焉ブラックホール', icon:'⚫', recipe:'ブラックホールエンペラー Lv3 + 虚空コレクター Lv3', desc:'吸引と経験値回収が同時に強化される。' }
         ];
+
+        const WEAPON_CODEX_EXTRA = {
+            '通常弾': { attackType:'単体・遠距離', strong:'序盤、狙った敵', weak:'敵が多すぎる場面', unlock:'最初から', recommend:'★★★☆☆' },
+            '円環の刃界': { attackType:'近距離・周囲', strong:'囲まれた時', weak:'遠い敵', unlock:'レベルアップ', recommend:'★★★★☆' },
+            '破滅の雷域': { attackType:'範囲・自動', strong:'ザコ敵の群れ', weak:'単体ボス', unlock:'レベルアップ', recommend:'★★★★☆' },
+            '虚空次元の暴風': { attackType:'吸引・範囲', strong:'ジェム回収、密集敵', weak:'離れたボス', unlock:'レベルアップ', recommend:'★★★★★' },
+            '天穹の裁き・極光': { attackType:'高火力・範囲', strong:'ボス、敵の密集', weak:'発動待ちの時間', unlock:'レベルアップで低確率', recommend:'★★★★★' },
+            '深淵の重力刃': { attackType:'吸引・斬撃', strong:'敵をまとめる場面', weak:'高速敵', unlock:'レベルアップで低確率', recommend:'★★★★☆' },
+            '雷霆砕破・轟': { attackType:'投てき・広範囲', strong:'中盤以降の群れ', weak:'狙いがずれる場面', unlock:'レベルアップで低確率', recommend:'★★★★☆' },
+            '龍星・崩命破': { attackType:'ビーム・直線', strong:'ボス、一直線の敵', weak:'横から来る敵', unlock:'レベルアップで低確率', recommend:'★★★★★' },
+            'スナイパー': { attackType:'遠距離・高火力', strong:'ボス戦、オンライン', weak:'敵が多すぎる時', unlock:'オンライン武器', recommend:'★★★★☆' },
+            '跳弾ボム': { attackType:'爆発・範囲', strong:'密集した敵', weak:'単体狙い', unlock:'オンライン武器', recommend:'★★★☆☆' },
+            '毒雲': { attackType:'継続ダメージ', strong:'範囲内に留まる敵', weak:'高速敵', unlock:'オンライン武器', recommend:'★★★☆☆' },
+            '重力パルサー': { attackType:'吸引・妨害', strong:'相手の動きを崩す', weak:'火力だけ欲しい場面', unlock:'オンライン武器', recommend:'★★★★☆' }
+        };
+        WEAPON_CODEX_DEFS.forEach(w => Object.assign(w, WEAPON_CODEX_EXTRA[w.name] || { attackType:'特殊', strong:'状況次第', weak:'使い方次第', unlock:'ゲーム内で解放', recommend:'★★★☆☆' }));
 
         const LEGENDARY_WEAPON_DEFS = [
             { id:'neonLance', name:'伝説武器：ネオンランス', icon:'🔱', desc:'通常弾が黄金の貫通弾になる。ソロ専用。', hint:'KILL系ミッションで解放' },
@@ -666,6 +740,17 @@
             { id:'d_score_8000', cat:'DAILY', title:'今日のスコアアタック', desc:'今日中にスコア8000を超える', metric:'dailyBestScore', target:8000, reward:{coins:1000} },
             { id:'d_online_5', cat:'DAILY', title:'今日のオンライン練習', desc:'今日中にオンライン攻撃を5回当てる', metric:'dailyOnlineHits', target:5, reward:{coins:1200} },
             { id:'d_mission_1', cat:'DAILY', title:'今日のミッション回収', desc:'今日中に通常ミッションを1個達成する', metric:'dailyMissionCompletions', target:1, reward:{coins:900} }
+        ];
+
+        const MISSION_TAB_DEFS = [
+            { id:'RECOMMENDED', label:'今日のおすすめ' },
+            { id:'START', label:'初心者向け', cats:['START','PLAY'] },
+            { id:'KILL', label:'討伐', cats:['KILL','RUN'] },
+            { id:'TIME', label:'生存時間', cats:['TIME'] },
+            { id:'BOSS', label:'ボス', cats:['BOSS'] },
+            { id:'ONLINE', label:'オンライン', cats:['ONLINE'] },
+            { id:'HARD', label:'高難度', cats:['HARD','LEGEND','FINAL','BLACKHOLE'] },
+            { id:'ALL', label:'すべて' }
         ];
 
         function getTodayKey() {
@@ -963,25 +1048,39 @@
             const ready = MISSION_DEFS.filter(m => userData.missions.completed[m.id] && !userData.missions.claimed[m.id]);
             ensureDailyMissionData();
             const dailyReady = getDailyMissionDefs().filter(m => userData.daily.completed[m.id] && !userData.daily.claimed[m.id]);
-            const activeDaily = getDailyMissionDefs().filter(m => !userData.daily.completed[m.id]).slice(0, 1);
-            const active = activeDaily.length ? activeDaily : MISSION_DEFS.filter(m => !userData.missions.completed[m.id]).slice(0, 2);
+            const dailyActive = getDailyMissionDefs().filter(m => !userData.daily.completed[m.id]);
+            const normalActive = MISSION_DEFS.filter(m => !userData.missions.completed[m.id]);
+            const active = [...dailyActive, ...normalActive].slice(0, 3);
             if (gameState !== 'playing') { hud.classList.add('hidden'); return; }
             hud.classList.remove('hidden');
             if (ready.length || dailyReady.length) {
                 hud.innerHTML = `<div class="text-yellow-300 font-bold">🎁 受け取り可能: ${ready.length + dailyReady.length}</div><div class="text-gray-300">タイトルの MISSIONS で報酬GET</div>`;
             } else {
-                hud.innerHTML = `<div class="text-yellow-300 font-bold">DAILY / MISSIONS</div>` + active.map(m => {
+                hud.innerHTML = `<div class="text-yellow-300 font-bold">MISSION PROGRESS</div>` + active.map(m => {
                     const isDaily = String(m.id).startsWith('d_');
                     const progress = isDaily ? getDailyMissionProgress(m) : getMissionProgress(m);
                     const p = Math.min(1, progress / m.target);
-                    return `<div class="mt-1"><div class="flex justify-between gap-2"><span>${m.title}</span><span>${Math.floor(progress)}/${m.target}</span></div><div class="mini-progress"><div style="width:${p*100}%"></div></div></div>`;
+                    return `<div class="mt-1"><div class="flex justify-between gap-2"><span>${isDaily ? '今日: ' : ''}${m.title}</span><span>${Math.floor(progress)}/${m.target}</span></div><div class="mini-progress"><div style="width:${p*100}%"></div></div></div>`;
                 }).join('');
             }
+        }
+
+        function renderMissionTabs() {
+            const tabs = document.getElementById('missionTabs');
+            if (!tabs) return;
+            tabs.innerHTML = MISSION_TAB_DEFS.map(t => `<button class="mission-tab-btn ${currentMissionFilter === t.id ? 'active' : ''}" data-filter="${t.id}">${t.label}</button>`).join('');
+            tabs.querySelectorAll('.mission-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentMissionFilter = btn.dataset.filter || 'RECOMMENDED';
+                    renderMissionScreen();
+                });
+            });
         }
 
         function renderMissionScreen() {
             ensureProgressionData();
             checkMissionCompletions(false);
+            renderMissionTabs();
             const container = document.getElementById('missionsListContainer');
             if (!container) return;
             container.innerHTML = '';
@@ -1014,21 +1113,39 @@
 
             const addHeader = (title, sub = '') => {
                 const h = document.createElement('div');
-                h.className = 'md:col-span-2 mt-2 mb-1 bg-black/40 border border-cyan-500/30 rounded-xl px-4 py-3';
+                h.className = 'section-header';
                 h.innerHTML = `<div class="text-xl font-bold text-cyan-300" style="font-family:'Orbitron',sans-serif;">${title}</div>${sub ? `<div class="text-xs text-gray-300 mt-1">${sub}</div>` : ''}`;
                 container.appendChild(h);
             };
 
-            addHeader('DAILY MISSIONS', `今日だけのミッション：${getTodayKey()}`);
-            getDailyMissionDefs().forEach(m => makeCard(m, true));
+            const tab = MISSION_TAB_DEFS.find(t => t.id === currentMissionFilter) || MISSION_TAB_DEFS[0];
+            const allDaily = getDailyMissionDefs();
+            let normal = [...MISSION_DEFS];
+
+            if (tab.id === 'RECOMMENDED') {
+                addHeader('DAILY MISSIONS', `今日だけの3つ：${getTodayKey()}`);
+                allDaily.forEach(m => makeCard(m, true));
+                normal = normal.filter(m => !userData.missions.claimed[m.id]).sort((a,b) => {
+                    const ac = userData.missions.completed[a.id] ? 0 : 1;
+                    const bc = userData.missions.completed[b.id] ? 0 : 1;
+                    if (ac !== bc) return ac - bc;
+                    return (getMissionProgress(b) / b.target) - (getMissionProgress(a) / a.target);
+                }).slice(0, 12);
+                addHeader('NEXT MISSIONS', '今やると分かりやすいおすすめ');
+                normal.forEach(m => makeCard(m, false));
+                return;
+            }
+
+            if (tab.id === 'ALL') {
+                addHeader('DAILY MISSIONS', `今日だけの3つ：${getTodayKey()}`);
+                allDaily.forEach(m => makeCard(m, true));
+            } else if (Array.isArray(tab.cats)) {
+                normal = normal.filter(m => tab.cats.includes(m.cat));
+            }
 
             const categoryOrder = ['START','KILL','RUN','TIME','BOSS','LEVEL','SCORE','COIN','GEM','PLAY','ONLINE','HARD','LEGEND','COLLECT','SKIN','AURA','CAPE','BLACKHOLE','FINAL'];
             const grouped = {};
-            MISSION_DEFS.forEach(m => {
-                const key = m.cat || 'OTHER';
-                if (!grouped[key]) grouped[key] = [];
-                grouped[key].push(m);
-            });
+            normal.forEach(m => { const key = m.cat || 'OTHER'; (grouped[key] ||= []).push(m); });
             for (const cat of categoryOrder) {
                 if (!grouped[cat] || !grouped[cat].length) continue;
                 const done = grouped[cat].filter(m => userData.missions.completed[m.id]).length;
@@ -1050,10 +1167,11 @@
                 return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc}</p><p class="text-xs text-cyan-200 mt-2">解放条件: ${w.hint || 'ミッション報酬'}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
             }).join('');
             const codexHtml = WEAPON_CODEX_DEFS.map(w => {
-                return `<div class="collection-card unlocked"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-xs text-purple-200 font-bold mt-1">${w.type}</p><p class="text-sm text-gray-300 mt-1">${w.desc}</p></div>`;
+                return `<div class="collection-card unlocked"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-xs text-purple-200 font-bold mt-1">${w.type}</p><p class="text-sm text-gray-300 mt-1">${w.desc}</p><div class="text-xs text-gray-300 mt-3 space-y-1"><p>攻撃タイプ：${w.attackType}</p><p>強い場面：${w.strong}</p><p>弱い場面：${w.weak}</p><p>解放条件：${w.unlock}</p><p class="text-yellow-200">おすすめ度：${w.recommend}</p></div></div>`;
             }).join('');
             const evoHtml = EVOLUTION_RECIPE_DEFS.map(e => {
-                return `<div class="collection-card"><div class="text-3xl">${e.icon}</div><h3 class="font-bold text-white mt-1">${e.name}</h3><p class="text-xs text-yellow-200 mt-1">合成条件: ${e.recipe}</p><p class="text-sm text-gray-300 mt-1">${e.desc}</p></div>`;
+                const mythicLocked = (e.name.includes('星核') && !userData.unlocks.legendaryWeapons.railCannon) || (e.name.includes('終焉') && !userData.unlocks.legendaryWeapons.blackholeEmperor);
+                return `<div class="collection-card"><div class="text-3xl">${mythicLocked ? '❔' : e.icon}</div><h3 class="font-bold text-white mt-1">${mythicLocked ? '？？？' : e.name}</h3><p class="text-xs text-yellow-200 mt-1">合成条件: ${mythicLocked ? '？？？ + ？？？' : e.recipe}</p><p class="text-sm text-gray-300 mt-1">${mythicLocked ? 'まだ解放されていない進化レシピ。ミッションを進めると見えるようになります。' : e.desc}</p></div>`;
             }).join('');
             const skinHtml = SKIN_DEFS.map(sk => {
                 const on = !!userData.unlocks.skins[sk.id];
@@ -1390,36 +1508,48 @@
             container.innerHTML = '';
             coinsDisplay.innerText = Math.floor(userData.coins || 0);
 
-            upgradeDef.forEach(upg => {
-                const level = Math.max(0, Number(userData.upgrades?.[upg.id] || 0));
-                const cost = 100 * (level + 1);
-                const canBuy = (userData.coins || 0) >= cost;
+            const order = ['attack','defense','move','exp','coin','special'];
+            const grouped = {};
+            upgradeDef.forEach(upg => { (grouped[upg.category || 'special'] ||= []).push(upg); });
 
-                const card = document.createElement('div');
-                card.className = 'upgrade-card p-5 rounded-lg text-center pointer-events-auto flex flex-col items-center gap-3';
-                card.innerHTML = `
-                    <div class="text-4xl">${upg.icon}</div>
-                    <h3 class="text-xl font-bold text-cyan-300">${upg.name}</h3>
-                    <p class="text-sm text-gray-300">${upg.desc}</p>
-                    <p class="text-yellow-300 font-bold">LV ${level}</p>
-                    <button class="buy-upgrade btn-neon px-4 py-2 rounded font-bold ${canBuy ? '' : 'opacity-40 cursor-not-allowed'}" ${canBuy ? '' : 'disabled'}>
-                        BUY: ${cost} COINS
-                    </button>
-                `;
+            order.forEach(cat => {
+                if (!grouped[cat] || !grouped[cat].length) return;
+                const header = document.createElement('div');
+                header.className = 'section-header md:col-span-2';
+                header.innerHTML = `<div class="text-xl font-bold text-yellow-300">${UPGRADE_CATEGORY_LABELS[cat] || cat}</div><div class="text-xs text-gray-300 mt-1">次のレベルに必要なコインを下に大きく表示しています。</div>`;
+                container.appendChild(header);
+                grouped[cat].forEach(upg => {
+                    const level = Math.max(0, Number(userData.upgrades?.[upg.id] || 0));
+                    const cost = 100 * (level + 1);
+                    const canBuy = (userData.coins || 0) >= cost;
 
-                const button = card.querySelector('.buy-upgrade');
-                button.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if ((userData.coins || 0) < cost) return;
-                    userData.coins -= cost;
-                    userData.upgrades[upg.id] = level + 1;
-                    saveData();
-                    renderUpgradeScreen();
-                    Sound.playTone(900, 'square', 0.08, 0.05);
+                    const card = document.createElement('div');
+                    card.className = 'upgrade-card p-5 rounded-lg text-center pointer-events-auto flex flex-col items-center gap-3';
+                    card.innerHTML = `
+                        <div class="text-4xl">${upg.icon}</div>
+                        <h3 class="text-xl font-bold text-cyan-300">${upg.name}</h3>
+                        <p class="text-sm text-gray-300">${upg.desc}</p>
+                        <p class="text-yellow-300 font-bold">LV ${level}</p>
+                        <p class="text-2xl font-black text-yellow-200">${cost} COINS</p>
+                        <button class="buy-upgrade btn-neon px-4 py-2 rounded font-bold ${canBuy ? '' : 'opacity-40 cursor-not-allowed'}" ${canBuy ? '' : 'disabled'}>
+                            BUY
+                        </button>
+                    `;
+
+                    const button = card.querySelector('.buy-upgrade');
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if ((userData.coins || 0) < cost) return;
+                        userData.coins -= cost;
+                        userData.upgrades[upg.id] = level + 1;
+                        saveData();
+                        renderUpgradeScreen();
+                        Sound.playTone(900, 'square', 0.08, 0.05);
+                    });
+
+                    container.appendChild(card);
                 });
-
-                container.appendChild(card);
             });
         }
 
@@ -2101,6 +2231,7 @@
             const nickInput = document.getElementById('nicknameInput');
             if (nickInput && finalNick) nickInput.value = finalNick;
             document.getElementById('currentBestDisplay').innerText = userData.score;
+            applyLightMode(localStorage.getItem('neon_survivor_light_mode') === '1');
             loadDataFromCloud();
         }
 
@@ -2112,6 +2243,38 @@
             if (userData.nickname) localStorage.setItem('neon_survivor_nickname', userData.nickname);
             document.getElementById('currentBestDisplay').innerText = userData.score;
             saveDataToCloud();
+        }
+
+
+        function applyLightMode(enabled) {
+            isLightMode = !!enabled;
+            document.body.classList.toggle('light-mode', isLightMode);
+            localStorage.setItem('neon_survivor_light_mode', isLightMode ? '1' : '0');
+            const t = document.getElementById('lightModeToggle');
+            if (t) t.checked = isLightMode;
+            // 背景星の数を作り直す。重い端末ではここが効く。
+            bgStars = [];
+        }
+        window.toggleLightMode = applyLightMode;
+
+        function shouldShowTutorial(mode) {
+            return mode === 'solo' && localStorage.getItem('neon_survivor_tutorial_done') !== '1';
+        }
+        function showTutorialOverlay() {
+            const overlay = document.getElementById('tutorialOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        }
+        function closeTutorialOverlay() {
+            localStorage.setItem('neon_survivor_tutorial_done', '1');
+            const overlay = document.getElementById('tutorialOverlay');
+            if (overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
+            gameState = 'playing';
+            syncJoystickVisibility();
+            lastTime = performance.now();
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(gameLoop);
         }
 
         // Firebase初期化処理を安全なブロックで実行
@@ -2418,7 +2581,10 @@
             else if (player.pendingBossSpawn) { type = 3; player.pendingBossSpawn = false; triggerBossWarning(); } 
             else if (player.pendingMidBossSpawn) { type = 4; player.pendingMidBossSpawn = false; } 
             else {
-                if (gameTime > 120 && r < 0.1) type = 2; else if (gameTime > 60 && r < 0.3) type = 1; else if (gameTime > 180 && r < 0.4) type = 5; else if (gameTime > 240 && r < 0.5) type = 6; 
+                if (gameTime > 420 && r < 0.08) type = 11;
+                else if (gameTime > 360 && r < 0.14) type = 10;
+                else if (gameTime > 300 && r < 0.22) type = 9;
+                else if (gameTime > 120 && r < 0.1) type = 2; else if (gameTime > 60 && r < 0.3) type = 1; else if (gameTime > 180 && r < 0.4) type = 5; else if (gameTime > 240 && r < 0.5) type = 6; 
             }
             enemies.push(new Enemy(ex, ey, type));
         }
@@ -2438,12 +2604,22 @@
             document.getElementById('finalTime').innerText = document.getElementById('timeDisplay').innerText;
             const finalScoreVal = Math.floor(score); document.getElementById('finalScore').innerText = finalScoreVal;
             
+            const completedBefore = Object.keys(userData.missions?.completed || {}).length + Object.keys(userData.daily?.completed || {}).length;
             let baseEarnedCoins = Math.floor((Math.floor(finalScoreVal / 100) + Math.floor(gameTime)) / 6);
             let earnedCoins = Math.floor(baseEarnedCoins * RUN_COIN_GAIN_RATE * getCoinBonusMultiplier());
             userData.coins += earnedCoins; document.getElementById('earnedCoinsDisplay').innerText = `+${earnedCoins}`;
             ensureDailyMissionData();
             userData.daily.stats.dailyBestScore = Math.max(userData.daily.stats.dailyBestScore || 0, finalScoreVal);
             finishMissionRun(earnedCoins);
+            const completedAfter = Object.keys(userData.missions?.completed || {}).length + Object.keys(userData.daily?.completed || {}).length;
+            const summary = document.getElementById('resultSummary');
+            if (summary) {
+                summary.innerHTML = `
+                    <div class="result-pill">敵撃破：<b>${runStats ? runStats.kills || 0 : 0}</b>体</div>
+                    <div class="result-pill">ジェム：<b>${runStats ? runStats.gems || 0 : 0}</b>個</div>
+                    <div class="result-pill">最高Lv：<b>${player ? player.level : '-'}</b></div>
+                    <div class="result-pill">ミッション進行：<b>${Math.max(0, completedAfter - completedBefore)}</b>個更新</div>`;
+            }
             
             const newRecordText = document.getElementById('newRecordText');
             if (finalScoreVal > userData.score) { userData.score = finalScoreVal; newRecordText.classList.remove('hidden'); } 
@@ -5253,7 +5429,10 @@
                     case 3: 
                         this.radius = 45; this.color = '#ff0044'; this.speed = 1.2 + (timeMultiplier * 0.05); 
                         this.hp = 1500 * Math.max(1, Math.floor(player.level / 3)) * 1.5; this.damage = 40 * 1.5; 
-                        this.expValue = 25; this.isBoss = true; break;
+                        this.expValue = 25; this.isBoss = true;
+                        this.bossPattern = ['VOID BOSS','THUNDER BOSS','FIRE BOSS','MIRROR BOSS'][Math.floor(Math.random() * 4)];
+                        this.patternTimer = 0;
+                        break;
                     case 4: 
                         this.radius = 30; this.color = '#ff6600'; this.speed = 1.4 + (timeMultiplier * 0.05); 
                         this.hp = 250 * Math.max(1, player.level) * 1.5; this.damage = 30 * 1.5;
@@ -5264,6 +5443,15 @@
                     case 6: 
                         this.radius = 6; this.color = '#d946ef'; this.speed = MathUtils.random(3.5, 4.5); 
                         this.hp = 1 * 1.5; this.damage = 5 * 1.5; this.expValue = 0.5; break;
+                    case 9:
+                        this.radius = 16; this.color = '#ef4444'; this.speed = MathUtils.random(2.0, 2.7);
+                        this.hp = 25 * timeMultiplier; this.damage = 35; this.expValue = 4; this.explodeRadius = 95; break;
+                    case 10:
+                        this.radius = 18; this.color = '#38bdf8'; this.speed = 0.9;
+                        this.hp = 95 * timeMultiplier; this.damage = 8; this.expValue = 8; this.summonTimer = 0; break;
+                    case 11:
+                        this.radius = 17; this.color = '#e5e7eb'; this.speed = 1.15;
+                        this.hp = 120 * timeMultiplier; this.damage = 18; this.expValue = 9; this.shieldAngle = 0; break;
                     case 7: 
                         this.radius = 60; this.color = '#8B4513'; this.speed = (2.5 + (timeMultiplier * 0.1)) * 2; // ボスの移動速度強化
                         this.hp = 10000 * Math.max(1, Math.floor(player.level / 5)) * 1.5 * 2; // ボスのHPをさらに倍増
@@ -5323,6 +5511,56 @@
                             this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
                         }
                     }
+                } else if (this.type === 3) {
+                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
+                    const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                    this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
+                    this.patternTimer = (this.patternTimer || 0) + 1;
+                    if (this.patternTimer >= 180) {
+                        this.patternTimer = 0;
+                        const ptn = this.bossPattern || 'BOSS';
+                        if (ptn.includes('VOID')) {
+                            if(effects.length < 50) effects.push(new Shockwave(this.x, this.y, '#a855f7', 10, 520));
+                            if (d < 520) { const pull = MathUtils.angle(player.x, player.y, this.x, this.y); player.x += Math.cos(pull) * 42; player.y += Math.sin(pull) * 42; }
+                            floatingTexts.push(new FloatingText(this.x, this.y - 65, 'BLACK HOLE', '#a855f7', 18));
+                        } else if (ptn.includes('THUNDER')) {
+                            for (let i = 0; i < 10 && enemyBullets.length < 300; i++) enemyBullets.push(new Bullet(this.x, this.y, (Math.PI * 2 / 10) * i, this.damage * 0.45, 4.2, 5, 1, '#67e8f9', '#06b6d4', true));
+                            floatingTexts.push(new FloatingText(this.x, this.y - 65, 'THUNDER', '#67e8f9', 18));
+                        } else if (ptn.includes('FIRE')) {
+                            if(effects.length < 50) effects.push(new Shockwave(this.x, this.y, '#fb923c', 12, 360));
+                            if (d < 260) player.takeDamage(12);
+                            floatingTexts.push(new FloatingText(this.x, this.y - 65, 'FIRE FLOOR', '#fb923c', 18));
+                        } else if (ptn.includes('MIRROR')) {
+                            for (let i = 0; i < 3 && enemies.length < 800; i++) enemies.push(new Enemy(this.x + MathUtils.random(-90,90), this.y + MathUtils.random(-90,90), 1));
+                            floatingTexts.push(new FloatingText(this.x, this.y - 65, 'MIRROR CLONES', '#e879f9', 18));
+                        }
+                    }
+                } else if (this.type === 9) {
+                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
+                    const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                    this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
+                    if (d < this.explodeRadius) {
+                        if (!this.isCharmed) player.takeDamage(this.damage);
+                        if(effects.length < 50) effects.push(new Shockwave(this.x, this.y, '#ef4444', 8, this.explodeRadius * 2));
+                        createParticles(this.x, this.y, isLightMode ? 8 : 22, '#ef4444', 5);
+                        this.markedForDeletion = true;
+                    }
+                } else if (this.type === 10) {
+                    const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                    if (d > 340) {
+                        const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
+                        this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
+                    }
+                    this.summonTimer++;
+                    if (this.summonTimer >= 240 && enemies.length < 800) {
+                        this.summonTimer = 0;
+                        for (let i = 0; i < 2; i++) enemies.push(new Enemy(this.x + MathUtils.random(-35,35), this.y + MathUtils.random(-35,35), 6));
+                        floatingTexts.push(new FloatingText(this.x, this.y - 28, 'SUMMON', '#38bdf8', 14));
+                    }
+                } else if (this.type === 11) {
+                    const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
+                    this.shieldAngle = angle;
+                    this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
                 } else if (this.type === 5) {
                     if (MathUtils.distance(this.x, this.y, player.x, player.y) > 250) {
                         const angle = MathUtils.angle(this.x, this.y, player.x, player.y);
@@ -5424,6 +5662,9 @@
                 } else if (this.type === 3) { for (let i = 0; i < 24; i++) { let ar = (i % 2 === 0) ? r : r*0.6; let a = (Math.PI*2/24)*i; if(i===0) ctx.moveTo(px+Math.cos(a)*ar, py+Math.sin(a)*ar); else ctx.lineTo(px+Math.cos(a)*ar, py+Math.sin(a)*ar); } ctx.closePath(); ctx.shadowBlur = 20; ctx.shadowColor = this.isCharmed ? '#ec4899' : '#ff0000'; 
                 } else if (this.type === 5) { ctx.moveTo(px + r, py); ctx.lineTo(px - r, py - r); ctx.lineTo(px - r, py + r); ctx.closePath(); 
                 } else if (this.type === 6) { ctx.arc(px, py, r, 0, Math.PI * 2); }
+                else if (this.type === 9) { ctx.arc(px, py, r, 0, Math.PI * 2); ctx.moveTo(px-r*.55, py-r*.55); ctx.lineTo(px+r*.55, py+r*.55); ctx.moveTo(px+r*.55, py-r*.55); ctx.lineTo(px-r*.55, py+r*.55); }
+                else if (this.type === 10) { for (let i = 0; i < 5; i++) { const a = (Math.PI*2/5)*i - Math.PI/2; if(i===0) ctx.moveTo(px+Math.cos(a)*r, py+Math.sin(a)*r); else ctx.lineTo(px+Math.cos(a)*r, py+Math.sin(a)*r); } ctx.closePath(); }
+                else if (this.type === 11) { ctx.rect(px-r, py-r, r*2, r*2); ctx.moveTo(px+r*1.45, py-r*.9); ctx.lineTo(px+r*1.45, py+r*.9); ctx.shadowBlur = 16; ctx.shadowColor = '#e5e7eb'; }
                 
                 ctx.lineWidth = 2; ctx.strokeStyle = this.color; ctx.fillStyle = this.hp < this.maxHp && Math.random() > 0.8 ? '#fff' : 'rgba(0,0,0,0.8)';
                 
@@ -5531,6 +5772,9 @@
                     {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}, {a:overlordFlames, l:35}, {a:cosmicSushiStorms, l:6}
                 ];
                 
+                if (isLightMode) {
+                    for (let g of groups) g.l = Math.max(8, Math.floor(g.l * 0.45));
+                }
                 for (let g of groups) {
                     if (g.a.length > g.l) g.a.splice(0, g.a.length - g.l);
                     for (let i = g.a.length - 1; i >= 0; i--) { 
@@ -5775,7 +6019,7 @@
             } catch(e) {}
 
             if (bgStars.length === 0) {
-                for (let i = 0; i < 200; i++) {
+                for (let i = 0; i < (isLightMode ? 80 : 200); i++) {
                     let c = Math.random() > 0.5 ? `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.5})` : `rgba(6, 255, 255, ${Math.random() * 0.5 + 0.5})`;
                     bgStars.push({ 
                         x: Math.random() * w, y: Math.random() * h, z: Math.random() * 0.7 + 0.1, size: Math.random() * 2 + 1, color: c 
@@ -5813,7 +6057,7 @@
             if (currentBoss && !isTimeStopped) { 
                 bossHpContainer.classList.remove('hidden'); 
                 document.getElementById('bossHpBar').style.width = `${Math.max(0, (currentBoss.hp / currentBoss.maxHp) * 100)}%`; 
-                document.getElementById('bossNameDisplay').innerText = currentBoss.isApeOverlord ? "DEMON APE OVERLORD" : (currentBoss.isMonkey ? "MONKEY KING" : "BOSS");
+                document.getElementById('bossNameDisplay').innerText = currentBoss.isApeOverlord ? "DEMON APE OVERLORD" : (currentBoss.isMonkey ? "MONKEY KING" : (currentBoss.bossPattern || "BOSS"));
             } else { bossHpContainer.classList.add('hidden'); }
             
             camera.x = player ? player.x - w / 2 : 0; camera.y = player ? player.y - h / 2 : 0;
@@ -6039,7 +6283,15 @@
             const speedRadios = document.getElementsByName('gameSpeed'); for(let r of speedRadios) { if(r.value === "1.0") r.checked = true; }
             
             updateUI(); Sound.init(); Sound.startBGM();
-            lastTime = performance.now(); if (animationId) cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop);
+            lastTime = performance.now();
+            if (animationId) cancelAnimationFrame(animationId);
+            if (shouldShowTutorial(mode)) {
+                gameState = 'tutorial';
+                syncJoystickVisibility();
+                showTutorialOverlay();
+            } else {
+                animationId = requestAnimationFrame(gameLoop);
+            }
         }
 
         // ==========================================
@@ -6056,6 +6308,8 @@
         document.getElementById('claimAllMissionsBtn').addEventListener('click', claimAllMissions);
         document.getElementById('openCollectionBtn').addEventListener('click', () => { renderCollectionScreen(); showScreen('collectionScreen'); });
         document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
+        document.getElementById('tutorialStartBtn')?.addEventListener('click', closeTutorialOverlay);
+        document.getElementById('tutorialSkipBtn')?.addEventListener('click', closeTutorialOverlay);
         document.getElementById('pauseMuteBtn').addEventListener('click', (e) => {
             isMuted = !isMuted; e.target.innerText = isMuted ? '🔇 SOUND: OFF' : '🔊 SOUND: ON';
             if (isMuted) Sound.stopBGM(); else if (gameState === 'playing' || gameState === 'paused') Sound.startBGM();
