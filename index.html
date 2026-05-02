@@ -196,6 +196,7 @@
                 <button id="openUpgradeBtn" class="bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow] menu-secondary px-6 py-3 font-bold rounded cursor-pointer transition-all">UPGRADE</button>
                 <button id="openMissionBtn" class="btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer">MISSIONS</button>
                 <button id="openCollectionBtn" class="btn-green menu-secondary px-6 py-3 font-bold rounded cursor-pointer">COLLECTION</button>
+                <button id="openWeaponCodexBtn" class="btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer">WEAPON CODEX<br><span class="text-xs text-cyan-100 font-bold">武器図鑑をすぐ見る</span></button>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
                     <span class="text-cyan-300 font-bold text-sm tracking-wider">ジョイスティック</span>
                     <label class="flex items-center cursor-pointer gap-3">
@@ -288,6 +289,20 @@
                 <button id="closeCollectionBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
             </div>
             <div id="collectionListContainer" class="overflow-y-auto max-h-[70vh] pr-1 space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="weaponCodexScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3">
+        <div class="menu-panel w-full flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #22d3ee;">WEAPON CODEX</h2>
+                    <p class="text-gray-300 text-sm mt-2">使った武器は緑で解放表示されます。未使用でも全武器の名前と内容を確認できます。</p>
+                </div>
+                <button id="closeWeaponCodexBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+            </div>
+            <div id="weaponCodexSummary" class="text-sm text-yellow-200 font-bold"></div>
+            <div id="weaponCodexListContainer" class="overflow-y-auto max-h-[72vh] pr-1 space-y-4"></div>
         </div>
     </div>
 
@@ -397,7 +412,7 @@
         let userData = { score: 0, coins: 0, nickname: '', upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 } };
 
         function createFreshUserData(nickname = '') {
-            return { score: 0, coins: 0, nickname: normalizeNickname(nickname || ''), upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 }, stats: {}, missions: { completed: {}, claimed: {} }, unlocks: { legendaryWeapons: {}, skins: { classic: true }, auras: { none: true }, capes: { none: true } }, equippedSkin: 'classic', equippedAura: 'none', equippedCape: 'none', resetVersion: SAVE_RESET_VERSION };
+            return { score: 0, coins: 0, nickname: normalizeNickname(nickname || ''), upgrades: { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 }, stats: {}, missions: { completed: {}, claimed: {} }, unlocks: { legendaryWeapons: {}, skins: { classic: true }, auras: { none: true }, capes: { none: true } }, codex: { weapons: { base_0_通常弾: true } }, equippedSkin: 'classic', equippedAura: 'none', equippedCape: 'none', resetVersion: SAVE_RESET_VERSION };
         }
 
         // ==========================================
@@ -542,6 +557,107 @@
             { id:'solarDrill', name:'神話武器：ソーラードリル', icon:'☀️', desc:'敵の密集地に太陽レーザーを落とす超火力武器。ソロ専用。', hint:'超高スコアで解放' },
             { id:'chronoLotus', name:'神話武器：クロノロータス', icon:'🪷', desc:'一定間隔で時間波を広げ、敵に大ダメージを与える。ソロ専用。', hint:'ミッションを大量達成すると解放' }
         ];
+
+        // ===== 2026-05-02 Update: Weapon Codex direct screen / used-weapon unlock tracking =====
+        const WEAPON_CODEX_MORE_DEFS = [
+            { id:'ironBlaster', type:'ULTIMATE', name:'創世の光芒', icon:'🤖', desc:'高速ブラスターと極太ユニビームで攻撃する。', attackType:'連射・ビーム', strong:'中盤以降の敵の群れ', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['創世の光芒','機神'] },
+            { id:'funnel', type:'ULTIMATE', name:'星砕きの流星群', icon:'🛰️', desc:'敵を自動追尾して連続爆破する。', attackType:'追尾・爆破', strong:'動き回る敵', weak:'単体火力は状況次第', unlock:'レベルアップで低確率', aliases:['星砕きの流星群','機動'] },
+            { id:'disneyMagic', type:'ULTIMATE', name:'星夢の輪舞曲', icon:'🪄', desc:'敵を味方にして大きく強化する特殊武器。', attackType:'魅了・味方化', strong:'敵が多い時', weak:'出現率がかなり低い', unlock:'レベルアップで低確率', aliases:['星夢の輪舞曲','幻奏'] },
+            { id:'muryoku', type:'ULTIMATE', name:'無量空処', icon:'♾️', desc:'領域で敵を止めて大ダメージを与える。', attackType:'停止・範囲', strong:'ピンチの時、ボス戦', weak:'発動待ちが必要', unlock:'レベルアップで低確率', aliases:['無量空処','領域'] },
+            { id:'shieldThrow', type:'ULTIMATE', name:'絶対防壁の反響', icon:'🛡️', desc:'盾を投げて敵の間を跳ね返らせる。', attackType:'反射・防御寄り', strong:'敵が横に広がる場面', weak:'狙いが分散する場面', unlock:'レベルアップで低確率', aliases:['絶対防壁の反響','不壊'] },
+            { id:'hollowMurasaki', type:'ULTIMATE', name:'虚式「茈」', icon:'🟣', desc:'巨大な紫の攻撃で広範囲を消し飛ばす。', attackType:'超火力・範囲', strong:'ボス、密集敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['虚式','茈','虚式「茈」'] },
+            { id:'infinitySnap', type:'ULTIMATE', name:'終焉の指弾', icon:'🫰', desc:'強力な衝撃で大量の敵を一気に削る。', attackType:'全体攻撃寄り', strong:'敵が多すぎる時', weak:'発動タイミングに左右される', unlock:'レベルアップで低確率', aliases:['終焉の指弾','神威'] },
+            { id:'infiniteBlade', type:'ULTIMATE', name:'無限の剣陣', icon:'🗡️', desc:'黄金の剣を大量に射出する。', attackType:'弾幕・範囲', strong:'広い範囲の敵', weak:'単体特化ではない', unlock:'レベルアップで低確率', aliases:['無限の剣陣','王の財宝'] },
+            { id:'keraunos', type:'ULTIMATE', name:'天帝の裁界・霹靂', icon:'⚡', desc:'画面全体に強力な雷を落とす。', attackType:'全体・雷', strong:'大量の敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['天帝の裁界','霹靂','神雷'] },
+            { id:'onlinePhantomDagger', type:'ONLINE', name:'ファントムダガー', icon:'🗡️', desc:'誘導弾で相手を追い込むオンライン武器。', attackType:'追尾弾', strong:'逃げる相手', weak:'盾持ち相手', unlock:'オンラインのレベルアップ', aliases:['ファントムダガー','追尾'] },
+            { id:'onlineBanana', type:'ONLINE', name:'バナナスリップ砲', icon:'🍌', desc:'バナナをばらまいて相手にダメージを与えるネタ武器。', attackType:'設置・妨害', strong:'相手の移動を崩す', weak:'まっすぐ火力は低め', unlock:'オンラインのレベルアップ', aliases:['バナナスリップ砲','爆笑'] },
+            { id:'onlineAstral', type:'ONLINE', name:'アストラル・ジャッジメント', icon:'☄️', desc:'星の槍を落として広範囲を攻撃する。', attackType:'範囲・落下攻撃', strong:'相手のいる場所を狙う', weak:'避けられることがある', unlock:'オンラインのレベルアップ', aliases:['アストラル・ジャッジメント','星骸'] },
+            { id:'onlineHarisen', type:'ONLINE', name:'ネビュラ・ハリセンノヴァ', icon:'🪭', desc:'巨大な衝撃波を落とすオンライン武器。', attackType:'範囲・衝撃波', strong:'密集、対人妨害', weak:'発動位置に左右される', unlock:'オンラインのレベルアップ', aliases:['ネビュラ・ハリセンノヴァ','ハリセン'] },
+            { id:'onlineSushi', type:'ONLINE', name:'コズミック・スシレイン', icon:'🍣', desc:'寿司メテオを降らせる見た目も派手な範囲武器。', attackType:'範囲・落下攻撃', strong:'広い場所の制圧', weak:'狙い撃ちは苦手', unlock:'オンラインのレベルアップ', aliases:['コズミック・スシレイン','スシレイン','寿司'] },
+            { id:'evoRicochetSniper', type:'EVOLUTION', name:'跳弾スナイパー', icon:'🎯💫', desc:'狙撃と反射爆弾が合体した進化武器。', attackType:'貫通・反射', strong:'直線上と反射が刺さる場面', weak:'進化条件が必要', unlock:'スナイパー Lv3 + バウンスボム Lv3', aliases:['跳弾スナイパー'] },
+            { id:'evoToxicAegis', type:'EVOLUTION', name:'猛毒アイギス', icon:'🛡️☣️', desc:'盾と毒が合体した守り寄りの進化武器。', attackType:'防御・毒範囲', strong:'近づく敵や相手', weak:'遠距離だけの相手', unlock:'蒼盾アイギス Lv2 + トキシックトラップ Lv3', aliases:['猛毒アイギス'] },
+            { id:'evoGravitonDagger', type:'EVOLUTION', name:'重力追尾刃グラビトン・ダガー', icon:'🗡️🌌', desc:'追尾刃と重力場が合体した進化武器。', attackType:'追尾・拘束', strong:'動き回る相手', weak:'進化条件が必要', unlock:'ファントムダガー Lv3 + グラビティ・パルサー Lv3', aliases:['重力追尾刃','グラビトン・ダガー'] },
+            { id:'evoSingularityBomb', type:'EVOLUTION', name:'特異点ボム・メテオ', icon:'💣🌌', desc:'反射爆弾と重力場が合体した広範囲進化武器。', attackType:'爆発・重力', strong:'密集地帯', weak:'進化条件が必要', unlock:'バウンスボム Lv3 + グラビティ・パルサー Lv3', aliases:['特異点ボム','メテオ'] }
+        ];
+
+        function normalizeCodexText(text) {
+            return String(text || '').replace(/[【】「」『』・\s]/g, '').toLowerCase();
+        }
+
+        function getAllWeaponCodexDefs() {
+            const base = WEAPON_CODEX_DEFS.map((w, i) => ({
+                id: w.id || `base_${i}_${normalizeCodexText(w.name)}`,
+                type: w.type || 'BASIC',
+                name: w.name,
+                icon: w.icon || '❔',
+                desc: w.desc || '武器です。',
+                attackType: w.attackType || '特殊',
+                strong: w.strong || '状況次第',
+                weak: w.weak || '使い方次第',
+                unlock: w.unlock || 'ゲーム中に入手',
+                aliases: [w.name].concat(w.aliases || [])
+            }));
+            const legendary = LEGENDARY_WEAPON_DEFS.map(w => ({
+                id: w.id,
+                type: w.name.includes('神話') ? 'MYTHIC' : 'LEGENDARY',
+                name: w.name.replace(/^伝説武器：|^神話武器：/, ''),
+                icon: w.icon,
+                desc: w.desc,
+                attackType: '特殊・高性能',
+                strong: '解放後のソロ攻略',
+                weak: 'ミッション解放が必要',
+                unlock: w.hint || 'ミッション報酬',
+                aliases: [w.name, w.name.replace(/^伝説武器：|^神話武器：/, ''), w.id]
+            }));
+            const evolutions = EVOLUTION_RECIPE_DEFS.map((e, i) => ({
+                id: `evo_${i}_${normalizeCodexText(e.name)}`,
+                type: 'EVOLUTION',
+                name: e.name,
+                icon: e.icon,
+                desc: e.desc,
+                attackType: '合成進化',
+                strong: '条件を満たした後の終盤',
+                weak: '素材武器のレベル上げが必要',
+                unlock: e.recipe,
+                aliases: [e.name]
+            }));
+            const all = [...base, ...WEAPON_CODEX_MORE_DEFS, ...legendary, ...evolutions];
+            const seen = new Set();
+            return all.filter(w => {
+                const id = w.id || normalizeCodexText(w.name);
+                if (seen.has(id)) return false;
+                seen.add(id);
+                return true;
+            });
+        }
+
+        function findWeaponCodexDefFromText(text) {
+            const raw = String(text || '');
+            const target = normalizeCodexText(raw.replace(/強化/g, ''));
+            if (!target) return null;
+            return getAllWeaponCodexDefs().find(w => {
+                const words = [w.name].concat(w.aliases || []);
+                return words.some(a => {
+                    const key = normalizeCodexText(a);
+                    return key && (target.includes(key) || key.includes(target));
+                });
+            }) || null;
+        }
+
+        function isWeaponCodexUsed(id) {
+            ensureProgressionData();
+            return !!(userData.codex && userData.codex.weapons && userData.codex.weapons[id]);
+        }
+
+        function recordWeaponCodexUse(nameOrId, saveNow = true) {
+            ensureProgressionData();
+            const def = getAllWeaponCodexDefs().find(w => w.id === nameOrId) || findWeaponCodexDefFromText(nameOrId);
+            if (!def) return false;
+            userData.codex.weapons[def.id] = true;
+            if (saveNow) saveData();
+            return true;
+        }
+
 
         const MISSION_DEFS = [
             { id:'m001', cat:'START', title:'はじめての出撃', desc:'ゲームを1回プレイする', metric:'totalRuns', target:1, reward:{coins:100} },
@@ -849,6 +965,8 @@
             userData.unlocks.skins = Object.assign({ classic:true }, userData.unlocks.skins || {});
             userData.unlocks.auras = Object.assign({ none:true }, userData.unlocks.auras || {});
             userData.unlocks.capes = Object.assign({ none:true }, userData.unlocks.capes || {});
+            userData.codex = userData.codex || {};
+            userData.codex.weapons = Object.assign({ base_0_通常弾:true }, userData.codex.weapons || {});
             userData.equippedSkin = userData.equippedSkin || 'classic';
             userData.equippedAura = userData.equippedAura || 'none';
             userData.equippedCape = userData.equippedCape || 'none';
@@ -863,6 +981,7 @@
             ensureProgressionData();
             ensureDailyMissionData();
             runStats = { mode, kills:0, bossKills:0, gems:0, levelUps:0, maxLevel:1, damageTaken:0, onlineHits:0 };
+            recordWeaponCodexUse('通常弾', false);
             userData.stats.totalRuns++;
             userData.daily.stats.dailyRuns++;
             if (mode === 'online') userData.stats.totalOnlineRuns++; else userData.stats.totalSoloRuns++;
@@ -1158,6 +1277,42 @@
             });
         }
 
+        function makeWeaponCodexCard(w) {
+            const used = isWeaponCodexUsed(w.id);
+            return `<div class="collection-card ${used?'unlocked':''}">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="text-3xl">${w.icon || '❔'}</div>
+                    <span class="text-[11px] font-bold px-2 py-1 rounded ${used?'bg-green-900/70 text-green-200 border border-green-400/50':'bg-slate-800 text-gray-300 border border-gray-500/40'}">${used?'使用済み':'未使用'}</span>
+                </div>
+                <h3 class="font-bold text-white mt-1">${w.name}</h3>
+                <p class="text-xs text-purple-200 font-bold mt-1">${w.type || 'WEAPON'}</p>
+                <p class="text-sm text-gray-300 mt-1">${w.desc || ''}</p>
+                <div class="text-xs text-gray-300 mt-3 space-y-1">
+                    <p>攻撃タイプ：${w.attackType || '特殊'}</p>
+                    <p>強い場面：${w.strong || '状況次第'}</p>
+                    <p>弱い場面：${w.weak || '使い方次第'}</p>
+                    <p>入手・進化条件：${w.unlock || 'ゲーム中に入手'}</p>
+                </div>
+            </div>`;
+        }
+
+        function renderWeaponCodexScreen() {
+            ensureProgressionData();
+            const summary = document.getElementById('weaponCodexSummary');
+            const container = document.getElementById('weaponCodexListContainer');
+            if (!container) return;
+            const all = getAllWeaponCodexDefs();
+            const usedCount = all.filter(w => isWeaponCodexUsed(w.id)).length;
+            if (summary) summary.textContent = `解放済み：${usedCount} / ${all.length}`;
+            const order = ['BASIC','ULTIMATE','ONLINE','LEGENDARY','MYTHIC','EVOLUTION'];
+            const label = { BASIC:'BASIC WEAPONS', ULTIMATE:'ULTIMATE WEAPONS', ONLINE:'ONLINE WEAPONS', LEGENDARY:'LEGENDARY WEAPONS', MYTHIC:'MYTHIC WEAPONS', EVOLUTION:'EVOLUTION WEAPONS' };
+            container.innerHTML = order.map(type => {
+                const list = all.filter(w => (w.type || 'BASIC') === type);
+                if (!list.length) return '';
+                return `<section><h3 class="text-2xl font-bold text-cyan-300 mb-2">${label[type] || type}</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(makeWeaponCodexCard).join('')}</div></section>`;
+            }).join('');
+        }
+
         function renderCollectionScreen() {
             ensureProgressionData();
             const container = document.getElementById('collectionListContainer');
@@ -1166,13 +1321,8 @@
                 const on = !!userData.unlocks.legendaryWeapons[w.id];
                 return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc}</p><p class="text-xs text-cyan-200 mt-2">解放条件: ${w.hint || 'ミッション報酬'}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
             }).join('');
-            const codexHtml = WEAPON_CODEX_DEFS.map(w => {
-                return `<div class="collection-card unlocked"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-xs text-purple-200 font-bold mt-1">${w.type}</p><p class="text-sm text-gray-300 mt-1">${w.desc}</p><div class="text-xs text-gray-300 mt-3 space-y-1"><p>攻撃タイプ：${w.attackType}</p><p>強い場面：${w.strong}</p><p>弱い場面：${w.weak}</p><p>解放条件：${w.unlock}</p><p class="text-yellow-200">おすすめ度：${w.recommend}</p></div></div>`;
-            }).join('');
-            const evoHtml = EVOLUTION_RECIPE_DEFS.map(e => {
-                const mythicLocked = (e.name.includes('星核') && !userData.unlocks.legendaryWeapons.railCannon) || (e.name.includes('終焉') && !userData.unlocks.legendaryWeapons.blackholeEmperor);
-                return `<div class="collection-card"><div class="text-3xl">${mythicLocked ? '❔' : e.icon}</div><h3 class="font-bold text-white mt-1">${mythicLocked ? '？？？' : e.name}</h3><p class="text-xs text-yellow-200 mt-1">合成条件: ${mythicLocked ? '？？？ + ？？？' : e.recipe}</p><p class="text-sm text-gray-300 mt-1">${mythicLocked ? 'まだ解放されていない進化レシピ。ミッションを進めると見えるようになります。' : e.desc}</p></div>`;
-            }).join('');
+            const allCodex = getAllWeaponCodexDefs();
+            const codexHtml = allCodex.map(makeWeaponCodexCard).join('');
             const skinHtml = SKIN_DEFS.map(sk => {
                 const on = !!userData.unlocks.skins[sk.id];
                 const eq = userData.equippedSkin === sk.id;
@@ -1188,10 +1338,10 @@
                 const eq = userData.equippedCape === c.id;
                 return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${c.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?c.color:'#9ca3af'}">${c.name}</h3><p class="text-sm text-gray-300">${c.desc}</p><button class="equip-cape mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-red':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${c.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
             }).join('');
+            const usedCount = allCodex.filter(w => isWeaponCodexUsed(w.id)).length;
             container.innerHTML = `
                 <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY / MYTHIC WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
-                <section><h3 class="text-2xl font-bold text-purple-300 mb-2">WEAPON INDEX</h3><p class="text-xs text-gray-300 mb-2">ゲーム中に出る武器の図鑑です。</p><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${codexHtml}</div></section>
-                <section><h3 class="text-2xl font-bold text-orange-300 mb-2">EVOLUTION RECIPES</h3><p class="text-xs text-gray-300 mb-2">条件を満たすと、レベルアップ画面に合成進化が出ます。</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${evoHtml}</div></section>
+                <section><h3 class="text-2xl font-bold text-purple-300 mb-2">WEAPON INDEX</h3><p class="text-xs text-gray-300 mb-2">ゲーム中に出る武器と進化武器の図鑑です。使用済み：${usedCount}/${allCodex.length}</p><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${codexHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>
                 <section><h3 class="text-2xl font-bold text-red-300 mb-2">CAPES</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${capeHtml}</div></section>`;
@@ -1994,7 +2144,7 @@
                 const card = document.createElement('div');
                 card.className = 'upgrade-card p-6 rounded-lg w-64 text-center cursor-pointer flex flex-col items-center justify-between pointer-events-auto';
                 card.innerHTML = `<div class="text-4xl mb-3">${upgrade.icon}</div><h3 class="text-xl font-bold mb-2" style="color:${upgrade.color}">${upgrade.name}</h3><p class="text-sm text-gray-300 leading-relaxed">${upgrade.desc}</p>`;
-                card.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); upgrade.apply(); floatingTexts.push(new FloatingText(player.x, player.y, upgrade.name, upgrade.color, 16)); closeLevelUpScreen(); });
+                card.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); recordWeaponCodexUse(upgrade.name, true); upgrade.apply(); floatingTexts.push(new FloatingText(player.x, player.y, upgrade.name, upgrade.color, 16)); closeLevelUpScreen(); });
                 container.appendChild(card);
             });
             showScreen('levelUpScreen');
@@ -2164,7 +2314,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2541,7 +2691,9 @@
                     <p class="text-sm text-gray-300 leading-relaxed">${upgrade.desc}</p>
                 `;
                 card.addEventListener('click', (e) => {
-                    e.preventDefault(); e.stopPropagation(); upgrade.apply();
+                    e.preventDefault(); e.stopPropagation();
+                    recordWeaponCodexUse(upgrade.name, true);
+                    upgrade.apply();
                     floatingTexts.push(new FloatingText(player.x, player.y, upgrade.name, upgrade.color, 16));
                     closeLevelUpScreen();
                 });
@@ -6308,6 +6460,8 @@
         document.getElementById('claimAllMissionsBtn').addEventListener('click', claimAllMissions);
         document.getElementById('openCollectionBtn').addEventListener('click', () => { renderCollectionScreen(); showScreen('collectionScreen'); });
         document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
+        document.getElementById('openWeaponCodexBtn')?.addEventListener('click', () => { renderWeaponCodexScreen(); showScreen('weaponCodexScreen'); });
+        document.getElementById('closeWeaponCodexBtn')?.addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('tutorialStartBtn')?.addEventListener('click', closeTutorialOverlay);
         document.getElementById('tutorialSkipBtn')?.addEventListener('click', closeTutorialOverlay);
         document.getElementById('pauseMuteBtn').addEventListener('click', (e) => {
