@@ -405,6 +405,16 @@
         // 以前のミッション報酬倍率 1/3 → 1/6、通常プレイ報酬も後で 1/2 に調整。
         const COIN_GAIN_RATE = 1 / 6;
         const RUN_COIN_GAIN_RATE = 1 / 2;
+        // 2026-05-02 追加バランス調整：画面や基本ルールは変えず、数値だけ安全に調整する。
+        const NSV_BALANCE_20260502 = {
+            mapBlackHoleCenterPullMult: 2 / 3,
+            sniperSpeedMult: 2,
+            sniperHoming: 0.032,
+            ricochetSniperHoming: 0.018,
+            onlineSniperDamageBase: 135,
+            onlineSniperDamageStep: 40,
+            onlineRicochetDamageMult: 1.3
+        };
         const scaledCoinReward = (coins) => Math.max(0, Math.floor(Number(coins || 0) * COIN_GAIN_RATE * getCoinBonusMultiplier()));
 
         // --- アップグレード定義の復元 ---
@@ -854,6 +864,61 @@
             { id:'m173', cat:'FINAL', title:'時を咲かせる者', desc:'ミッションを90個達成する', metric:'completedMissionCount', target:90, reward:{coins:30000, weapon:'chronoLotus', cape:'galaxy'} },
             { id:'m174', cat:'ONLINE', title:'対戦神話への道', desc:'オンラインで攻撃を合計2000回当てる', metric:'totalOnlineHits', target:2000, reward:{coins:20000, weapon:'railCannon', skin:'phantomSkin'} }
         );
+
+        // 2026-05-02追加：高難度ミッションを増量。既存ミッションも下の処理で強化目標にする。
+        MISSION_DEFS.push(
+            { id:'m175', cat:'KILL', title:'ネオン殲滅隊長', desc:'敵を合計42000体倒す', metric:'totalKills', target:42000, reward:{coins:26000, aura:'infernoRing'} },
+            { id:'m176', cat:'KILL', title:'銀河の討伐王', desc:'敵を合計65000体倒す', metric:'totalKills', target:65000, reward:{coins:36000, skin:'galaxyKnight'} },
+            { id:'m177', cat:'KILL', title:'終末の掃討者', desc:'敵を合計100000体倒す', metric:'totalKills', target:100000, reward:{coins:52000, aura:'crownBurst'} },
+            { id:'m178', cat:'RUN', title:'一戦三千斬り', desc:'1回のプレイで敵を3000体倒す', metric:'bestRunKills', target:3000, reward:{coins:28000} },
+            { id:'m179', cat:'RUN', title:'一戦五千斬り', desc:'1回のプレイで敵を5000体倒す', metric:'bestRunKills', target:5000, reward:{coins:42000, cape:'monarch'} },
+            { id:'m180', cat:'RUN', title:'一戦八千斬り', desc:'1回のプレイで敵を8000体倒す', metric:'bestRunKills', target:8000, reward:{coins:68000, weapon:'solarDrill'} },
+            { id:'m181', cat:'TIME', title:'35分サバイバー', desc:'1回のプレイで2100秒生き残る', metric:'bestTime', target:2100, reward:{coins:36000} },
+            { id:'m182', cat:'TIME', title:'45分サバイバー', desc:'1回のプレイで2700秒生き残る', metric:'bestTime', target:2700, reward:{coins:52000, aura:'solarFlare'} },
+            { id:'m183', cat:'TIME', title:'1時間サバイバー', desc:'1回のプレイで3600秒生き残る', metric:'bestTime', target:3600, reward:{coins:85000, skin:'blackholeCore'} },
+            { id:'m184', cat:'BOSS', title:'ボス討伐将軍', desc:'ボス系の敵を合計500体倒す', metric:'totalBossLikeKills', target:500, reward:{coins:42000, aura:'stormKing'} },
+            { id:'m185', cat:'BOSS', title:'ボス討伐皇帝', desc:'ボス系の敵を合計800体倒す', metric:'totalBossLikeKills', target:800, reward:{coins:65000, weapon:'thunderAegis'} },
+            { id:'m186', cat:'BOSS', title:'大猿王の天敵', desc:'MONKEY KINGを合計20体倒す', metric:'totalMonkeyKills', target:20, reward:{coins:70000, skin:'monkeySlayer'} },
+            { id:'m187', cat:'LEVEL', title:'レベル90到達', desc:'最高レベル90に到達する', metric:'bestLevel', target:90, reward:{coins:50000} },
+            { id:'m188', cat:'LEVEL', title:'レベル110到達', desc:'最高レベル110に到達する', metric:'bestLevel', target:110, reward:{coins:70000, weapon:'chronoLotus'} },
+            { id:'m189', cat:'LEVEL', title:'レベル130到達', desc:'最高レベル130に到達する', metric:'bestLevel', target:130, reward:{coins:100000, aura:'blackholeAura'} },
+            { id:'m190', cat:'SCORE', title:'ミリオンスコア', desc:'自己ベスト1000000点を超える', metric:'bestScore', target:1000000, reward:{coins:60000} },
+            { id:'m191', cat:'SCORE', title:'ダブルミリオン', desc:'自己ベスト2000000点を超える', metric:'bestScore', target:2000000, reward:{coins:90000, skin:'solar'} },
+            { id:'m192', cat:'SCORE', title:'ネオン神話スコア', desc:'自己ベスト3500000点を超える', metric:'bestScore', target:3500000, reward:{coins:130000, weapon:'blackholeEmperor'} },
+            { id:'m193', cat:'GEM', title:'ジェム大富豪', desc:'ジェムを合計30000個集める', metric:'totalGems', target:30000, reward:{coins:52000} },
+            { id:'m194', cat:'GEM', title:'銀河ジェム王', desc:'ジェムを合計60000個集める', metric:'totalGems', target:60000, reward:{coins:85000, aura:'galaxyTrail'} },
+            { id:'m195', cat:'COIN', title:'ネオン銀行王', desc:'合計500000コイン獲得する', metric:'totalCoinsEarned', target:500000, reward:{coins:65000} },
+            { id:'m196', cat:'COIN', title:'銀河金融王', desc:'合計1000000コイン獲得する', metric:'totalCoinsEarned', target:1000000, reward:{coins:120000, cape:'galaxy'} },
+            { id:'m197', cat:'ONLINE', title:'対戦エース', desc:'オンラインで攻撃を合計3500回当てる', metric:'totalOnlineHits', target:3500, reward:{coins:42000, skin:'phantomSkin'} },
+            { id:'m198', cat:'ONLINE', title:'対戦マスター', desc:'オンラインで攻撃を合計6500回当てる', metric:'totalOnlineHits', target:6500, reward:{coins:70000, aura:'phantomAfterimage'} },
+            { id:'m199', cat:'ONLINE', title:'対戦レジェンド', desc:'オンラインで攻撃を合計10000回当てる', metric:'totalOnlineHits', target:10000, reward:{coins:110000, weapon:'railCannon'} },
+            { id:'m200', cat:'PLAY', title:'100回出撃', desc:'合計100回プレイする', metric:'totalRuns', target:100, reward:{coins:36000} },
+            { id:'m201', cat:'PLAY', title:'250回出撃', desc:'合計250回プレイする', metric:'totalRuns', target:250, reward:{coins:75000, skin:'obsidian'} },
+            { id:'m202', cat:'HARD', title:'1回でボス10体', desc:'1回のプレイでボス系を10体倒す', metric:'bestRunBossKills', target:10, reward:{coins:50000} },
+            { id:'m203', cat:'HARD', title:'1回でボス20体', desc:'1回のプレイでボス系を20体倒す', metric:'bestRunBossKills', target:20, reward:{coins:85000, weapon:'thunderAegis'} },
+            { id:'m204', cat:'HARD', title:'一戦ジェム3000', desc:'1回のプレイでジェムを3000個集める', metric:'bestRunGems', target:3000, reward:{coins:50000} },
+            { id:'m205', cat:'HARD', title:'一戦ジェム6000', desc:'1回のプレイでジェムを6000個集める', metric:'bestRunGems', target:6000, reward:{coins:90000, aura:'blackholeAura'} },
+            { id:'m206', cat:'LEGEND', title:'神話武器の研究者', desc:'伝説・神話武器を7種類解放する', metric:'unlockedWeaponCount', target:7, reward:{coins:70000} },
+            { id:'m207', cat:'LEGEND', title:'神話武器コレクター', desc:'伝説・神話武器を9種類解放する', metric:'unlockedWeaponCount', target:9, reward:{coins:110000, aura:'royalHalo'} },
+            { id:'m208', cat:'COLLECT', title:'スキン完全主義者', desc:'スキンを10種類解放する', metric:'unlockedSkinCount', target:10, reward:{coins:65000} },
+            { id:'m209', cat:'COLLECT', title:'オーラ完全主義者', desc:'オーラを10種類解放する', metric:'unlockedAuraCount', target:10, reward:{coins:65000} },
+            { id:'m210', cat:'FINAL', title:'真・ネオンサバイバー', desc:'ミッションを150個達成する', metric:'completedMissionCount', target:150, reward:{coins:180000, weapon:'chronoLotus', skin:'galaxyKnight', aura:'crownBurst'} }
+        );
+
+        // 既存ミッションも全体的に難化。説明欄には強化後の目標値も追記してズレを防ぐ。
+        function applyHarderMissionTargets20260502() {
+            const categoryMult = { START:1.35, KILL:1.65, RUN:1.55, TIME:1.35, BOSS:1.6, LEVEL:1.28, SCORE:1.55, COIN:1.7, GEM:1.7, PLAY:1.45, ONLINE:1.45, HARD:1.55, LEGEND:1.45, FINAL:1.3, CAPE:1.45, AURA:1.45, SKIN:1.45, BLACKHOLE:1.35, COLLECT:1.35 };
+            for (const m of MISSION_DEFS) {
+                if (!m || !Number.isFinite(Number(m.target)) || m.__hard20260502) continue;
+                const originalTarget = Number(m.target);
+                const mult = categoryMult[m.cat] || 1.4;
+                const nextTarget = Math.max(originalTarget + 1, Math.ceil(originalTarget * mult));
+                m.target = nextTarget;
+                m.__hard20260502 = true;
+                if (m.desc && !m.desc.includes('強化目標')) m.desc += `（強化目標: ${nextTarget}）`;
+            }
+        }
+        applyHarderMissionTargets20260502();
 
         const DAILY_MISSION_VERSION = 'daily-v1';
         const DAILY_MISSION_POOL = [
@@ -2081,6 +2146,24 @@
             return target;
         }
 
+        function rebalanceOnlineUpgradePool20260502(pool) {
+            const original = Array.isArray(pool) ? pool.slice() : [];
+            const kept = [];
+            for (const item of original) {
+                const n = String(item && item.name || '');
+                let chance = 1;
+                if (n.includes('スナイパー')) chance = 0.68;
+                if (n.includes('バウンスボム')) chance = 0.58;
+                if (n.includes('トキシック') || n.includes('毒')) chance = 0.58;
+                if (n.includes('ファントムダガー')) chance = 0.52;
+                if (n.includes('グラビティ')) chance = 0.48;
+                if (n.includes('破滅の雷域') || n.includes('虚空次元の暴風')) chance = 0.42;
+                if (n.includes('アストラル') || n.includes('ハリセン') || n.includes('スシレイン')) chance = 0.34;
+                if (Math.random() < chance) kept.push(item);
+            }
+            return kept.length >= 3 ? kept : original;
+        }
+
         function triggerOnlineLevelUpScreen() {
             gameState = 'levelup';
             const container = document.getElementById('upgradesContainer');
@@ -2099,8 +2182,8 @@
             }
             
             // --- オンライン限定武器 ---
-            if ((player.onlineSniperLevel || 0) === 0) pool.push({ name:'【狙撃】スナイパーライフル', desc:'高火力の貫通狙撃弾を撃つ。初期150ダメージ', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel = 1; }});
-            else if (player.onlineSniperLevel < 3) pool.push({ name:'スナイパーライフル強化', desc:'狙撃弾のダメージが+50され、発射頻度もUP', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel += 1; }});
+            if ((player.onlineSniperLevel || 0) === 0) pool.push({ name:'【狙撃】スナイパーライフル', desc:'高火力の貫通狙撃弾を撃つ。速度2倍・少しだけ誘導・初期135ダメージ', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel = 1; }});
+            else if (player.onlineSniperLevel < 3) pool.push({ name:'スナイパーライフル強化', desc:'狙撃弾のダメージが+40され、発射頻度もUP', color:'#f87171', icon:'🎯', apply:()=>{ player.onlineSniperLevel += 1; }});
             
             if ((player.onlineBounceBombLevel || 0) === 0) pool.push({ name:'【反射】バウンスボム', desc:'画面端で反射する爆弾を放つ', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel = 1; }});
             else if (player.onlineBounceBombLevel < 3) pool.push({ name:'バウンスボム強化', desc:'反射爆弾の威力とサイズがUP', color:'#fbbf24', icon:'💣', apply:()=>{ player.onlineBounceBombLevel += 1; }});
@@ -2137,24 +2220,25 @@
 
             let ultimateSkills = [];
             if (player.onlineSniperLevel >= 3 && player.onlineBounceBombLevel >= 3 && !player.evoRicochetSniper) {
-                ultimateSkills.push({ name: '【進化】跳弾スナイパー', desc: '狙撃と反射爆弾が融合。狙撃弾が壁で反射し敵を貫通しまくる', color: '#f43f5e', icon: '🎯💫', apply: () => { player.evoRicochetSniper = true; triggerWeaponEvolved('スナイパー', '跳弾スナイパー', '#f43f5e'); }});
+                ultimateSkills.push({ name: '【進化】跳弾スナイパー', desc: '狙撃と反射爆弾が融合。狙撃弾が壁で反射し敵を貫通しまくる', color: '#f43f5e', icon: '🎯💫', apply: () => { player.evoRicochetSniper = true; finalizeEvolutionMerge('evoRicochetSniper'); triggerWeaponEvolved('スナイパー', '跳弾スナイパー', '#f43f5e'); }});
             }
             if (player.onlineShieldLevel >= 2 && player.onlinePoisonLevel >= 3 && !player.evoToxicAegis) {
-                ultimateSkills.push({ name: '【進化】猛毒アイギス', desc: '盾と毒が融合。ダメージを軽減しつつ周囲に猛毒を撒き散らす', color: '#84cc16', icon: '🛡️☣️', apply: () => { player.evoToxicAegis = true; triggerWeaponEvolved('蒼盾アイギス', '猛毒アイギス', '#84cc16'); }});
+                ultimateSkills.push({ name: '【進化】猛毒アイギス', desc: '盾と毒が融合。ダメージを軽減しつつ周囲に猛毒を撒き散らす', color: '#84cc16', icon: '🛡️☣️', apply: () => { player.evoToxicAegis = true; finalizeEvolutionMerge('evoToxicAegis'); triggerWeaponEvolved('蒼盾アイギス', '猛毒アイギス', '#84cc16'); }});
             }
             
             // --- 新規追加のオンライン進化武器 ---
             if (player.onlinePhantomLevel >= 3 && player.onlineGravityLevel >= 3 && !player.evoGravitonDagger) {
-                ultimateSkills.push({ name: '【進化】重力追尾刃グラビトン・ダガー', desc: '追尾刃と重力場が融合。命中時に相手を拘束する重力場を発生', color: '#9333ea', icon: '🗡️🌌', apply: () => { player.evoGravitonDagger = true; triggerWeaponEvolved('ファントムダガー', 'グラビトン・ダガー', '#9333ea'); }});
+                ultimateSkills.push({ name: '【進化】重力追尾刃グラビトン・ダガー', desc: '追尾刃と重力場が融合。命中時に相手を拘束する重力場を発生', color: '#9333ea', icon: '🗡️🌌', apply: () => { player.evoGravitonDagger = true; finalizeEvolutionMerge('evoGravitonDagger'); triggerWeaponEvolved('ファントムダガー', 'グラビトン・ダガー', '#9333ea'); }});
             }
             if (player.onlineBounceBombLevel >= 3 && player.onlineGravityLevel >= 3 && !player.evoSingularityBomb) {
-                ultimateSkills.push({ name: '【進化】特異点ボム・メテオ', desc: '反射爆弾と重力場が融合。爆発時に広範囲を巻き込む特大の重力場を残す', color: '#f59e0b', icon: '💣🌌', apply: () => { player.evoSingularityBomb = true; triggerWeaponEvolved('バウンスボム', '特異点ボム・メテオ', '#f59e0b'); }});
+                ultimateSkills.push({ name: '【進化】特異点ボム・メテオ', desc: '反射爆弾と重力場が融合。爆発時に広範囲を巻き込む特大の重力場を残す', color: '#f59e0b', icon: '💣🌌', apply: () => { player.evoSingularityBomb = true; finalizeEvolutionMerge('evoSingularityBomb'); triggerWeaponEvolved('バウンスボム', '特異点ボム・メテオ', '#f59e0b'); }});
             }
 
             let selected = [];
             let shuffledUlts = ultimateSkills.sort(() => 0.5 - Math.random());
             while(selected.length < 3 && shuffledUlts.length > 0) selected.push(shuffledUlts.shift());
 
+            pool = rebalanceOnlineUpgradePool20260502(pool);
             const shuffled = pool.sort(() => 0.5 - Math.random());
             while (selected.length < 3 && shuffled.length) selected.push(shuffled.shift());
             selected.forEach(upgrade => {
@@ -2573,6 +2657,80 @@
             setTimeout(() => Sound.playChord([392, 587, 784, 1175], 'triangle', 0.22, 0.065, 70), 180);
         }
 
+
+        // ===== 2026-05-02 Fix: 進化武器の停止バグ防止＆素材武器の統合 =====
+        // 目的：進化後は「素材2つが別々に発動」ではなく、進化武器1つとして扱う。
+        // 画面デザインは変えず、内部処理だけを安全に整理する。
+        function resetArraySafely(arr) {
+            if (Array.isArray(arr)) arr.length = 0;
+        }
+
+        function finalizeEvolutionMerge(evoId) {
+            if (!player) return;
+
+            // 進化直後に残っている素材武器の弾・演出を消して、同時発動による重さとフリーズを防ぐ。
+            if (evoId === 'evoBlackhole') {
+                resetArraySafely(voidTempests);
+                resetArraySafely(hollowMurasakis);
+                resetArraySafely(hollowMurasakiCharges);
+                player.hollowMurasakiTimer = 0;
+                player.voidTempestTimer = 0;
+                isTimeStopped = false;
+            }
+            if (evoId === 'evoDivineSword') {
+                resetArraySafely(orbitalStrikes);
+                resetArraySafely(infiniteBladeSwords);
+                resetArraySafely(infiniteBladeCharges);
+                player.orbitalStrikeTimer = 0;
+                player.infiniteBladeTimer = 0;
+            }
+            if (evoId === 'evoGravityBeam') {
+                resetArraySafely(vaderSkills);
+                resetArraySafely(kamehamehas);
+                player.vaderTimer = 0;
+                player.kamehamehaTimer = 0;
+            }
+            if (evoId === 'evoThunderBlade') {
+                player.electricFieldTimer = 0;
+            }
+            if (evoId === 'evoRicochetSniper') {
+                resetArraySafely(sniperBullets);
+                // スナイパーを親クールダウンにする。バウンスボムは進化素材としては別発動させない。
+                player.onlineSniperTimer = 0;
+                player.onlineBounceTimer = 0;
+            }
+            if (evoId === 'evoToxicAegis') {
+                resetArraySafely(poisonClouds);
+                player.onlinePoisonTimer = 0;
+            }
+            if (evoId === 'evoGravitonDagger') {
+                resetArraySafely(phantomDaggers);
+                resetArraySafely(gravityPulsars);
+                player.onlinePhantomTimer = 0;
+                player.onlineGravityTimer = 0;
+            }
+            if (evoId === 'evoSingularityBomb') {
+                resetArraySafely(bounceBombs);
+                resetArraySafely(gravityPulsars);
+                player.onlineBounceTimer = 0;
+                player.onlineGravityTimer = 0;
+            }
+            if (evoId === 'evoRailBurst') {
+                player.fireTimer = 0;
+            }
+            if (evoId === 'evoEndBlackhole') {
+                resetArraySafely(blackholes);
+                player.blackholeEmperorTimer = 0;
+                isTimeStopped = false;
+            }
+        }
+
+        function pushCooldown(skills, id, icon, timer, cooldown) {
+            const cd = Math.max(1, Number(cooldown || 1));
+            const tm = Math.max(0, Number(timer || 0));
+            skills.push({ id, icon, p: Math.min(1, tm / cd) });
+        }
+
         function triggerLevelUpScreen() {
             if (isOnlineMode) return triggerOnlineLevelUpScreen();
             gameState = 'levelup';
@@ -2684,22 +2842,22 @@
             // --- 進化スキルの判定と追加 ---
             if (player) {
                 if (player.voidTempestLevel >= 3 && player.hollowMurasakiLevel >= 3 && !player.evoBlackhole) {
-                    ultimateSkills.push({ name: '【進化】ブラックホール・ノヴァ', desc: '暴風と茈が融合。全てを吸い込み消滅させる', color: '#000000', icon: '🌌', apply: () => { player.evoBlackhole = true; triggerWeaponEvolved('虚空次元の暴風', 'ブラックホール・ノヴァ', '#a855f7'); } });
+                    ultimateSkills.push({ name: '【進化】ブラックホール・ノヴァ', desc: '暴風と茈が融合。全てを吸い込み消滅させる', color: '#000000', icon: '🌌', apply: () => { player.evoBlackhole = true; finalizeEvolutionMerge('evoBlackhole'); triggerWeaponEvolved('虚空次元の暴風', 'ブラックホール・ノヴァ', '#a855f7'); } });
                 }
                 if (player.orbitalStrikeLevel >= 3 && player.infiniteBladeLevel >= 3 && !player.evoDivineSword) {
-                    ultimateSkills.push({ name: '【進化】神罰の剣雨', desc: '裁きの光と王の財宝が融合。無数の光剣が降り注ぐ', color: '#ffea00', icon: '⚔️✨', apply: () => { player.evoDivineSword = true; triggerWeaponEvolved('天穹の裁き', '神罰の剣雨', '#ffea00'); } });
+                    ultimateSkills.push({ name: '【進化】神罰の剣雨', desc: '裁きの光と王の財宝が融合。無数の光剣が降り注ぐ', color: '#ffea00', icon: '⚔️✨', apply: () => { player.evoDivineSword = true; finalizeEvolutionMerge('evoDivineSword'); triggerWeaponEvolved('天穹の裁き', '神罰の剣雨', '#ffea00'); } });
                 }
                 if (player.vaderLevel >= 3 && player.kamehamehaLevel >= 3 && !player.evoGravityBeam) {
-                    ultimateSkills.push({ name: '【進化】超重力・崩命破', desc: '深淵と龍星が融合。敵を中心線に吸い寄せる極太ビーム', color: '#818cf8', icon: '🌌🌊', apply: () => { player.evoGravityBeam = true; triggerWeaponEvolved('深淵の重力刃', '超重力・崩命破', '#818cf8'); } });
+                    ultimateSkills.push({ name: '【進化】超重力・崩命破', desc: '深淵と龍星が融合。敵を中心線に吸い寄せる極太ビーム', color: '#818cf8', icon: '🌌🌊', apply: () => { player.evoGravityBeam = true; finalizeEvolutionMerge('evoGravityBeam'); triggerWeaponEvolved('深淵の重力刃', '超重力・崩命破', '#818cf8'); } });
                 }
                 if (player.bladeRingLevel >= 3 && player.electricFieldLevel >= 3 && !player.evoThunderBlade) {
-                    ultimateSkills.push({ name: '【進化】雷鳴の剣域', desc: '円環と雷域が融合。高速回転する剣が常に雷を放つ', color: '#2dd4bf', icon: '⚡🌀', apply: () => { player.evoThunderBlade = true; triggerWeaponEvolved('円環の刃界', '雷鳴の剣域', '#2dd4bf'); } });
+                    ultimateSkills.push({ name: '【進化】雷鳴の剣域', desc: '円環と雷域が融合。高速回転する剣が常に雷を放つ', color: '#2dd4bf', icon: '⚡🌀', apply: () => { player.evoThunderBlade = true; finalizeEvolutionMerge('evoThunderBlade'); triggerWeaponEvolved('円環の刃界', '雷鳴の剣域', '#2dd4bf'); } });
                 }
                 if ((player.legendaryRailCannonLevel || 0) >= 3 && (player.legendaryNeonLanceLevel || 0) >= 3 && !player.evoRailBurst) {
-                    ultimateSkills.push({ name: '【神話進化】星核レールバースト', desc: 'レールキャノンとネオンランスが融合。通常弾が超火力の星核弾になる', color: '#e0f2fe', icon: '🔭🔱', apply: () => { player.evoRailBurst = true; player.damage *= 1.35; player.pierce += 6; triggerWeaponEvolved('レールキャノン', '星核レールバースト', '#e0f2fe'); } });
+                    ultimateSkills.push({ name: '【神話進化】星核レールバースト', desc: 'レールキャノンとネオンランスが融合。通常弾が超火力の星核弾になる', color: '#e0f2fe', icon: '🔭🔱', apply: () => { player.evoRailBurst = true; player.damage *= 1.35; player.pierce += 6; finalizeEvolutionMerge('evoRailBurst'); triggerWeaponEvolved('レールキャノン', '星核レールバースト', '#e0f2fe'); } });
                 }
                 if ((player.legendaryBlackholeEmperorLevel || 0) >= 3 && (player.legendaryVoidCollectorLevel || 0) >= 3 && !player.evoEndBlackhole) {
-                    ultimateSkills.push({ name: '【神話進化】終焉ブラックホール', desc: 'ブラックホールと虚空コレクターが融合。吸引範囲と経験値回収がさらに強化', color: '#a855f7', icon: '⚫🌌', apply: () => { player.evoEndBlackhole = true; player.magnetBonus += 250; player.expBoost *= 1.25; triggerWeaponEvolved('ブラックホールエンペラー', '終焉ブラックホール', '#a855f7'); } });
+                    ultimateSkills.push({ name: '【神話進化】終焉ブラックホール', desc: 'ブラックホールと虚空コレクターが融合。吸引範囲と経験値回収がさらに強化', color: '#a855f7', icon: '⚫🌌', apply: () => { player.evoEndBlackhole = true; player.magnetBonus += 250; player.expBoost *= 1.25; finalizeEvolutionMerge('evoEndBlackhole'); triggerWeaponEvolved('ブラックホールエンペラー', '終焉ブラックホール', '#a855f7'); } });
                 }
             }
 
@@ -2902,8 +3060,27 @@
         // --- 新規追加：スナイパー用の銃弾クラス ---
         class SniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 2.1875, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 2.1875 * NSV_BALANCE_20260502.sniperSpeedMult, 8, 9999, '#f87171', '#ef4444'); // 速度を2倍、貫通は維持
                 this.angle = angle;
+                this.onlineAimId = null;
+            }
+            update() {
+                if (isOnlineMode && this.homingStrength !== 0) {
+                    let target = (this.onlineAimId && remotePlayers && remotePlayers.get(this.onlineAimId)) || getPriorityOnlineTarget(this.x, this.y, 1500);
+                    if (target && Number(target.hp || 0) > 0) {
+                        const targetAngle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                        const currentAngle = Math.atan2(this.vy, this.vx);
+                        let diff = targetAngle - currentAngle;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        const nextAngle = currentAngle + diff * NSV_BALANCE_20260502.sniperHoming;
+                        const speed = Math.hypot(this.vx, this.vy) || (2.1875 * NSV_BALANCE_20260502.sniperSpeedMult);
+                        this.vx = Math.cos(nextAngle) * speed;
+                        this.vy = Math.sin(nextAngle) * speed;
+                    }
+                }
+                super.update();
+                this.angle = Math.atan2(this.vy, this.vx);
             }
             draw(ctx) {
                 ctx.save();
@@ -2932,13 +3109,28 @@
 
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 2.1875, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 2.1875 * NSV_BALANCE_20260502.sniperSpeedMult, 12, 9999, '#fb7185', '#e11d48'); // 速度を2倍、貫通は維持
                 this.bounces = 6;
                 this.lifeTimer = 0;
                 this.angle = angle;
+                this.onlineAimId = null;
             }
             update() {
                 this.lifeTimer++;
+                if (isOnlineMode) {
+                    let target = (this.onlineAimId && remotePlayers && remotePlayers.get(this.onlineAimId)) || getPriorityOnlineTarget(this.x, this.y, 1400);
+                    if (target && Number(target.hp || 0) > 0) {
+                        const targetAngle = MathUtils.angle(this.x, this.y, target.x, target.y);
+                        const currentAngle = Math.atan2(this.vy, this.vx);
+                        let diff = targetAngle - currentAngle;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        const nextAngle = currentAngle + diff * NSV_BALANCE_20260502.ricochetSniperHoming;
+                        const speed = Math.hypot(this.vx, this.vy) || (2.1875 * NSV_BALANCE_20260502.sniperSpeedMult);
+                        this.vx = Math.cos(nextAngle) * speed;
+                        this.vy = Math.sin(nextAngle) * speed;
+                    }
+                }
                 if (this.lifeTimer > 180) { this.markedForDeletion = true; return; }
                 
                 this.trail.push({x: this.x, y: this.y});
@@ -4105,11 +4297,11 @@
             constructor(x, y, angle, damage, level) {
                 this.x = x; this.y = y; this.speed = 12;
                 this.vx = Math.cos(angle) * this.speed; this.vy = Math.sin(angle) * this.speed;
-                this.damage = damage * 2; // 威力を大幅強化
-                this.radius = 12 + level * 3; this.life = 300; this.markedForDeletion = false;
+                this.damage = damage * (isOnlineMode ? 1.15 : 2); // オンラインでは高すぎない火力に調整
+                this.radius = isOnlineMode ? (10 + level * 2) : (12 + level * 3); this.life = 300; this.markedForDeletion = false;
                 this.trail = [];
                 this.isSingularity = false;
-                this.bouncesLeft = 4 + level; // バウンド回数（最大5〜7回）
+                this.bouncesLeft = isOnlineMode ? (3 + level) : (4 + level); // オンラインは反射回数を少し抑える
                 this.hitTargets = new Set();
             }
             update() {
@@ -4154,8 +4346,8 @@
             bounce(target) {
                 this.hitTargets.add(target.id || target);
                 
-                let blastRadius = this.radius * 5; // バウンド時の小爆発
-                if (this.isSingularity) blastRadius *= 1.5;
+                let blastRadius = this.radius * (isOnlineMode ? 4 : 5); // バウンド時の小爆発
+                if (this.isSingularity) blastRadius *= (isOnlineMode ? 1.25 : 1.5);
                 
                 effects.push(new Shockwave(this.x, this.y, this.isSingularity ? '#9333ea' : '#fbbf24', 8, blastRadius));
                 createParticles(this.x, this.y, 10, this.isSingularity ? '#c084fc' : '#f59e0b', 4); Sound.playNoise(0.2, 0.2);
@@ -4214,8 +4406,8 @@
             }
 
             explodeArea() {
-                let blastRadius = this.radius * 12; // 最終の大爆発
-                if (this.isSingularity) blastRadius *= 1.5;
+                let blastRadius = this.radius * (isOnlineMode ? 9 : 12); // 最終の大爆発
+                if (this.isSingularity) blastRadius *= (isOnlineMode ? 1.25 : 1.5);
 
                 effects.push(new Shockwave(this.x, this.y, this.isSingularity ? '#9333ea' : '#fbbf24', 15, blastRadius));
                 createParticles(this.x, this.y, 25, this.isSingularity ? '#c084fc' : '#f59e0b', 6); Sound.playNoise(0.3, 0.4);
@@ -4224,7 +4416,7 @@
                 }
                 if (isOnlineMode) {
                     remotePlayers.forEach(r => {
-                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < blastRadius) sendOnlineHit(r.id, this.damage * (this.isSingularity ? 3 : 2));
+                        if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < blastRadius) sendOnlineHit(r.id, this.damage * (this.isSingularity ? 2.0 : 1.45));
                     });
                 }
                 
@@ -4249,8 +4441,8 @@
 
         class PoisonCloud {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage * 3; this.radius = (60 + level * 15) * 4;
-                this.timer = 0; this.maxTime = 400; this.markedForDeletion = false;
+                this.x = x; this.y = y; this.damage = damage * (isOnlineMode ? 1.15 : 3); this.radius = isOnlineMode ? (70 + level * 20) : ((60 + level * 15) * 4);
+                this.timer = 0; this.maxTime = isOnlineMode ? 300 : 400; this.markedForDeletion = false;
             }
             update() {
                 this.timer++;
@@ -4260,7 +4452,7 @@
                     }
                     if (isOnlineMode) {
                         remotePlayers.forEach(r => {
-                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius) sendOnlineHit(r.id, this.damage * 0.5);
+                            if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius) sendOnlineHit(r.id, this.damage * 0.42);
                         });
                     }
                 }
@@ -4374,8 +4566,8 @@
 
         class GravityPulsar {
             constructor(x, y, damage, level) {
-                this.x = x; this.y = y; this.damage = damage * 3; this.radius = (80 + level * 20) * 4;
-                this.timer = 0; this.maxTime = 240 + level * 60; this.markedForDeletion = false;
+                this.x = x; this.y = y; this.damage = damage * (isOnlineMode ? 1.1 : 3); this.radius = isOnlineMode ? (95 + level * 24) : ((80 + level * 20) * 4);
+                this.timer = 0; this.maxTime = isOnlineMode ? (180 + level * 45) : (240 + level * 60); this.markedForDeletion = false;
             }
             update() {
                 this.timer++;
@@ -4390,7 +4582,7 @@
                     if (isOnlineMode) {
                         remotePlayers.forEach(r => {
                             if (r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < this.radius) {
-                                sendOnlineHit(r.id, this.damage * 0.4);
+                                sendOnlineHit(r.id, this.damage * 0.34);
                             }
                         });
                     }
@@ -4688,7 +4880,7 @@
                         // ダメージ値は変更せず、中心付近の吸引だけを上限付きにする。
                         const centerEscapeZone = this.eventRadius * 1.26;
                         if (d < centerEscapeZone + player.radius) {
-                            pullPower = Math.min(pullPower, isOnlineMode ? 3.45 : 2.55);
+                            pullPower = Math.min(pullPower, (isOnlineMode ? 3.45 : 2.55) * NSV_BALANCE_20260502.mapBlackHoleCenterPullMult);
                         } else if (soloMapBlackHole) {
                             pullPower *= 0.46;
                         }
@@ -5028,7 +5220,12 @@
                 
                 if (this.electricFieldLevel > 0) { 
                     this.electricFieldTimer++; 
-                    if (this.electricFieldTimer >= Math.max(30, 120 - (this.electricFieldLevel * 15))) { this.fireElectricField(); this.electricFieldTimer = 0; } 
+                    const thunderBladeCd = Math.max(30, 120 - (this.electricFieldLevel * 15));
+                    if (this.electricFieldTimer >= thunderBladeCd) { 
+                        if (!this.evoThunderBlade) this.fireElectricField();
+                        else if (!isLightMode) createParticles(this.x, this.y, 10, '#2dd4bf', 4);
+                        this.electricFieldTimer = 0; 
+                    } 
                 }
 
                 if (this.shieldLevel > 0) { 
@@ -5036,7 +5233,7 @@
                     if (this.shieldTimer >= 900) { this.startShield(); this.shieldTimer = 0; } 
                 }
 
-                if (this.voidTempestLevel > 0) { 
+                if (this.voidTempestLevel > 0 && !this.evoBlackhole) { 
                     this.voidTempestTimer++; 
                     if (this.voidTempestTimer >= Math.max(240, 480 - ((this.voidTempestLevel - 1) * 60))) { 
                         if(voidTempests.length < 10) voidTempests.push(new VoidTempest(this.voidTempestLevel)); 
@@ -5045,7 +5242,7 @@
                     } 
                 }
 
-                if (this.vaderLevel > 0) { 
+                if (this.vaderLevel > 0 && !this.evoGravityBeam) { 
                     this.vaderTimer++; 
                     if (this.vaderTimer >= 900) { this.startVader(); this.vaderTimer = 0; } 
                 }
@@ -5072,7 +5269,7 @@
                     if (this.orbitalStrikeLevel > 0) { 
                         this.orbitalStrikeTimer++; 
                         if (this.orbitalStrikeTimer >= Math.max(90, 240 - (this.orbitalStrikeLevel * 30))) { 
-                            if (this.evoDivineSword && Math.random() < 0.3) { if(divineSwords.length < 2) divineSwords.push(new DivineSwordRain()); }
+                            if (this.evoDivineSword) { if(divineSwords.length < 1) divineSwords.push(new DivineSwordRain()); }
                             else this.fireOrbitalStrike(); 
                             this.orbitalStrikeTimer = 0; 
                         } 
@@ -5085,7 +5282,7 @@
                         this.infinitySnapTimer++; 
                         if (this.infinitySnapTimer >= Math.max(480, 600 - ((this.infinitySnapLevel - 1) * 30))) { if(infinitySnaps.length < 5) infinitySnaps.push(new InfinitySnapEffect()); this.infinitySnapTimer = 0; } 
                     }
-                    if (this.infiniteBladeLevel > 0) { 
+                    if (this.infiniteBladeLevel > 0 && !this.evoDivineSword) { 
                         this.infiniteBladeTimer++; 
                         if (this.infiniteBladeTimer >= Math.max(480, 600 - ((this.infiniteBladeLevel - 1) * 30))) { this.startInfiniteBlade(); this.infiniteBladeTimer = 0; } 
                     }
@@ -5109,16 +5306,7 @@
 
                 // --- オンライン限定武器の発動ロジック ---
                 if (isOnlineMode) {
-                    if (this.evoToxicAegis && frameCount % 15 === 0) {
-                        let r = 80;
-                        createParticles(this.x + MathUtils.random(-r, r), this.y + MathUtils.random(-r, r), 2, '#84cc16', 4);
-                        for (let t of enemies) {
-                            if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < r) t.takeDamage(10);
-                        }
-                        remotePlayers.forEach(remote => {
-                            if (remote && Number(remote.hp || 0) > 0 && MathUtils.distance(this.x, this.y, remote.x, remote.y) < r) sendOnlineHit(remote.id, 5);
-                        });
-                    }
+                    // 進化後は毒と盾を別々に出さず、毒盾1つのクールダウン武器として発動する。
 
                     if (this.onlineSniperLevel > 0) {
                         this.onlineSniperTimer++;
@@ -5126,7 +5314,7 @@
                             this.fireOnlineSniper(); this.onlineSniperTimer = 0;
                         }
                     }
-                    if (this.onlineBounceBombLevel > 0) {
+                    if (this.onlineBounceBombLevel > 0 && (!this.evoRicochetSniper || this.evoSingularityBomb)) {
                         this.onlineBounceTimer++;
                         if (this.onlineBounceTimer >= Math.max(120, 240 - this.onlineBounceBombLevel * 20)) {
                             this.fireOnlineBounceBomb(); this.onlineBounceTimer = 0;
@@ -5135,7 +5323,12 @@
                     if (this.onlinePoisonLevel > 0) {
                         this.onlinePoisonTimer++;
                         if (this.onlinePoisonTimer >= 180) {
-                            if(poisonClouds.length < 10) poisonClouds.push(new PoisonCloud(this.x, this.y, 10 * this.onlinePoisonLevel, this.onlinePoisonLevel));
+                            if (this.evoToxicAegis) {
+                                if (poisonClouds.length < 6) poisonClouds.push(new PoisonCloud(this.x, this.y, 18 * this.onlinePoisonLevel, this.onlinePoisonLevel + 2));
+                                createParticles(this.x, this.y, isLightMode ? 8 : 18, '#84cc16', 5);
+                            } else {
+                                if(poisonClouds.length < 10) poisonClouds.push(new PoisonCloud(this.x, this.y, 10 * this.onlinePoisonLevel, this.onlinePoisonLevel));
+                            }
                             this.onlinePoisonTimer = 0;
                         }
                     }
@@ -5145,7 +5338,7 @@
                             this.fireOnlinePhantom(); this.onlinePhantomTimer = 0;
                         }
                     }
-                    if (this.onlineGravityLevel > 0) {
+                    if (this.onlineGravityLevel > 0 && !this.evoGravitonDagger && !this.evoSingularityBomb) {
                         this.onlineGravityTimer++;
                         if (this.onlineGravityTimer >= 300) {
                             this.fireOnlineGravity(); this.onlineGravityTimer = 0;
@@ -5202,9 +5395,9 @@
 
                 if (target) {
                     const angle = MathUtils.angle(this.x, this.y, target.x, target.y);
-                    let dmg = 150 + (this.onlineSniperLevel - 1) * 50;
+                    let dmg = NSV_BALANCE_20260502.onlineSniperDamageBase + (this.onlineSniperLevel - 1) * NSV_BALANCE_20260502.onlineSniperDamageStep;
                     let b = this.evoRicochetSniper 
-                        ? new RicochetSniperBullet(this.x, this.y, angle, dmg * 1.5)
+                        ? new RicochetSniperBullet(this.x, this.y, angle, dmg * NSV_BALANCE_20260502.onlineRicochetDamageMult)
                         : new SniperBullet(this.x, this.y, angle, dmg);
                     if(target.id) b.onlineAimId = target.id;
                     if(sniperBullets.length < 50) sniperBullets.push(b);
@@ -6123,7 +6316,7 @@
                     if (d < this.radius) {
                         const a = MathUtils.angle(player.x, player.y, this.x, this.y);
                         const t = 1 - d / this.radius;
-                        const pull = Math.min(3.1, 0.85 + t * 3.6);
+                        const pull = Math.min(3.1, 0.85 + t * 3.6) * NSV_BALANCE_20260502.mapBlackHoleCenterPullMult;
                         player.x += Math.cos(a) * pull; player.y += Math.sin(a) * pull;
                         if (d < this.core + player.radius && this.timer - this.damageTick > 35) { this.damageTick = this.timer; player.takeDamage(18); }
                     }
@@ -6551,11 +6744,15 @@
             }
             
             const chargeGroups = [hollowMurasakiCharges, infiniteBladeCharges, keraunosCharges];
+            if (isTimeStopped) chargeGroups.push(blackholes); // ブラックホール・ノヴァは時間停止中でも更新して解除まで進める
             for (let group of chargeGroups) {
                 for (let i = group.length - 1; i >= 0; i--) { 
-                    try { group[i].update(); } catch(e) { group[i].markedForDeletion = true; }
+                    try { group[i].update(); } catch(e) { group[i].markedForDeletion = true; isTimeStopped = false; }
                     if (group[i].markedForDeletion) group.splice(i, 1); 
                 }
+            }
+            if (isTimeStopped && (!blackholes || blackholes.length === 0) && hollowMurasakiCharges.length === 0 && infiniteBladeCharges.length === 0 && keraunosCharges.length === 0) {
+                isTimeStopped = false;
             }
         }
 
@@ -6699,33 +6896,66 @@
         function drawSkillCooldowns() {
             if (!player) return;
             const skills = [];
-            if (player.hollowMurasakiLevel > 0) skills.push({ id: 'hollowMurasaki', icon: '🟣', p: player.hollowMurasakiTimer / Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)) });
-            if (player.kamehamehaLevel > 0) skills.push({ id: 'kamehameha', icon: '🌊', p: player.kamehamehaTimer / Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)) });
-            if (player.infiniteBladeLevel > 0) skills.push({ id: 'infiniteBlade', icon: '🗡️', p: player.infiniteBladeTimer / Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)) });
-            if (player.orbitalStrikeLevel > 0) skills.push({ id: 'orbitalStrike', icon: '✨', p: player.orbitalStrikeTimer / Math.max(90, 240 - (player.orbitalStrikeLevel * 30)) });
-            if (player.voidTempestLevel > 0) skills.push({ id: 'voidTempest', icon: '🌪️', p: player.voidTempestTimer / Math.max(240, 480 - ((player.voidTempestLevel - 1) * 60)) });
-            if (player.infinitySnapLevel > 0) skills.push({ id: 'infinitySnap', icon: '🫰', p: player.infinitySnapTimer / Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30)) });
-            if (player.ironmanSuitLevel > 0) skills.push({ id: 'unibeam', icon: '🤖', p: player.unibeamTimer / 600 });
-            if (player.keraunosLevel > 0) skills.push({ id: 'keraunos', icon: '⚡', p: player.keraunosTimer / 900 });
-            if (player.funnelLevel > 0) skills.push({ id: 'funnel', icon: '🛰️', p: player.funnelTimer / 900 });
-            if (player.vaderLevel > 0) skills.push({ id: 'vader', icon: '⚔️', p: player.vaderTimer / 900 });
-            if (player.thorLevel > 0) skills.push({ id: 'thor', icon: '🪓', p: player.thorTimer / 900 });
-            if (player.shieldLevel > 0) skills.push({ id: 'shield', icon: '🛡️', p: player.shieldTimer / 900 });
-            if (player.disneyMagicLevel > 0) skills.push({ id: 'disneyMagic', icon: '🪄', p: player.disneyMagicTimer / 3600 });
-            if (player.muryokuLevel > 0) skills.push({ id: 'muryoku', icon: '♾️', p: player.muryokuTimer / 1200 });
 
-            // --- オンライン専用武器のクールダウン ---
-            if (player.onlineSniperLevel > 0) skills.push({ id: 'onlineSniper', icon: '🎯', p: player.onlineSniperTimer / Math.max(60, 120 - player.onlineSniperLevel * 15) });
-            if (player.onlineBounceBombLevel > 0) skills.push({ id: 'onlineBounce', icon: '💣', p: player.onlineBounceTimer / Math.max(120, 240 - player.onlineBounceBombLevel * 20) });
-            if (player.onlinePoisonLevel > 0) skills.push({ id: 'onlinePoison', icon: '☣️', p: player.onlinePoisonTimer / 180 });
-            if (player.onlinePhantomLevel > 0) skills.push({ id: 'onlinePhantom', icon: '🗡️×5', p: player.onlinePhantomTimer / 600 });
-            if (player.onlineGravityLevel > 0) skills.push({ id: 'onlineGravity', icon: '🌌', p: player.onlineGravityTimer / 300 });
-            if (player.onlineBananaLevel > 0) skills.push({ id: 'onlineBanana', icon: '🍌', p: player.onlineBananaTimer / 360 });
-            if (player.onlineAstralLevel > 0) skills.push({ id: 'onlineAstral', icon: '☄️', p: player.onlineAstralTimer / Math.max(300, 540 - player.onlineAstralLevel * 60) });
-            if (player.onlineHarisenLevel > 0) skills.push({ id: 'onlineHarisen', icon: '🪭', p: player.onlineHarisenTimer / Math.max(330, 540 - player.onlineHarisenLevel * 70) });
-            if (player.onlineSushiLevel > 0) skills.push({ id: 'onlineSushi', icon: '🍣', p: player.onlineSushiTimer / Math.max(360, 660 - player.onlineSushiLevel * 80) });
-            if (player.onlineChestMurasaki) skills.push({ id: 'chestMurasaki', icon: '🟣宝', p: player.hollowMurasakiTimer / 1200 });
-            if (player.onlineChestKamehameha) skills.push({ id: 'chestKamehameha', icon: '🌊宝', p: player.kamehamehaTimer / 1200 });
+            // --- ソロ進化武器：素材2つを1本のクールダウンに統合 ---
+            if (player.evoBlackhole) {
+                pushCooldown(skills, 'evoBlackhole', '🌌', player.hollowMurasakiTimer, Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)));
+            } else {
+                if (player.hollowMurasakiLevel > 0) pushCooldown(skills, 'hollowMurasaki', '🟣', player.hollowMurasakiTimer, Math.max(900, 1200 - ((player.hollowMurasakiLevel - 1) * 60)));
+                if (player.voidTempestLevel > 0) pushCooldown(skills, 'voidTempest', '🌪️', player.voidTempestTimer, Math.max(240, 480 - ((player.voidTempestLevel - 1) * 60)));
+            }
+
+            if (player.evoDivineSword) {
+                pushCooldown(skills, 'evoDivineSword', '⚔️✨', player.orbitalStrikeTimer, Math.max(90, 240 - (player.orbitalStrikeLevel * 30)));
+            } else {
+                if (player.orbitalStrikeLevel > 0) pushCooldown(skills, 'orbitalStrike', '✨', player.orbitalStrikeTimer, Math.max(90, 240 - (player.orbitalStrikeLevel * 30)));
+                if (player.infiniteBladeLevel > 0) pushCooldown(skills, 'infiniteBlade', '🗡️', player.infiniteBladeTimer, Math.max(480, 600 - ((player.infiniteBladeLevel - 1) * 30)));
+            }
+
+            if (player.evoGravityBeam) {
+                pushCooldown(skills, 'evoGravityBeam', '🌌🌊', player.kamehamehaTimer, Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)));
+            } else {
+                if (player.kamehamehaLevel > 0) pushCooldown(skills, 'kamehameha', '🌊', player.kamehamehaTimer, Math.max(900, 1200 - ((player.kamehamehaLevel - 1) * 60)));
+                if (player.vaderLevel > 0) pushCooldown(skills, 'vader', '⚔️', player.vaderTimer, 900);
+            }
+
+            if (player.evoThunderBlade) {
+                // 円環の刃界＋破滅の雷域は、常時回転する雷剣1つとして表示する。
+                pushCooldown(skills, 'evoThunderBlade', '⚡🌀', player.electricFieldTimer, Math.max(30, 120 - (player.electricFieldLevel * 15)));
+            }
+
+            if (player.infinitySnapLevel > 0) pushCooldown(skills, 'infinitySnap', '🫰', player.infinitySnapTimer, Math.max(480, 600 - ((player.infinitySnapLevel - 1) * 30)));
+            if (player.ironmanSuitLevel > 0) pushCooldown(skills, 'unibeam', '🤖', player.unibeamTimer, 600);
+            if (player.keraunosLevel > 0) pushCooldown(skills, 'keraunos', '⚡', player.keraunosTimer, 900);
+            if (player.funnelLevel > 0) pushCooldown(skills, 'funnel', '🛰️', player.funnelTimer, 900);
+            if (player.thorLevel > 0) pushCooldown(skills, 'thor', '🪓', player.thorTimer, 900);
+            if (player.shieldLevel > 0) pushCooldown(skills, 'shield', '🛡️', player.shieldTimer, 900);
+            if (player.disneyMagicLevel > 0) pushCooldown(skills, 'disneyMagic', '🪄', player.disneyMagicTimer, 3600);
+            if (player.muryokuLevel > 0) pushCooldown(skills, 'muryoku', '♾️', player.muryokuTimer, 1200);
+            if (player.legendaryBlackholeEmperorLevel > 0) pushCooldown(skills, player.evoEndBlackhole ? 'evoEndBlackhole' : 'blackholeEmperor', player.evoEndBlackhole ? '⚫🌌' : '⚫', player.blackholeEmperorTimer, Math.max(150, 520 - player.legendaryBlackholeEmperorLevel * 65));
+            if (player.legendarySolarDrillLevel > 0) pushCooldown(skills, 'solarDrill', '☀️', player.solarDrillTimer, Math.max(120, 420 - player.legendarySolarDrillLevel * 55));
+            if (player.legendaryChronoLotusLevel > 0) pushCooldown(skills, 'chronoLotus', '🪷', player.chronoLotusTimer, Math.max(150, 480 - player.legendaryChronoLotusLevel * 60));
+
+            // --- オンライン進化武器：素材2つを1本のクールダウンに統合 ---
+            if (player.evoRicochetSniper) pushCooldown(skills, 'evoRicochetSniper', '🎯💫', player.onlineSniperTimer, Math.max(60, 120 - player.onlineSniperLevel * 15));
+            else if (player.onlineSniperLevel > 0) pushCooldown(skills, 'onlineSniper', '🎯', player.onlineSniperTimer, Math.max(60, 120 - player.onlineSniperLevel * 15));
+
+            if (player.evoSingularityBomb) pushCooldown(skills, 'evoSingularityBomb', '💣🌌', player.onlineBounceTimer, Math.max(120, 240 - player.onlineBounceBombLevel * 20));
+            else if (player.onlineBounceBombLevel > 0 && !player.evoRicochetSniper) pushCooldown(skills, 'onlineBounce', '💣', player.onlineBounceTimer, Math.max(120, 240 - player.onlineBounceBombLevel * 20));
+
+            if (player.evoToxicAegis) pushCooldown(skills, 'evoToxicAegis', '🛡️☣️', player.onlinePoisonTimer, 180);
+            else if (player.onlinePoisonLevel > 0) pushCooldown(skills, 'onlinePoison', '☣️', player.onlinePoisonTimer, 180);
+
+            if (player.evoGravitonDagger) pushCooldown(skills, 'evoGravitonDagger', '🗡️🌌', player.onlinePhantomTimer, 600);
+            else if (player.onlinePhantomLevel > 0) pushCooldown(skills, 'onlinePhantom', '🗡️×5', player.onlinePhantomTimer, 600);
+
+            if (player.onlineGravityLevel > 0 && !player.evoGravitonDagger && !player.evoSingularityBomb) pushCooldown(skills, 'onlineGravity', '🌌', player.onlineGravityTimer, 300);
+            if (player.onlineBananaLevel > 0) pushCooldown(skills, 'onlineBanana', '🍌', player.onlineBananaTimer, 360);
+            if (player.onlineAstralLevel > 0) pushCooldown(skills, 'onlineAstral', '☄️', player.onlineAstralTimer, Math.max(300, 540 - player.onlineAstralLevel * 60));
+            if (player.onlineHarisenLevel > 0) pushCooldown(skills, 'onlineHarisen', '🪭', player.onlineHarisenTimer, Math.max(330, 540 - player.onlineHarisenLevel * 70));
+            if (player.onlineSushiLevel > 0) pushCooldown(skills, 'onlineSushi', '🍣', player.onlineSushiTimer, Math.max(360, 660 - player.onlineSushiLevel * 80));
+            if (player.onlineChestMurasaki) pushCooldown(skills, 'chestMurasaki', '🟣宝', player.hollowMurasakiTimer, 1200);
+            if (player.onlineChestKamehameha) pushCooldown(skills, 'chestKamehameha', '🌊宝', player.kamehamehaTimer, 1200);
 
             if (skills.length === 0) return;
 
