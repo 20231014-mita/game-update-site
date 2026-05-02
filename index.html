@@ -4641,22 +4641,41 @@
                 // ブラックホールはプレイヤーだけを吸い込む。敵・宝箱・弾・ジェムには影響させない。
                 if (player && gameState === 'playing') {
                     const d = MathUtils.distance(this.x, this.y, player.x, player.y);
-                    if (d < this.radius && d > 1) {
-                        const a = MathUtils.angle(player.x, player.y, this.x, this.y);
-                        const t = Math.max(0, (this.radius - d) / this.radius);
+                    if (d < this.radius) {
+                        // 2026-05-02調整：ソロのマップブラックホールだけ、吸引を弱めて中心から脱出可能にする。
+                        // オンラインのマップブラックホールは今まで通りの強さ・ダメージを維持。
+                        const soloMapBlackHole = !isOnlineMode;
+                        const a = d > 1 ? MathUtils.angle(player.x, player.y, this.x, this.y) : (player.faceAngle || 0);
+                        const t = Math.max(0, (this.radius - Math.max(d, 1)) / this.radius);
                         let instability = 0.78 + Math.sin(this.timer * 0.045 + this.instabilitySeed) * 0.32 + Math.sin(this.timer * 0.137) * 0.18;
                         if (this.surgeTimer > 0) { this.surgeTimer--; instability += 0.65; }
                         else if (Math.random() < 0.006) { this.surgeTimer = MathUtils.randomInt(24, 70); }
                         instability = Math.max(0.42, Math.min(1.85, instability));
-                        const pullPower = (5.2 + t * 18.5) * instability;
+                        let pullPower = (5.2 + t * 18.5) * instability;
+                        if (soloMapBlackHole) {
+                            pullPower *= 0.46;
+                            if (d < this.eventRadius + player.radius) pullPower = Math.min(pullPower, 2.4);
+                        }
                         player.x += Math.cos(a) * pullPower;
                         player.y += Math.sin(a) * pullPower;
+
+                        // 2026-05-02調整：ソロ・オンライン両方で、中心付近に入っても外向きの脱出補助を入れる。
+                        // ダメージは下の処理で分けているため、オンラインのダメージ60はそのまま維持。
+                        if (d < this.eventRadius * 1.18) {
+                            const escapeRate = 1 - Math.min(1, d / (this.eventRadius * 1.18));
+                            const escapeAngle = d > 1 ? MathUtils.angle(this.x, this.y, player.x, player.y) : (player.faceAngle || 0);
+                            const escapePower = 2.2 + escapeRate * 6.2;
+                            player.x += Math.cos(escapeAngle) * escapePower;
+                            player.y += Math.sin(escapeAngle) * escapePower;
+                        }
+
                         if (Math.random() < 0.18 * t) createParticles(player.x, player.y, 2, instability > 1.35 ? '#facc15' : '#a855f7', 3);
 
                         if (d < this.eventRadius + player.radius && this.timer - this.damageTick >= 30) {
                             this.damageTick = this.timer;
-                            player.takeDamage(60);
-                            floatingTexts.push(new FloatingText(player.x, player.y - 50, 'BLACK HOLE -60', '#a855f7', 18));
+                            const mapBlackHoleDamage = isOnlineMode ? 60 : 30;
+                            player.takeDamage(mapBlackHoleDamage);
+                            floatingTexts.push(new FloatingText(player.x, player.y - 50, `BLACK HOLE -${mapBlackHoleDamage}`, '#a855f7', 18));
                             createParticles(player.x, player.y, 24, '#a855f7', 4);
                             triggerShake(8);
                         }
