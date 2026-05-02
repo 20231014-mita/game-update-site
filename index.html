@@ -306,6 +306,19 @@
         </div>
     </div>
 
+    <div id="onlineRoleScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[57] hidden p-3">
+        <div class="menu-panel w-full flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #facc15;">SELECT ROLE</h2>
+                    <p class="text-gray-300 text-sm mt-2">オンラインバトルで使う役割を1つ選んでください。</p>
+                </div>
+                <button id="closeOnlineRoleBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+            </div>
+            <div id="onlineRoleListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[70vh] pr-1"></div>
+        </div>
+    </div>
+
     <div id="levelUpScreen" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center backdrop-blur-md z-50 hidden">
         <h2 class="text-5xl font-bold mb-8 text-yellow-300 shadow-[0_0_15px_yellow] animate-pulse" style="font-family: 'Orbitron', sans-serif;">LEVEL UP!</h2>
         <p class="mb-6 text-2xl font-bold">スキルを1つ選んでください</p>
@@ -1996,7 +2009,6 @@
             ctx.fillStyle = 'rgba(0,0,0,.85)'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.shadowBlur = 14; ctx.shadowColor = color; ctx.stroke();
             ctx.shadowBlur = 0; ctx.font = 'bold 13px Noto Sans JP'; ctx.textAlign = 'center';
             ctx.fillStyle = '#fff'; ctx.fillText(nickname, px, py - 28);
-            if (roleName) { ctx.fillStyle = '#facc15'; ctx.font = 'bold 10px Orbitron, Noto Sans JP'; ctx.fillText(roleName, px, py - 42); ctx.font = 'bold 13px Noto Sans JP'; }
             ctx.fillStyle = 'rgba(0,0,0,.8)'; ctx.fillRect(px - 24, py - 22, 48, 5);
             ctx.fillStyle = '#22c55e'; ctx.fillRect(px - 24, py - 22, 48 * Math.max(0, Math.min(1, hp / maxHp)), 5);
             if (shieldLevel > 0) { ctx.fillStyle = '#60a5fa'; ctx.fillText('🛡️', px + 28, py + 5); }
@@ -2012,7 +2024,7 @@
 
         function drawRemoteOnlinePlayers(ctx) {
             if (!isOnlineMode) return;
-            remotePlayers.forEach(r => drawOnlinePlayerShape(ctx, r.x, r.y, r.nickname, r.hp, r.maxHp, r.shieldLevel, '#a78bfa', r.roleName || ''));
+            remotePlayers.forEach(r => drawOnlinePlayerShape(ctx, r.x, r.y, r.nickname, r.hp, r.maxHp, r.shieldLevel, '#a78bfa', ''));
         }
 
         function drawOnlineArrows() {
@@ -2319,7 +2331,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2890,7 +2902,7 @@
         // --- 新規追加：スナイパー用の銃弾クラス ---
         class SniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 1.09375, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 2.1875, 8, 9999, '#f87171', '#ef4444'); // pierceを9999にして無限貫通
                 this.angle = angle;
             }
             draw(ctx) {
@@ -2920,7 +2932,7 @@
 
         class RicochetSniperBullet extends Bullet {
             constructor(x, y, angle, damage) {
-                super(x, y, angle, damage, 1.09375, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
+                super(x, y, angle, damage, 2.1875, 12, 9999, '#fb7185', '#e11d48'); // pierceを9999にして無限貫通
                 this.bounces = 6;
                 this.lifeTimer = 0;
                 this.angle = angle;
@@ -6213,11 +6225,35 @@
             { id:'collector', name:'回収型', badge:'COL', color:'#facc15', desc:'ジェム回収と成長が速い', apply(p){ p.expBoost *= 1.26; p.magnetBonus += 240; p.fireRate *= 1.04; } }
         ];
         let currentOnlineRole = null;
+        let selectedOnlineRoleId = null;
         function chooseOnlineRole() {
-            const seed = String((getNickname && getNickname()) || onlinePlayerId || 'player');
-            let h = 0; for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-            h = (h + Math.floor(Date.now() / 60000)) >>> 0;
-            return ONLINE_ROLE_DEFS[h % ONLINE_ROLE_DEFS.length];
+            return ONLINE_ROLE_DEFS.find(r => r.id === selectedOnlineRoleId) || ONLINE_ROLE_DEFS[0];
+        }
+        function renderOnlineRoleScreen() {
+            const container = document.getElementById('onlineRoleListContainer');
+            if (!container) return;
+            container.innerHTML = ONLINE_ROLE_DEFS.map(role => `
+                <button class="upgrade-card p-5 rounded-lg text-left cursor-pointer pointer-events-auto" data-role-id="${role.id}" style="border-color:${role.color};">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="text-4xl">${role.id === 'attacker' ? '⚔️' : role.id === 'speed' ? '💨' : role.id === 'tank' ? '🛡️' : role.id === 'trapper' ? '☣️' : '⭐'}</div>
+                        <div class="text-xs font-bold px-2 py-1 rounded" style="color:#000;background:${role.color};">${role.badge}</div>
+                    </div>
+                    <h3 class="text-2xl font-bold mt-3" style="color:${role.color};">${role.name}</h3>
+                    <p class="text-gray-300 text-sm mt-2">${role.desc}</p>
+                    <p class="text-cyan-100 text-xs mt-3">クリックするとこの役割でオンラインバトルを開始します。</p>
+                </button>
+            `).join('');
+            container.querySelectorAll('[data-role-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedOnlineRoleId = btn.dataset.roleId;
+                    initGame('online');
+                });
+            });
+        }
+        function openOnlineRoleSelect() {
+            if (!requireNickname()) return;
+            renderOnlineRoleScreen();
+            showScreen('onlineRoleScreen');
         }
         function applyOnlineRoleToPlayer() {
             if (!isOnlineMode || !player || player.nsvRoleApplied) return;
@@ -6245,21 +6281,13 @@
             return { rankPoints, cur, next };
         }
         function renderPlayerRankBadge() {
-            const ui = document.getElementById('uiLayer');
-            if (!ui) return;
-            let badge = document.getElementById('nsvRankBadge');
-            if (!badge) {
-                badge = document.createElement('div');
-                badge.id = 'nsvRankBadge';
-                badge.className = 'pointer-events-none fixed left-4 top-[104px] z-40 bg-black/55 border border-cyan-400/60 rounded-lg px-3 py-2 text-xs md:text-sm shadow-[0_0_10px_rgba(6,182,212,.35)]';
-                document.body.appendChild(badge);
-            }
-            const info = calcPlayerRankInfo();
-            const roleText = isOnlineMode && currentOnlineRole ? `<div style="color:${currentOnlineRole.color};font-weight:800;">ROLE: ${currentOnlineRole.name}</div>` : '';
-            const nextText = info.next ? `NEXT: ${Math.max(0, info.next.min - info.rankPoints)}` : 'MAX RANK';
-            badge.innerHTML = `<div style="font-family:Orbitron,sans-serif;color:${info.cur.color};font-weight:900;">RANK: ${info.cur.name}</div><div class="text-gray-200">POINTS: ${info.rankPoints}</div><div class="text-cyan-200">${nextText}</div>${roleText}`;
-            if (gameState === 'start' || gameState === 'tutorial') badge.classList.add('hidden'); else badge.classList.remove('hidden');
-            userData.playerRank = info.cur.name;
+            // 左上に出ていたランク/ROLE表示は出さない。
+            const badge = document.getElementById('nsvRankBadge');
+            if (badge) badge.remove();
+            try {
+                const info = calcPlayerRankInfo();
+                userData.playerRank = info.cur.name;
+            } catch(e) {}
         }
         const __nsvOriginalUpdateUI = updateUI;
         updateUI = function() { const r = __nsvOriginalUpdateUI.apply(this, arguments); try { renderPlayerRankBadge(); } catch(e) {} return r; };
@@ -6267,7 +6295,7 @@
         const __nsvOriginalInitGame = initGame;
         initGame = function(mode = 'solo') {
             const ret = __nsvOriginalInitGame.apply(this, arguments);
-            if (mode === 'online' && gameState === 'playing') setTimeout(applyOnlineRoleToPlayer, 30);
+            if (mode === 'online' && player) setTimeout(applyOnlineRoleToPlayer, 30);
             else { currentOnlineRole = null; setTimeout(renderPlayerRankBadge, 30); }
             return ret;
         };
@@ -6850,6 +6878,7 @@
         document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('openWeaponCodexBtn')?.addEventListener('click', () => { renderWeaponCodexScreen(); showScreen('weaponCodexScreen'); });
         document.getElementById('closeWeaponCodexBtn')?.addEventListener('click', () => { showScreen('startScreen'); });
+        document.getElementById('closeOnlineRoleBtn')?.addEventListener('click', () => { selectedOnlineRoleId = null; showScreen('startScreen'); });
         document.getElementById('tutorialStartBtn')?.addEventListener('click', closeTutorialOverlay);
         document.getElementById('tutorialSkipBtn')?.addEventListener('click', closeTutorialOverlay);
         document.getElementById('pauseMuteBtn').addEventListener('click', (e) => {
@@ -6858,10 +6887,11 @@
         });
 
         document.getElementById('startBtn').addEventListener('click', () => { if (gameState === 'start' || gameState === 'gameover') initGame('solo'); });
-        document.getElementById('onlineStartBtn').addEventListener('click', () => { if (gameState === 'start' || gameState === 'gameover') initGame('online'); });
+        document.getElementById('onlineStartBtn').addEventListener('click', () => { if (gameState === 'start' || gameState === 'gameover') openOnlineRoleSelect(); });
         document.getElementById('restartBtn').addEventListener('click', () => {
             gameState = 'start';
             stopOnlineMode();
+            selectedOnlineRoleId = null; currentOnlineRole = null;
             syncJoystickVisibility();
             showScreen('startScreen');
             loadData(); 
@@ -6946,6 +6976,327 @@
         renderMissionMiniHud();
         syncJoystickVisibility();
         showScreen('startScreen');
+
+
+        // ==========================================================
+        // 2026-05-02 V3 Add-on
+        // - Phoenix Core online support
+        // - Flashier Phoenix revive effect
+        // - Boss advanced patterns weakened to about 1/2
+        // - Cape system removed from gameplay / collection UI / rewards
+        // - Futuristic aura quality upgrade
+        // ==========================================================
+        (function neonSurvivorV3Patch(){
+            const PHOENIX_COLOR_A = '#ff3d81';
+            const PHOENIX_COLOR_B = '#ffb86b';
+            const PHOENIX_COLOR_C = '#ffffff';
+
+            // ---- Cape removal: keep old save compatibility, but remove it from game display/rewards. ----
+            try {
+                if (Array.isArray(MISSION_DEFS)) {
+                    for (let i = MISSION_DEFS.length - 1; i >= 0; i--) {
+                        const m = MISSION_DEFS[i];
+                        if (!m) continue;
+                        if (m.cat === 'CAPE') { MISSION_DEFS.splice(i, 1); continue; }
+                        if (m.reward && m.reward.cape) delete m.reward.cape;
+                    }
+                }
+            } catch(e) { console.warn('V3 cape mission cleanup skipped', e); }
+
+            try {
+                drawEquippedCape = function(){ /* capes removed by V3 patch */ };
+            } catch(e) { console.warn('V3 drawEquippedCape override skipped', e); }
+
+            try {
+                rewardText = function(reward = {}) {
+                    const parts = [];
+                    if (reward.coins) parts.push(`+${scaledCoinReward(reward.coins)} COINS`);
+                    if (reward.weapon) parts.push((LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon));
+                    if (reward.skin) parts.push(`スキン:${SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin}`);
+                    if (reward.aura) parts.push(`オーラ:${AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura}`);
+                    return parts.join(' / ') || '報酬なし';
+                };
+                grantReward = function(reward = {}, silent = false) {
+                    ensureProgressionData();
+                    const unlocked = [];
+                    if (reward.coins) { const c = scaledCoinReward(reward.coins); userData.coins += c; userData.stats.totalCoinsEarned += c; }
+                    if (reward.weapon && !userData.unlocks.legendaryWeapons[reward.weapon]) { userData.unlocks.legendaryWeapons[reward.weapon] = true; unlocked.push(LEGENDARY_WEAPON_DEFS.find(w => w.id === reward.weapon)?.name || reward.weapon); }
+                    if (reward.skin && !userData.unlocks.skins[reward.skin]) { userData.unlocks.skins[reward.skin] = true; unlocked.push(SKIN_DEFS.find(x => x.id === reward.skin)?.name || reward.skin); }
+                    if (reward.aura && !userData.unlocks.auras[reward.aura]) { userData.unlocks.auras[reward.aura] = true; unlocked.push(AURA_DEFS.find(x => x.id === reward.aura)?.name || reward.aura); }
+                    // reward.cape is intentionally ignored. Capes were removed from the game.
+                    if (!silent && unlocked.length) showMissionToast('新アイテム解放！', unlocked.join(' / '));
+                };
+            } catch(e) { console.warn('V3 reward override skipped', e); }
+
+            try {
+                renderCollectionScreen = function() {
+                    ensureProgressionData();
+                    const container = document.getElementById('collectionListContainer');
+                    if (!container) return;
+                    const weaponHtml = LEGENDARY_WEAPON_DEFS.map(w => {
+                        const on = !!userData.unlocks.legendaryWeapons[w.id];
+                        const onlineNote = w.id === 'phoenixCore' ? '<p class="text-xs text-pink-200 mt-1">オンラインモードでも使用可能</p>' : '';
+                        return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${w.icon}</div><h3 class="font-bold text-white mt-1">${w.name}</h3><p class="text-sm text-gray-300">${w.desc.replace('ソロ専用。','')}</p>${onlineNote}<p class="text-xs text-cyan-200 mt-2">解放条件: ${w.hint || 'ミッション報酬'}</p><p class="mt-2 text-sm ${on?'text-green-300':'text-gray-500'}">${on?'解放済み':'未解放'}</p></div>`;
+                    }).join('');
+                    const allCodex = getAllWeaponCodexDefs();
+                    const codexHtml = allCodex.map(makeWeaponCodexCard).join('');
+                    const skinHtml = SKIN_DEFS.map(sk => {
+                        const on = !!userData.unlocks.skins[sk.id];
+                        const eq = userData.equippedSkin === sk.id;
+                        return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${sk.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?sk.color:'#9ca3af'}">${sk.name}</h3><p class="text-sm text-gray-300">${sk.desc}</p><p class="text-xs text-cyan-200 mt-2">能力: ${getSkinAbilityText(sk.id)}</p><button class="equip-skin mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-neon':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${sk.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+                    }).join('');
+                    const auraHtml = AURA_DEFS.map(a => {
+                        const on = !!userData.unlocks.auras[a.id];
+                        const eq = userData.equippedAura === a.id;
+                        return `<div class="collection-card ${on?'unlocked':''}"><div class="text-3xl">${a.icon}</div><h3 class="font-bold text-white mt-1" style="color:${on?a.color:'#9ca3af'}">${a.name}</h3><p class="text-sm text-gray-300">${a.desc}</p><p class="text-xs text-cyan-200 mt-2">近未来リング演出つき</p><button class="equip-aura mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-gold':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${a.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button></div>`;
+                    }).join('');
+                    const usedCount = allCodex.filter(w => isWeaponCodexUsed(w.id)).length;
+                    container.innerHTML = `
+                        <section><h3 class="text-2xl font-bold text-yellow-300 mb-2">LEGENDARY / MYTHIC WEAPONS</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${weaponHtml}</div></section>
+                        <section><h3 class="text-2xl font-bold text-purple-300 mb-2">WEAPON INDEX</h3><p class="text-xs text-gray-300 mb-2">ゲーム中に出る武器と進化武器の図鑑です。使用済み：${usedCount}/${allCodex.length}</p><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${codexHtml}</div></section>
+                        <section><h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div></section>
+                        <section><h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div></section>`;
+                    container.querySelectorAll('.equip-skin').forEach(btn => btn.addEventListener('click', () => { userData.equippedSkin = btn.dataset.id; saveData(); renderCollectionScreen(); }));
+                    container.querySelectorAll('.equip-aura').forEach(btn => btn.addEventListener('click', () => { userData.equippedAura = btn.dataset.id; saveData(); renderCollectionScreen(); }));
+                };
+            } catch(e) { console.warn('V3 renderCollectionScreen override skipped', e); }
+
+            // ---- Futuristic aura upgrade. ----
+            try {
+                drawEquippedAura = function(ctx, x, y) {
+                    ensureProgressionData();
+                    const aura = AURA_DEFS.find(a => a.id === userData.equippedAura) || AURA_DEFS[0];
+                    if (!aura || aura.id === 'none') return;
+                    const t = Date.now() / 1000;
+                    const main = aura.color || '#22d3ee';
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.translate(safe(x), safe(y));
+
+                    const pulse = 1 + Math.sin(t * 4.2) * 0.045;
+                    const baseR = 34 * pulse;
+                    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, 78);
+                    grad.addColorStop(0, 'rgba(255,255,255,.30)');
+                    grad.addColorStop(0.28, main.replace(')', ',.20)').replace('rgb(', 'rgba('));
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI * 2); ctx.fill();
+
+                    for (let ring = 0; ring < 3; ring++) {
+                        ctx.save();
+                        ctx.rotate(t * (ring % 2 ? -1.45 : 1.25) + ring * 0.8);
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, baseR + ring * 10, baseR * (0.42 + ring * 0.08), 0, 0, Math.PI * 2);
+                        ctx.strokeStyle = ring === 0 ? '#ffffff' : main;
+                        ctx.lineWidth = ring === 0 ? 1.8 : 2.6;
+                        ctx.setLineDash(ring === 1 ? [16, 10] : ring === 2 ? [4, 8] : []);
+                        ctx.shadowBlur = 26;
+                        ctx.shadowColor = main;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // hex-shield outline
+                    ctx.save();
+                    ctx.rotate(t * 0.85);
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const a = Math.PI / 3 * i;
+                        const px = Math.cos(a) * 48;
+                        const py = Math.sin(a) * 48;
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.strokeStyle = main;
+                    ctx.lineWidth = 1.6;
+                    ctx.globalAlpha = 0.75;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = main;
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // special aura accents
+                    if (aura.id === 'royalHalo' || aura.id === 'crownBurst') {
+                        const crownY = -52 + Math.sin(t * 3) * 2;
+                        ctx.fillStyle = 'rgba(250,204,21,.92)'; ctx.strokeStyle = '#fff7ed'; ctx.lineWidth = 2; ctx.shadowBlur = 24; ctx.shadowColor = '#facc15';
+                        ctx.beginPath(); ctx.moveTo(-26, crownY + 12); ctx.lineTo(-18, crownY - 7); ctx.lineTo(-8, crownY + 5); ctx.lineTo(0, crownY - 14); ctx.lineTo(8, crownY + 5); ctx.lineTo(18, crownY - 7); ctx.lineTo(26, crownY + 12); ctx.closePath(); ctx.fill(); ctx.stroke();
+                    }
+                    if (aura.id === 'stormKing' || aura.id === 'thunderCrown') {
+                        for (let i = 0; i < 4; i++) {
+                            const a = t * 3 + i * Math.PI / 2;
+                            ctx.beginPath();
+                            ctx.moveTo(Math.cos(a) * 28, Math.sin(a) * 28);
+                            ctx.lineTo(Math.cos(a + .18) * 48, Math.sin(a + .18) * 48);
+                            ctx.lineTo(Math.cos(a - .12) * 40, Math.sin(a - .12) * 58);
+                            ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 2; ctx.shadowBlur = 18; ctx.shadowColor = '#67e8f9'; ctx.stroke();
+                        }
+                    }
+                    if (aura.id === 'blackholeAura') {
+                        ctx.beginPath(); ctx.arc(0, 0, 22 + Math.sin(t * 6) * 3, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(0,0,0,.78)'; ctx.fill();
+                        ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 4; ctx.shadowBlur = 30; ctx.shadowColor = '#a855f7'; ctx.stroke();
+                    }
+                    if (!isLightMode && Math.random() < 0.18) createParticles(x + MathUtils.random(-42, 42), y + MathUtils.random(-42, 42), 1, main, 3);
+                    ctx.restore();
+                };
+            } catch(e) { console.warn('V3 aura override skipped', e); }
+
+            // ---- Phoenix Core can now appear in Online mode too. ----
+            try {
+                const __v3OriginalAddUnlockedLegendarySkills = addUnlockedLegendarySkills;
+                addUnlockedLegendarySkills = function(pool) {
+                    if (!player) return;
+                    ensureProgressionData();
+                    if (!isOnlineMode) return __v3OriginalAddUnlockedLegendarySkills(pool);
+                    const u = userData.unlocks.legendaryWeapons || {};
+                    // Online can use Phoenix Core. If already unlocked, it appears as a legendary option.
+                    // Also allow it as a rare online comeback option so the online mode can actually use it.
+                    const canOffer = !!u.phoenixCore || Math.random() < 0.18;
+                    if (!canOffer) return;
+                    if (!player.legendaryPhoenixCoreLevel) {
+                        pool.push({ name:'【伝説】フェニックスコア', desc:'オンラインでも1回だけ復活できる。復活時に周囲を爆発で吹き飛ばす', color:PHOENIX_COLOR_A, icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel = 1; player.phoenixRevived = false; markWeaponCodexUsed('phoenixCore'); }});
+                    } else if (player.legendaryPhoenixCoreLevel < 3) {
+                        pool.push({ name:'フェニックスコア強化', desc:'復活時のHP・爆発範囲・爆発威力UP', color:PHOENIX_COLOR_B, icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel++; markWeaponCodexUsed('phoenixCore'); }});
+                    }
+                };
+            } catch(e) { console.warn('V3 online phoenix override skipped', e); }
+
+            class PhoenixReviveV3Effect {
+                constructor(x, y, radius) {
+                    this.x = x; this.y = y; this.radius = radius; this.timer = 0; this.maxTime = 150; this.markedForDeletion = false;
+                }
+                update() {
+                    this.timer++;
+                    if (this.timer < 80 && this.timer % 5 === 0 && !isLightMode) {
+                        createParticles(this.x + MathUtils.random(-55,55), this.y + MathUtils.random(-55,55), 3, this.timer % 10 === 0 ? PHOENIX_COLOR_B : PHOENIX_COLOR_A, 6);
+                    }
+                    if (this.timer > this.maxTime) this.markedForDeletion = true;
+                }
+                draw(ctx) {
+                    const p = Math.min(1, this.timer / this.maxTime);
+                    const burst = Math.sin(Math.min(1, this.timer / 45) * Math.PI);
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.translate(safe(this.x), safe(this.y));
+                    ctx.rotate(this.timer * 0.06);
+
+                    const glow = ctx.createRadialGradient(0,0,10,0,0,this.radius * (0.25 + p * 0.75));
+                    glow.addColorStop(0, `rgba(255,255,255,${0.55 * (1-p)})`);
+                    glow.addColorStop(0.25, `rgba(255,184,107,${0.38 * (1-p*.4)})`);
+                    glow.addColorStop(0.65, `rgba(255,61,129,${0.22 * (1-p*.65)})`);
+                    glow.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glow;
+                    ctx.beginPath(); ctx.arc(0, 0, this.radius * (0.25 + p * 0.75), 0, Math.PI * 2); ctx.fill();
+
+                    for (let wing = -1; wing <= 1; wing += 2) {
+                        ctx.save();
+                        ctx.scale(wing, 1);
+                        ctx.beginPath();
+                        ctx.moveTo(0, 12);
+                        ctx.bezierCurveTo(42, -56 - burst * 32, 112 + burst * 70, -36, 145 + burst * 80, -8);
+                        ctx.bezierCurveTo(96 + burst * 45, 12, 58, 38 + burst * 28, 0, 24);
+                        ctx.closePath();
+                        const wg = ctx.createLinearGradient(0, -80, 170, 40);
+                        wg.addColorStop(0, 'rgba(255,255,255,.90)');
+                        wg.addColorStop(0.35, 'rgba(255,184,107,.70)');
+                        wg.addColorStop(1, 'rgba(255,61,129,.08)');
+                        ctx.fillStyle = wg; ctx.shadowBlur = 34; ctx.shadowColor = PHOENIX_COLOR_B; ctx.fill();
+                        ctx.restore();
+                    }
+
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 42 + i * 32 + p * this.radius * 0.22, 0, Math.PI * 2);
+                        ctx.strokeStyle = i === 0 ? PHOENIX_COLOR_C : i === 1 ? PHOENIX_COLOR_B : PHOENIX_COLOR_A;
+                        ctx.globalAlpha = (1 - p) * (0.9 - i * 0.18);
+                        ctx.lineWidth = 5 - i;
+                        ctx.shadowBlur = 28;
+                        ctx.shadowColor = ctx.strokeStyle;
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                    ctx.restore();
+                }
+            }
+
+            try {
+                triggerPhoenixRevive = function() {
+                    if (!player || !player.legendaryPhoenixCoreLevel || player.phoenixRevived) return false;
+                    player.phoenixRevived = true;
+                    const level = player.legendaryPhoenixCoreLevel || 1;
+                    player.hp = player.maxHp * Math.min(0.9, 0.42 + level * 0.16);
+                    player.invincibleTimer = 240;
+                    const radius = 310 + level * 110;
+                    const damage = 1500 + level * 900;
+                    effects.push(new PhoenixReviveV3Effect(player.x, player.y, radius));
+                    effects.push(new Shockwave(player.x, player.y, PHOENIX_COLOR_A, 28, radius));
+                    effects.push(new Shockwave(player.x, player.y, PHOENIX_COLOR_B, 16, radius * 0.68));
+                    createParticles(player.x, player.y, isLightMode ? 45 : 130, PHOENIX_COLOR_B, 9);
+                    createParticles(player.x, player.y, isLightMode ? 25 : 80, PHOENIX_COLOR_A, 8);
+                    for (const e of enemies) {
+                        if (!e.isCharmed && !e.markedForDeletion && MathUtils.distance(player.x, player.y, e.x, e.y) < radius) {
+                            e.takeDamage(damage);
+                            const a = MathUtils.angle(player.x, player.y, e.x, e.y);
+                            e.x += Math.cos(a) * 38;
+                            e.y += Math.sin(a) * 38;
+                        }
+                    }
+                    whiteFlash = Math.max(whiteFlash || 0, 0.72);
+                    redFlash = Math.max(redFlash || 0, 0.45);
+                    triggerShake(22);
+                    Sound.playNoise(0.75, 0.22, 'bandpass', 900);
+                    showCustomCutin('PHOENIX CORE', 'REVIVE!', PHOENIX_COLOR_B);
+                    floatingTexts.push(new FloatingText(player.x, player.y - 92, 'PHOENIX REVIVE!', PHOENIX_COLOR_B, 36));
+                    updateUI();
+                    return true;
+                };
+            } catch(e) { console.warn('V3 phoenix revive override skipped', e); }
+
+            // ---- Boss patterns weakened to about half strength. ----
+            try {
+                triggerAdvancedBossPattern = function(boss) {
+                    if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
+                    boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 140)) + 1;
+                    const interval = boss.isMonkey ? 300 : boss.isMidBoss ? 420 : 360; // about half as frequent
+                    if (boss.nsvBossPatternTimer < interval) return;
+                    boss.nsvBossPatternTimer = 0;
+                    const a = MathUtils.angle(boss.x, boss.y, player.x, player.y);
+                    const roll = Math.random();
+                    if (roll < 0.22) {
+                        effects.push(new BossWarningExplosion(player.x + MathUtils.random(-150,150), player.y + MathUtils.random(-150,150), boss.isMonkey ? 230 : 180, boss.isMonkey ? 23 : 17));
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'WARNING', '#ef4444', 15));
+                    } else if (roll < 0.40) {
+                        effects.push(new BossConeBeam(boss.x, boss.y, a, boss.isMonkey ? 21 : 15));
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'BEAM', '#fb923c', 15));
+                    } else if (roll < 0.62) {
+                        const count = boss.isMonkey ? 3 : 2;
+                        for (let i = 0; i < count && enemyBullets.length < 520; i++) {
+                            const b = new BossHomingBullet(boss.x + MathUtils.random(-30,30), boss.y + MathUtils.random(-30,30), boss.isMonkey ? 11 : 8);
+                            b.speed *= 0.82;
+                            enemyBullets.push(b);
+                        }
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'HOMING', '#f472b6', 15));
+                    } else if (roll < 0.82) {
+                        const count = boss.isMidBoss ? 1 : 2;
+                        for (let i = 0; i < count && enemies.length < 800; i++) {
+                            const v = ['fast','shooter','bomber'][MathUtils.randomInt(0,2)];
+                            const add = new AdvancedEnemy(boss.x + MathUtils.random(-130,130), boss.y + MathUtils.random(-130,130), v);
+                            add.hp *= 0.7; add.maxHp = add.hp;
+                            enemies.push(add);
+                        }
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'SUMMON', '#38bdf8', 15));
+                    } else {
+                        const bh = new BossTemporaryBlackHole(player.x - Math.cos(a) * 100, player.y - Math.sin(a) * 100);
+                        bh.pull *= 0.55;
+                        bh.damage = Math.max(1, Math.floor((bh.damage || 8) * 0.5));
+                        bh.radius *= 0.78;
+                        bh.maxTime = Math.floor((bh.maxTime || 260) * 0.55);
+                        effects.push(bh);
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'WEAK BLACK HOLE', '#a855f7', 15));
+                    }
+                };
+            } catch(e) { console.warn('V3 boss pattern override skipped', e); }
+        })();
 
     </script>
 </body>
