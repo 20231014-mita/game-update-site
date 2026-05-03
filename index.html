@@ -160,6 +160,18 @@
             </label>
         </div>
 
+        <div class="mb-8 bg-gray-900/80 p-5 rounded-lg border border-cyan-500/50 flex flex-col items-center gap-3">
+            <span class="text-cyan-300 font-bold text-lg tracking-wider">LIGHT MODE</span>
+            <label class="flex items-center cursor-pointer gap-3">
+                <div class="relative">
+                    <input type="checkbox" id="pauseLightModeToggle" class="sr-only" onchange="window.toggleLightMode(this.checked)">
+                    <div class="block bg-gray-600 w-14 h-8 rounded-full transition-colors duration-300"></div>
+                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform duration-300 shadow"></div>
+                </div>
+                <span class="text-white select-none font-bold text-sm">軽量モードを使う</span>
+            </label>
+        </div>
+
         <div class="flex flex-col md:flex-row gap-4">
             <button id="resumeBtn" class="btn-neon px-8 py-3 text-xl font-bold rounded cursor-pointer">RESUME</button>
             <button id="titleFromPauseBtn" class="btn-red px-8 py-3 text-xl font-bold rounded cursor-pointer">TITLE MENU</button>
@@ -197,6 +209,7 @@
                 <button id="openMissionBtn" class="btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer">MISSIONS</button>
                 <button id="openCollectionBtn" class="btn-green menu-secondary px-6 py-3 font-bold rounded cursor-pointer">COLLECTION</button>
                 <button id="openWeaponCodexBtn" class="btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer">WEAPON CODEX<br><span class="text-xs text-cyan-100 font-bold">武器図鑑をすぐ見る</span></button>
+                <button id="openEnemyCodexBtn" class="btn-red menu-secondary px-6 py-3 font-bold rounded cursor-pointer">ENEMY CODEX<br><span class="text-xs text-red-100 font-bold">敵のHP・攻撃を見る</span></button>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
                     <span class="text-cyan-300 font-bold text-sm tracking-wider">ジョイスティック</span>
                     <label class="flex items-center cursor-pointer gap-3">
@@ -306,6 +319,19 @@
         </div>
     </div>
 
+    <div id="enemyCodexScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3">
+        <div class="menu-panel w-full flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <h2 class="text-4xl md:text-5xl font-bold text-red-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #ef4444;">ENEMY CODEX</h2>
+                    <p class="text-gray-300 text-sm mt-2">敵のHP・攻撃方法・注意点を確認できます。HPは時間やレベルで増えます。</p>
+                </div>
+                <button id="closeEnemyCodexBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+            </div>
+            <div id="enemyCodexListContainer" class="overflow-y-auto max-h-[72vh] pr-1 space-y-4"></div>
+        </div>
+    </div>
+
     <div id="onlineRoleScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[57] hidden p-3">
         <div class="menu-panel w-full flex flex-col gap-4">
             <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
@@ -390,7 +416,7 @@
         const frameTime = 1000 / 60;
         
         let camera = { x: 0, y: 0 };
-        const mapSize = 10000;
+        const mapSize = 20000; // 2026-05-03調整：縦横2倍＝全体面積4倍
         let isMuted = false;
         let bgStars = [];
         let isLightMode = false;
@@ -407,6 +433,7 @@
         const RUN_COIN_GAIN_RATE = 1 / 2;
         // 2026-05-02 追加バランス調整：画面や基本ルールは変えず、数値だけ安全に調整する。
         const NSV_BALANCE_20260502 = {
+            // 2026-05-03調整：中心の吸い込み力だけ2/3。周りの吸い込み力は元の強さに戻す。
             mapBlackHoleCenterPullMult: 2 / 3,
             sniperSpeedMult: 2,
             sniperHoming: 0.032,
@@ -1048,6 +1075,8 @@
             userData.unlocks.capes = Object.assign({ none:true }, userData.unlocks.capes || {});
             userData.codex = userData.codex || {};
             userData.codex.weapons = Object.assign({ base_0_通常弾:true }, userData.codex.weapons || {});
+            userData.settings = userData.settings || {};
+            userData.settings.disabledLegendaryWeapons = userData.settings.disabledLegendaryWeapons || {};
             // ネオンレイガンはゲームから削除したため、過去セーブの図鑑・解放情報も非表示にする。
             delete userData.codex.weapons.neonRaygun;
             if (userData.unlocks && userData.unlocks.legendaryWeapons) delete userData.unlocks.legendaryWeapons.neonRaygun;
@@ -1361,9 +1390,39 @@
             });
         }
 
+        function isMissionWeaponCodexItem(w) {
+            if (!w || !w.id) return false;
+            return LEGENDARY_WEAPON_DEFS.some(def => def.id === w.id);
+        }
+
+        function isLegendaryWeaponEnabled(id) {
+            ensureProgressionData();
+            return !userData.settings.disabledLegendaryWeapons[id];
+        }
+
+        function setLegendaryWeaponEnabled(id, enabled) {
+            ensureProgressionData();
+            if (enabled) delete userData.settings.disabledLegendaryWeapons[id];
+            else userData.settings.disabledLegendaryWeapons[id] = true;
+            saveData();
+            renderWeaponCodexScreen();
+        }
+
         function makeWeaponCodexCard(w) {
+            ensureProgressionData();
             const used = isWeaponCodexUsed(w.id);
-            return `<div class="collection-card ${used?'unlocked':''}">
+            const isMissionWeapon = isMissionWeaponCodexItem(w);
+            const unlockedMissionWeapon = isMissionWeapon && !!(userData.unlocks.legendaryWeapons || {})[w.id];
+            const enabled = !isMissionWeapon || isLegendaryWeaponEnabled(w.id);
+            const toggleHtml = isMissionWeapon ? `
+                <div class="mt-3 border-t border-slate-700 pt-3">
+                    ${unlockedMissionWeapon ? `
+                    <label class="flex items-center justify-between gap-3 cursor-pointer">
+                        <span class="text-xs font-bold ${enabled?'text-green-300':'text-red-300'}">出現：${enabled?'ON':'OFF'}</span>
+                        <input type="checkbox" class="mission-weapon-toggle w-5 h-5" data-id="${w.id}" ${enabled?'checked':''}>
+                    </label>` : `<p class="text-xs text-gray-500">未解放なので出現設定はまだ変更できません。</p>`}
+                </div>` : '';
+            return `<div class="collection-card ${used || unlockedMissionWeapon ? 'unlocked':''}">
                 <div class="flex items-start justify-between gap-2">
                     <div class="text-3xl">${w.icon || '❔'}</div>
                     <span class="text-[11px] font-bold px-2 py-1 rounded ${used?'bg-green-900/70 text-green-200 border border-green-400/50':'bg-slate-800 text-gray-300 border border-gray-500/40'}">${used?'使用済み':'未使用'}</span>
@@ -1377,6 +1436,7 @@
                     <p>弱い場面：${w.weak || '使い方次第'}</p>
                     <p>入手・進化条件：${w.unlock || 'ゲーム中に入手'}</p>
                 </div>
+                ${toggleHtml}
             </div>`;
         }
 
@@ -1394,6 +1454,59 @@
                 const list = all.filter(w => (w.type || 'BASIC') === type);
                 if (!list.length) return '';
                 return `<section><h3 class="text-2xl font-bold text-cyan-300 mb-2">${label[type] || type}</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(makeWeaponCodexCard).join('')}</div></section>`;
+            }).join('');
+            container.querySelectorAll('.mission-weapon-toggle').forEach(t => {
+                t.addEventListener('change', () => setLegendaryWeaponEnabled(t.dataset.id, t.checked));
+            });
+        }
+
+
+        const ENEMY_CODEX_DEFS = [
+            { group:'通常敵', icon:'🔴', name:'通常ネオン', hp:'約30 × 時間補正', damage:'約15', attack:'近づいて体当たり', note:'一番基本の敵。数が増えると危険。' },
+            { group:'通常敵', icon:'🟠', name:'高速ランナー', hp:'約15 × 時間補正', damage:'約7.5', attack:'速く近づいて体当たり', note:'HPは低いが、足が速い。' },
+            { group:'通常敵', icon:'🟣', name:'タンク', hp:'約120 × 時間補正', damage:'約37.5', attack:'ゆっくり近づいて重い体当たり', note:'硬いので範囲攻撃で削ると安全。' },
+            { group:'通常敵', icon:'🟢', name:'シューター', hp:'約22.5 × 時間補正', damage:'約7.5', attack:'近づきながら弾を撃つ', note:'距離を取ってくるので早めに倒す。' },
+            { group:'通常敵', icon:'🟪', name:'小型スピード敵', hp:'約1.5', damage:'約7.5', attack:'超高速で体当たり', note:'HPは低いが、急に近づく。' },
+            { group:'追加敵', icon:'💥', name:'爆弾敵', hp:'約25 × 時間補正', damage:'約35', attack:'近づくと爆発', note:'爆発範囲に入る前に倒す。' },
+            { group:'追加敵', icon:'⭐', name:'召喚型', hp:'約95 × 時間補正', damage:'約8', attack:'敵を呼ぶ・接触攻撃', note:'放置すると敵が増えやすい。' },
+            { group:'追加敵', icon:'🛡️', name:'シールド型', hp:'約120 × 時間補正', damage:'約18', attack:'守りながら接近', note:'少し硬め。貫通武器が有効。' },
+            { group:'強化敵', icon:'⚡', name:'SPEED', hp:'約18 × 時間補正', damage:'約10', attack:'高速で追跡', note:'移動速度がとても高い。' },
+            { group:'強化敵', icon:'🪨', name:'TANK', hp:'約260 × 時間補正', damage:'約34', attack:'硬い体当たり', note:'倒すのに時間がかかる。' },
+            { group:'強化敵', icon:'🏹', name:'SHOOTER', hp:'約74 × 時間補正', damage:'約12', attack:'距離を取りながら射撃', note:'弾を避けつつ近づかれないようにする。' },
+            { group:'強化敵', icon:'💣', name:'BOMBER', hp:'約55 × 時間補正', damage:'約42', attack:'近づくと大きめに爆発', note:'近距離で倒すと危険。' },
+            { group:'強化敵', icon:'🐌', name:'SLOW', hp:'約82 × 時間補正', damage:'約13', attack:'近距離でプレイヤーを遅くする', note:'囲まれている時に受けると危険。' },
+            { group:'強化敵', icon:'🟣', name:'GRAVITY', hp:'約135 × 時間補正', damage:'約18', attack:'重力で押す・動きを崩す', note:'位置取りを崩されやすい。' },
+            { group:'ボス', icon:'👹', name:'中ボス', hp:'約250 × プレイヤーレベル × 1.5', damage:'約45', attack:'大きめの体当たり', note:'倒すと回復しやすい。' },
+            { group:'ボス', icon:'🔴', name:'通常ボス', hp:'約1500 × レベル補正 × 1.5', damage:'約60', attack:'VOID / THUNDER / FIRE / MIRROR 系のパターン攻撃', note:'攻撃パターンを見て距離を取る。' },
+            { group:'ボス', icon:'🐵', name:'大猿王', hp:'約10000 × レベル補正 × 1.5 × 2', damage:'約300', attack:'高速移動・強力な近距離攻撃', note:'かなり危険。回避優先。' },
+            { group:'ボス', icon:'🔥', name:'最恐大猿王', hp:'約60000 × レベル補正 × パワー', damage:'約360 × パワー', attack:'炎・復活・強力な近距離攻撃', note:'長期戦になる最上位ボス。' }
+        ];
+
+        function makeEnemyCodexCard(e) {
+            return `<div class="collection-card">
+                <div class="flex items-start gap-3">
+                    <div class="text-3xl">${e.icon}</div>
+                    <div>
+                        <p class="text-xs text-red-200 font-bold">${e.group}</p>
+                        <h3 class="font-bold text-white text-lg">${e.name}</h3>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-300 mt-3 space-y-1">
+                    <p>HP：${e.hp}</p>
+                    <p>攻撃力：${e.damage}</p>
+                    <p>攻撃方法：${e.attack}</p>
+                    <p class="text-yellow-200">注意：${e.note}</p>
+                </div>
+            </div>`;
+        }
+
+        function renderEnemyCodexScreen() {
+            const container = document.getElementById('enemyCodexListContainer');
+            if (!container) return;
+            const groups = [...new Set(ENEMY_CODEX_DEFS.map(e => e.group))];
+            container.innerHTML = groups.map(g => {
+                const list = ENEMY_CODEX_DEFS.filter(e => e.group === g);
+                return `<section><h3 class="text-2xl font-bold text-red-300 mb-2">${g}</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(makeEnemyCodexCard).join('')}</div></section>`;
             }).join('');
         }
 
@@ -1438,39 +1551,39 @@
             if (!player || isOnlineMode) return;
             ensureProgressionData();
             const u = userData.unlocks.legendaryWeapons || {};
-            if (u.neonLance) {
+            if (u.neonLance && isLegendaryWeaponEnabled('neonLance')) {
                 if (!player.legendaryNeonLanceLevel) pool.push({ name:'【伝説】ネオンランス', desc:'通常弾が貫通する黄金弾になる', color:'#facc15', icon:'🔱', apply:()=>{ player.legendaryNeonLanceLevel = 1; player.damage *= 1.15; }});
                 else if (player.legendaryNeonLanceLevel < 5) pool.push({ name:'ネオンランス強化', desc:'黄金弾の威力・貫通数UP', color:'#facc15', icon:'🔱', apply:()=>{ player.legendaryNeonLanceLevel++; player.damage *= 1.1; }});
             }
-            if (u.phoenixCore) {
+            if (u.phoenixCore && isLegendaryWeaponEnabled('phoenixCore')) {
                 if (!player.legendaryPhoenixCoreLevel) pool.push({ name:'【伝説】フェニックスコア', desc:'倒されても1回だけ復活する', color:'#fb7185', icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel = 1; player.phoenixRevived = false; }});
                 else if (player.legendaryPhoenixCoreLevel < 3) pool.push({ name:'フェニックスコア強化', desc:'復活時のHPと爆発威力UP', color:'#fb7185', icon:'🔥', apply:()=>{ player.legendaryPhoenixCoreLevel++; }});
             }
-            if (u.starfallCrown) {
+            if (u.starfallCrown && isLegendaryWeaponEnabled('starfallCrown')) {
                 if (!player.legendaryStarfallLevel) pool.push({ name:'【伝説】星落としの王冠', desc:'一定間隔で星の爆発を起こす', color:'#fde68a', icon:'👑', apply:()=>{ player.legendaryStarfallLevel = 1; player.starfallTimer = 0; }});
                 else if (player.legendaryStarfallLevel < 5) pool.push({ name:'星落としの王冠 強化', desc:'星爆発の頻度・威力UP', color:'#fde68a', icon:'👑', apply:()=>{ player.legendaryStarfallLevel++; }});
             }
-            if (u.voidCollector) {
+            if (u.voidCollector && isLegendaryWeaponEnabled('voidCollector')) {
                 if (!player.legendaryVoidCollectorLevel) pool.push({ name:'【伝説】虚空コレクター', desc:'経験値吸収と成長速度が上がる', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel = 1; player.expBoost *= 1.3; }});
                 else if (player.legendaryVoidCollectorLevel < 5) pool.push({ name:'虚空コレクター強化', desc:'経験値ボーナスと吸収範囲UP', color:'#a78bfa', icon:'🌌', apply:()=>{ player.legendaryVoidCollectorLevel++; player.expBoost *= 1.15; }});
             }
-            if (u.railCannon) {
+            if (u.railCannon && isLegendaryWeaponEnabled('railCannon')) {
                 if (!player.legendaryRailCannonLevel) pool.push({ name:'【神話】レールキャノン', desc:'通常弾が超高速・超貫通のレール弾になる', color:'#67e8f9', icon:'🔭', apply:()=>{ player.legendaryRailCannonLevel = 1; player.damage *= 1.25; player.pierce += 4; player.bulletSpeed += 5; }});
                 else if (player.legendaryRailCannonLevel < 5) pool.push({ name:'レールキャノン強化', desc:'レール弾の威力・速度・貫通数UP', color:'#67e8f9', icon:'🔭', apply:()=>{ player.legendaryRailCannonLevel++; player.damage *= 1.12; player.pierce += 2; player.bulletSpeed += 1.5; }});
             }
-            if (u.blackholeEmperor) {
+            if (u.blackholeEmperor && isLegendaryWeaponEnabled('blackholeEmperor')) {
                 if (!player.legendaryBlackholeEmperorLevel) pool.push({ name:'【神話】ブラックホールエンペラー', desc:'一定間隔で敵を吸い込む重力核を作る', color:'#a855f7', icon:'⚫', apply:()=>{ player.legendaryBlackholeEmperorLevel = 1; player.blackholeEmperorTimer = 0; }});
                 else if (player.legendaryBlackholeEmperorLevel < 5) pool.push({ name:'ブラックホールエンペラー強化', desc:'重力核の範囲・威力・発動頻度UP', color:'#a855f7', icon:'⚫', apply:()=>{ player.legendaryBlackholeEmperorLevel++; }});
             }
-            if (u.thunderAegis) {
+            if (u.thunderAegis && isLegendaryWeaponEnabled('thunderAegis')) {
                 if (!player.legendaryThunderAegisLevel) pool.push({ name:'【神話】サンダーイージス', desc:'防御力を上げ、雷の反撃を出す', color:'#38bdf8', icon:'🛡️⚡', apply:()=>{ player.legendaryThunderAegisLevel = 1; player.armorRate = Math.min(0.62, player.armorRate + 0.08); player.thunderAegisTimer = 0; }});
                 else if (player.legendaryThunderAegisLevel < 5) pool.push({ name:'サンダーイージス強化', desc:'防御力と雷反撃の威力UP', color:'#38bdf8', icon:'🛡️⚡', apply:()=>{ player.legendaryThunderAegisLevel++; player.armorRate = Math.min(0.68, player.armorRate + 0.04); }});
             }
-            if (u.solarDrill) {
+            if (u.solarDrill && isLegendaryWeaponEnabled('solarDrill')) {
                 if (!player.legendarySolarDrillLevel) pool.push({ name:'【神話】ソーラードリル', desc:'敵の密集地に太陽レーザーを落とす', color:'#fb923c', icon:'☀️', apply:()=>{ player.legendarySolarDrillLevel = 1; player.solarDrillTimer = 0; }});
                 else if (player.legendarySolarDrillLevel < 5) pool.push({ name:'ソーラードリル強化', desc:'レーザーの威力と頻度UP', color:'#fb923c', icon:'☀️', apply:()=>{ player.legendarySolarDrillLevel++; }});
             }
-            if (u.chronoLotus) {
+            if (u.chronoLotus && isLegendaryWeaponEnabled('chronoLotus')) {
                 if (!player.legendaryChronoLotusLevel) pool.push({ name:'【神話】クロノロータス', desc:'時間波で敵をまとめて削る', color:'#f0abfc', icon:'🪷', apply:()=>{ player.legendaryChronoLotusLevel = 1; player.chronoLotusTimer = 0; }});
                 else if (player.legendaryChronoLotusLevel < 5) pool.push({ name:'クロノロータス強化', desc:'時間波の範囲・威力・頻度UP', color:'#f0abfc', icon:'🪷', apply:()=>{ player.legendaryChronoLotusLevel++; }});
             }
@@ -2426,7 +2539,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'enemyCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2514,6 +2627,8 @@
             localStorage.setItem('neon_survivor_light_mode', isLightMode ? '1' : '0');
             const t = document.getElementById('lightModeToggle');
             if (t) t.checked = isLightMode;
+            const pt = document.getElementById('pauseLightModeToggle');
+            if (pt) pt.checked = isLightMode;
             // 背景星の数を作り直す。重い端末ではここが効く。
             bgStars = [];
         }
@@ -4939,6 +5054,8 @@
                         } else if (soloMapBlackHole) {
                             pullPower *= 0.46;
                         }
+
+                        // 2026-05-03再調整：周りの吸い込み力は元に戻し、中心付近だけ上の上限処理で2/3にする。
                         player.x += Math.cos(a) * pullPower;
                         player.y += Math.sin(a) * pullPower;
 
@@ -7246,6 +7363,7 @@
         document.getElementById('openCollectionBtn').addEventListener('click', () => { renderCollectionScreen(); showScreen('collectionScreen'); });
         document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('openWeaponCodexBtn')?.addEventListener('click', () => { renderWeaponCodexScreen(); showScreen('weaponCodexScreen'); });
+        document.getElementById('openEnemyCodexBtn')?.addEventListener('click', () => { renderEnemyCodexScreen(); showScreen('enemyCodexScreen'); });
         document.getElementById('closeWeaponCodexBtn')?.addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('closeOnlineRoleBtn')?.addEventListener('click', () => { selectedOnlineRoleId = null; showScreen('startScreen'); });
         document.getElementById('tutorialStartBtn')?.addEventListener('click', closeTutorialOverlay);
