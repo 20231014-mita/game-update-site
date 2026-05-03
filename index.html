@@ -209,7 +209,6 @@
                 <button id="openMissionBtn" class="btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer">MISSIONS</button>
                 <button id="openCollectionBtn" class="btn-green menu-secondary px-6 py-3 font-bold rounded cursor-pointer">COLLECTION</button>
                 <button id="openWeaponCodexBtn" class="btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer">WEAPON CODEX<br><span class="text-xs text-cyan-100 font-bold">武器図鑑をすぐ見る</span></button>
-                <button id="openEnemyCodexBtn" class="btn-red menu-secondary px-6 py-3 font-bold rounded cursor-pointer">ENEMY CODEX<br><span class="text-xs text-red-100 font-bold">敵のHP・攻撃を見る</span></button>
                 <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-500 flex items-center justify-between gap-3">
                     <span class="text-cyan-300 font-bold text-sm tracking-wider">ジョイスティック</span>
                     <label class="flex items-center cursor-pointer gap-3">
@@ -319,19 +318,6 @@
         </div>
     </div>
 
-    <div id="enemyCodexScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3">
-        <div class="menu-panel w-full flex flex-col gap-4">
-            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                <div>
-                    <h2 class="text-4xl md:text-5xl font-bold text-red-300" style="font-family: 'Orbitron', sans-serif; text-shadow:0 0 15px #ef4444;">ENEMY CODEX</h2>
-                    <p class="text-gray-300 text-sm mt-2">敵のHP・攻撃方法・注意点を確認できます。HPは時間やレベルで増えます。</p>
-                </div>
-                <button id="closeEnemyCodexBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
-            </div>
-            <div id="enemyCodexListContainer" class="overflow-y-auto max-h-[72vh] pr-1 space-y-4"></div>
-        </div>
-    </div>
-
     <div id="onlineRoleScreen" class="absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[57] hidden p-3">
         <div class="menu-panel w-full flex flex-col gap-4">
             <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
@@ -423,6 +409,8 @@
         let currentMissionFilter = 'RECOMMENDED';
         
         let isLavaDomainActive = false;
+        // 最恐大猿王の復活は1プレイ中1回だけにする。
+        let apeOverlordReviveUsed = false;
         let lavaDomainTimer = 0;
         const LAVA_DOMAIN_MAX_TIME = 45 * 60;
         const restrictedSkills = ['kamehameha', 'orbitalStrike', 'hollowMurasaki', 'unibeam', 'keraunos', 'infinitySnap', 'infiniteBlade', 'funnel', 'disneyMagic', 'muryoku'];
@@ -435,6 +423,11 @@
         const NSV_BALANCE_20260502 = {
             // 2026-05-03調整：中心の吸い込み力だけ2/3。周りの吸い込み力は元の強さに戻す。
             mapBlackHoleCenterPullMult: 2 / 3,
+            // 2026-05-03追加：今回はブラックホール全体の吸い込み力も現在の2/3にする。
+            mapBlackHoleTotalPullMult: 2 / 3,
+            // ブラックホールエンペラーは範囲を2/3にした分、中心部だけ少し強くする。
+            blackholeEmperorRangeMult: 2 / 3,
+            blackholeEmperorCenterDamageMult: 1.25,
             sniperSpeedMult: 2,
             sniperHoming: 0.032,
             ricochetSniperHoming: 0.018,
@@ -1408,6 +1401,24 @@
             renderWeaponCodexScreen();
         }
 
+        function getMissionWeaponToggleReason(w, enabled, unlockedMissionWeapon) {
+            if (!isMissionWeaponCodexItem(w)) return '';
+            if (!unlockedMissionWeapon) return 'まだミッションで解放していないので、出現設定は変更できません。';
+            const easy = {
+                neonLance: 'ON：通常弾を強くしたい時におすすめ。OFF：近距離・範囲武器だけで遊びたい時。',
+                phoenixCore: 'ON：1回復活できて安心。OFF：復活なしの高難度で挑みたい時。',
+                starfallCrown: 'ON：広い範囲を自動で攻撃したい時。OFF：画面を軽くしたい時。',
+                voidCollector: 'ON：経験値を集めて早く成長したい時。OFF：成長をゆっくりにしたい時。',
+                railCannon: 'ON：遠距離の高火力がほしい時。OFF：近距離武器中心で遊びたい時。',
+                blackholeEmperor: 'ON：敵をまとめて倒したい時。OFF：吸い込み系を減らして見やすくしたい時。',
+                thunderAegis: 'ON：守りを強くしたい時。OFF：攻撃特化にしたい時。',
+                solarDrill: 'ON：ボス火力を上げたい時。OFF：派手なレーザーを減らしたい時。',
+                chronoLotus: 'ON：時間波で安定して戦いたい時。OFF：処理を軽くしたい時。',
+                phantomStep: 'ON：回避力を上げたい時。OFF：移動スキルなしで遊びたい時。'
+            };
+            return easy[w.id] || (enabled ? 'ON：この解放武器がレベルアップ候補に出ます。' : 'OFF：この解放武器はレベルアップ候補に出ません。');
+        }
+
         function makeWeaponCodexCard(w) {
             ensureProgressionData();
             const used = isWeaponCodexUsed(w.id);
@@ -1420,7 +1431,8 @@
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span class="text-xs font-bold ${enabled?'text-green-300':'text-red-300'}">出現：${enabled?'ON':'OFF'}</span>
                         <input type="checkbox" class="mission-weapon-toggle w-5 h-5" data-id="${w.id}" ${enabled?'checked':''}>
-                    </label>` : `<p class="text-xs text-gray-500">未解放なので出現設定はまだ変更できません。</p>`}
+                    </label>
+                    <p class="text-[11px] text-gray-300 mt-2 leading-relaxed">${getMissionWeaponToggleReason(w, enabled, unlockedMissionWeapon)}</p>` : `<p class="text-xs text-gray-500">未解放なので出現設定はまだ変更できません。</p>`}
                 </div>` : '';
             return `<div class="collection-card ${used || unlockedMissionWeapon ? 'unlocked':''}">
                 <div class="flex items-start justify-between gap-2">
@@ -1460,55 +1472,6 @@
             });
         }
 
-
-        const ENEMY_CODEX_DEFS = [
-            { group:'通常敵', icon:'🔴', name:'通常ネオン', hp:'約30 × 時間補正', damage:'約15', attack:'近づいて体当たり', note:'一番基本の敵。数が増えると危険。' },
-            { group:'通常敵', icon:'🟠', name:'高速ランナー', hp:'約15 × 時間補正', damage:'約7.5', attack:'速く近づいて体当たり', note:'HPは低いが、足が速い。' },
-            { group:'通常敵', icon:'🟣', name:'タンク', hp:'約120 × 時間補正', damage:'約37.5', attack:'ゆっくり近づいて重い体当たり', note:'硬いので範囲攻撃で削ると安全。' },
-            { group:'通常敵', icon:'🟢', name:'シューター', hp:'約22.5 × 時間補正', damage:'約7.5', attack:'近づきながら弾を撃つ', note:'距離を取ってくるので早めに倒す。' },
-            { group:'通常敵', icon:'🟪', name:'小型スピード敵', hp:'約1.5', damage:'約7.5', attack:'超高速で体当たり', note:'HPは低いが、急に近づく。' },
-            { group:'追加敵', icon:'💥', name:'爆弾敵', hp:'約25 × 時間補正', damage:'約35', attack:'近づくと爆発', note:'爆発範囲に入る前に倒す。' },
-            { group:'追加敵', icon:'⭐', name:'召喚型', hp:'約95 × 時間補正', damage:'約8', attack:'敵を呼ぶ・接触攻撃', note:'放置すると敵が増えやすい。' },
-            { group:'追加敵', icon:'🛡️', name:'シールド型', hp:'約120 × 時間補正', damage:'約18', attack:'守りながら接近', note:'少し硬め。貫通武器が有効。' },
-            { group:'強化敵', icon:'⚡', name:'SPEED', hp:'約18 × 時間補正', damage:'約10', attack:'高速で追跡', note:'移動速度がとても高い。' },
-            { group:'強化敵', icon:'🪨', name:'TANK', hp:'約260 × 時間補正', damage:'約34', attack:'硬い体当たり', note:'倒すのに時間がかかる。' },
-            { group:'強化敵', icon:'🏹', name:'SHOOTER', hp:'約74 × 時間補正', damage:'約12', attack:'距離を取りながら射撃', note:'弾を避けつつ近づかれないようにする。' },
-            { group:'強化敵', icon:'💣', name:'BOMBER', hp:'約55 × 時間補正', damage:'約42', attack:'近づくと大きめに爆発', note:'近距離で倒すと危険。' },
-            { group:'強化敵', icon:'🐌', name:'SLOW', hp:'約82 × 時間補正', damage:'約13', attack:'近距離でプレイヤーを遅くする', note:'囲まれている時に受けると危険。' },
-            { group:'強化敵', icon:'🟣', name:'GRAVITY', hp:'約135 × 時間補正', damage:'約18', attack:'重力で押す・動きを崩す', note:'位置取りを崩されやすい。' },
-            { group:'ボス', icon:'👹', name:'中ボス', hp:'約250 × プレイヤーレベル × 1.5', damage:'約45', attack:'大きめの体当たり', note:'倒すと回復しやすい。' },
-            { group:'ボス', icon:'🔴', name:'通常ボス', hp:'約1500 × レベル補正 × 1.5', damage:'約60', attack:'VOID / THUNDER / FIRE / MIRROR 系のパターン攻撃', note:'攻撃パターンを見て距離を取る。' },
-            { group:'ボス', icon:'🐵', name:'大猿王', hp:'約10000 × レベル補正 × 1.5 × 2', damage:'約300', attack:'高速移動・強力な近距離攻撃', note:'かなり危険。回避優先。' },
-            { group:'ボス', icon:'🔥', name:'最恐大猿王', hp:'約60000 × レベル補正 × パワー', damage:'約360 × パワー', attack:'炎・復活・強力な近距離攻撃', note:'長期戦になる最上位ボス。' }
-        ];
-
-        function makeEnemyCodexCard(e) {
-            return `<div class="collection-card">
-                <div class="flex items-start gap-3">
-                    <div class="text-3xl">${e.icon}</div>
-                    <div>
-                        <p class="text-xs text-red-200 font-bold">${e.group}</p>
-                        <h3 class="font-bold text-white text-lg">${e.name}</h3>
-                    </div>
-                </div>
-                <div class="text-sm text-gray-300 mt-3 space-y-1">
-                    <p>HP：${e.hp}</p>
-                    <p>攻撃力：${e.damage}</p>
-                    <p>攻撃方法：${e.attack}</p>
-                    <p class="text-yellow-200">注意：${e.note}</p>
-                </div>
-            </div>`;
-        }
-
-        function renderEnemyCodexScreen() {
-            const container = document.getElementById('enemyCodexListContainer');
-            if (!container) return;
-            const groups = [...new Set(ENEMY_CODEX_DEFS.map(e => e.group))];
-            container.innerHTML = groups.map(g => {
-                const list = ENEMY_CODEX_DEFS.filter(e => e.group === g);
-                return `<section><h3 class="text-2xl font-bold text-red-300 mb-2">${g}</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(makeEnemyCodexCard).join('')}</div></section>`;
-            }).join('');
-        }
 
         function renderCollectionScreen() {
             ensureProgressionData();
@@ -1626,8 +1589,16 @@
             let target = enemies.find(e => (e.isBoss || e.isMonkey) && !e.markedForDeletion) || enemies.find(e => !e.isCharmed && !e.markedForDeletion);
             const tx = target ? target.x : player.x + Math.cos(player.faceAngle) * 180;
             const ty = target ? target.y : player.y + Math.sin(player.faceAngle) * 180;
-            if (gravityPulsars.length < 12) gravityPulsars.push(new GravityPulsar(tx, ty, 35 + level * 22, level + 3));
-            effects.push(new Shockwave(tx, ty, '#a855f7', 8, 220 + level * 40));
+            // ブラックホールエンペラーの範囲を2/3にし、その分中心部だけ少し強くする。
+            const emperorRangeMult = NSV_BALANCE_20260502.blackholeEmperorRangeMult || (2 / 3);
+            if (gravityPulsars.length < 12) {
+                const core = new GravityPulsar(tx, ty, 35 + level * 22, level + 3);
+                core.radius *= emperorRangeMult;
+                core.isBlackholeEmperorCore = true;
+                core.centerDamageMult = NSV_BALANCE_20260502.blackholeEmperorCenterDamageMult || 1.25;
+                gravityPulsars.push(core);
+            }
+            effects.push(new Shockwave(tx, ty, '#a855f7', 8, (220 + level * 40) * emperorRangeMult));
             floatingTexts.push(new FloatingText(tx, ty - 35, 'BLACKHOLE CORE', '#a855f7', 22));
         }
 
@@ -2539,7 +2510,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'enemyCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -3051,7 +3022,7 @@
                 return;
             }
             
-            if (player.pendingOverlordBoss) { type = 8; player.pendingOverlordBoss = false; triggerBossWarning(); }
+            if (player.pendingOverlordBoss) { type = 8; player.pendingOverlordBoss = false; triggerBossWarning(); triggerMonkeyDomain(); }
             else if (player.pendingMonkeyBoss) { type = 7; player.pendingMonkeyBoss = false; player.pendingOverlordBoss = false; triggerMonkeyDomain(); }
             else if (player.pendingBossSpawn) { type = 3; player.pendingBossSpawn = false; triggerBossWarning(); } 
             else if (player.pendingMidBossSpawn) { type = 4; player.pendingMidBossSpawn = false; } 
@@ -4398,7 +4369,7 @@
                     }
                     if (this.timer % 5 === 0) {
                         let a = Math.random() * Math.PI * 2; let r = this.radius * 1.5;
-                        createParticles(this.x + Math.cos(a)*r, this.y + Math.sin(a)*r, 5, '#8b5cf6', 4);
+                        createParticles(this.x + Math.cos(a)*r, this.y + Math.sin(a)*r, isLightMode ? 2 : 5, '#8b5cf6', 4);
                     }
                 } else if (this.timer === this.maxTime - 30) {
                     Sound.playNoise(1.0, 0.5); triggerShake(80); whiteFlash = 1.0;
@@ -4420,7 +4391,7 @@
                     ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * 1.1), 0, Math.PI*2);
                     ctx.strokeStyle = `rgba(139, 92, 246, ${Math.random()})`; ctx.lineWidth = 5; ctx.stroke();
                     ctx.rotate(this.timer * 0.1);
-                    for(let i=0; i<4; i++){
+                    for(let i=0; i<(isLightMode ? 2 : 4); i++){
                         ctx.beginPath(); ctx.ellipse(0, 0, safeR(this.radius*1.5), safeR(this.radius*0.2), 0, 0, Math.PI*2);
                         ctx.strokeStyle = `rgba(167, 139, 250, 0.5)`; ctx.stroke(); ctx.rotate(Math.PI/4);
                     }
@@ -4743,8 +4714,10 @@
                 this.timer++;
                 if (this.timer % 15 === 0) { 
                     for (let t of enemies) {
-                        if (!t.isCharmed && !t.markedForDeletion && MathUtils.distance(this.x, this.y, t.x, t.y) < this.radius) {
-                            t.takeDamage(this.damage);
+                        const distToCore = MathUtils.distance(this.x, this.y, t.x, t.y);
+                        if (!t.isCharmed && !t.markedForDeletion && distToCore < this.radius) {
+                            const centerBoost = (this.isBlackholeEmperorCore && distToCore < this.radius * 0.32) ? (this.centerDamageMult || 1.25) : 1;
+                            t.takeDamage(this.damage * centerBoost);
                             let angle = MathUtils.angle(t.x, t.y, this.x, this.y);
                             t.x += Math.cos(angle) * 3; t.y += Math.sin(angle) * 3;
                         }
@@ -5022,7 +4995,7 @@
                 this.damageTick = -999;
                 this.instabilitySeed = Math.random() * Math.PI * 2;
                 this.surgeTimer = 0;
-                this.starDust = Array.from({ length: 140 }, () => ({
+                this.starDust = Array.from({ length: (isLightMode ? 60 : 140) }, () => ({
                     a: Math.random() * Math.PI * 2,
                     d: MathUtils.random(140, 1000),
                     s: MathUtils.random(0.003, 0.016),
@@ -5055,7 +5028,9 @@
                             pullPower *= 0.46;
                         }
 
-                        // 2026-05-03再調整：周りの吸い込み力は元に戻し、中心付近だけ上の上限処理で2/3にする。
+                        // 2026-05-03再調整：ブラックホール全体の吸い込み力を現在の2/3にする。
+                        // 中心付近は上の上限処理も残るので、急に抜け出せないほど強くならない。
+                        pullPower *= (NSV_BALANCE_20260502.mapBlackHoleTotalPullMult || 1);
                         player.x += Math.cos(a) * pullPower;
                         player.y += Math.sin(a) * pullPower;
 
@@ -5081,10 +5056,10 @@
                     }
                 }
 
-                if (this.timer % 8 === 0) {
+                if (this.timer % (isLightMode ? 18 : 8) === 0) {
                     const a = Math.random() * Math.PI * 2;
                     const d = MathUtils.random(this.eventRadius + 80, this.radius);
-                    createParticles(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d, 2, Math.random() > 0.5 ? '#f59e0b' : '#60a5fa', 2);
+                    createParticles(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d, isLightMode ? 1 : 2, Math.random() > 0.5 ? '#f59e0b' : '#60a5fa', 2);
                 }
             }
             draw(ctx) {
@@ -5100,7 +5075,9 @@
                 ctx.fillStyle = lens;
                 ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * pulse), 0, Math.PI * 2); ctx.fill();
 
+                let __bhDustIndex = 0;
                 for (const dust of this.starDust) {
+                    if (isLightMode && (__bhDustIndex++ % 2 === 1)) continue;
                     const a = dust.a + this.timer * dust.s;
                     const squeeze = 0.22 + 0.07 * Math.sin(a * 2 + this.timer * 0.01);
                     const x = Math.cos(a) * dust.d;
@@ -6359,18 +6336,32 @@
                     if(effects.length < 50) effects.push(new Shockwave(this.x, this.y, this.isBoss || this.isMonkey ? '#ff0000' : '#ff6600', 15, 800));
                     triggerShake(this.isMonkey ? 60 : 40);
                     if(floatingTexts.length < 100) floatingTexts.push(new FloatingText(this.x, this.y - 50, this.isMonkey ? "MONKEY KING DEFEATED!" : "BOSS DEFEATED!", '#ff0000', 40));
+                    // 2026-05-03追加：ボス撃破時に短いリザルト演出を出して達成感を上げる。
+                    if (typeof showBossClearResult === 'function') showBossClearResult(this);
                     
                     if (this.isMonkey && isLavaDomainActive) {
                         triggerDomainCollapse();
                     }
-                    if (this.isApeOverlord && !isOnlineMode) {
+                    if (this.isApeOverlord && !isOnlineMode && !apeOverlordReviveUsed) {
+                        // 最恐大猿王の復活は1プレイ中1回だけ。
+                        apeOverlordReviveUsed = true;
                         const reviveX = this.x, reviveY = this.y;
                         const nextPower = Math.min(4, (this.overlordPower || 1) + 0.35);
-                        floatingTexts.push(new FloatingText(this.x, this.y - 100, '7秒後に復活...', '#fb923c', 28));
+                        floatingTexts.push(new FloatingText(this.x, this.y - 100, '7秒後に1回だけ復活...', '#fb923c', 28));
                         setTimeout(() => {
                             if (gameState === 'playing' && player && !isOnlineMode) {
-                                enemies.push(new Enemy(reviveX, reviveY, 8, nextPower));
-                                showCustomCutin('復活', '最恐大猿王', '#fb923c');
+                                const secondApe = new Enemy(reviveX, reviveY, 8, nextPower);
+                                secondApe.isApeOverlordSecondPhase = true;
+                                secondApe.secondPhasePatternTimer = 0;
+                                secondApe.color = '#dc2626';
+                                secondApe.hp *= 1.08;
+                                secondApe.maxHp = secondApe.hp;
+                                secondApe.damage *= 1.08;
+                                enemies.push(secondApe);
+                                showCustomCutin('第二形態', '最恐大猿王', '#fb923c');
+                                floatingTexts.push(new FloatingText(reviveX, reviveY - 140, '第二形態に変化！', '#fb923c', 30));
+                                // 復活後の最恐大猿王も領域展開する。
+                                triggerMonkeyDomain();
                                 createParticles(reviveX, reviveY, 90, '#fb923c', 8);
                                 triggerShake(22);
                             }
@@ -6575,12 +6566,12 @@
                         if (d < this.core + player.radius && this.timer - this.damageTick > 35) { this.damageTick = this.timer; player.takeDamage(18); }
                     }
                 }
-                if (this.timer % 12 === 0) createParticles(this.x + MathUtils.random(-this.radius,this.radius), this.y + MathUtils.random(-this.radius,this.radius), 1, '#a855f7', 3);
+                if (this.timer % (isLightMode ? 28 : 12) === 0) createParticles(this.x + MathUtils.random(-this.radius,this.radius), this.y + MathUtils.random(-this.radius,this.radius), 1, '#a855f7', 3);
                 if (this.timer > this.maxTime) this.markedForDeletion = true;
             }
             draw(ctx) {
                 ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.globalCompositeOperation='screen'; ctx.rotate(this.timer*.04);
-                ctx.beginPath(); ctx.ellipse(0,0,this.radius*.9,this.radius*.25,0,0,Math.PI*2); ctx.strokeStyle='rgba(168,85,247,.65)'; ctx.lineWidth=6; ctx.shadowBlur=26; ctx.shadowColor='#a855f7'; ctx.stroke();
+                ctx.beginPath(); ctx.ellipse(0,0,this.radius*.9,this.radius*.25,0,0,Math.PI*2); ctx.strokeStyle=isLightMode ? 'rgba(168,85,247,.42)' : 'rgba(168,85,247,.65)'; ctx.lineWidth=isLightMode ? 4 : 6; ctx.shadowBlur=isLightMode ? 10 : 26; ctx.shadowColor='#a855f7'; ctx.stroke();
                 ctx.globalCompositeOperation='source-over'; ctx.beginPath(); ctx.arc(0,0,this.core,0,Math.PI*2); ctx.fillStyle='#020617'; ctx.fill(); ctx.restore();
             }
         }
@@ -7075,8 +7066,22 @@
             
             if (currentBoss && !isTimeStopped) { 
                 bossHpContainer.classList.remove('hidden'); 
-                document.getElementById('bossHpBar').style.width = `${Math.max(0, (currentBoss.hp / currentBoss.maxHp) * 100)}%`; 
-                document.getElementById('bossNameDisplay').innerText = currentBoss.isApeOverlord ? "DEMON APE OVERLORD" : (currentBoss.isMonkey ? "MONKEY KING" : (currentBoss.bossPattern || "BOSS"));
+                const bossHpBar = document.getElementById('bossHpBar');
+                const bossNameEl = document.getElementById('bossNameDisplay');
+                bossHpBar.style.width = `${Math.max(0, (currentBoss.hp / currentBoss.maxHp) * 100)}%`; 
+                bossNameEl.innerText = currentBoss.isApeOverlordSecondPhase ? "DEMON APE OVERLORD 第二形態" : (currentBoss.isApeOverlord ? "DEMON APE OVERLORD" : (currentBoss.isMonkey ? "MONKEY KING" : (currentBoss.bossPattern || "BOSS")));
+                // 2026-05-03追加：第二形態はHPバーを赤から紫にして、今どの形態か分かりやすくする。
+                if (currentBoss.isApeOverlordSecondPhase) {
+                    bossNameEl.className = 'text-center text-purple-400 font-bold text-xl md:text-2xl mb-1 tracking-widest';
+                    bossNameEl.style.textShadow = '0 0 12px #a855f7';
+                    bossHpBar.className = 'absolute top-0 left-0 h-full bg-purple-600 shadow-[0_0_15px_#a855f7] transition-all duration-100';
+                    bossHpBar.parentElement.style.borderColor = '#7e22ce';
+                } else {
+                    bossNameEl.className = 'text-center text-red-500 font-bold text-xl md:text-2xl mb-1 tracking-widest';
+                    bossNameEl.style.textShadow = '0 0 10px red';
+                    bossHpBar.className = 'absolute top-0 left-0 h-full bg-red-600 shadow-[0_0_15px_red] transition-all duration-100';
+                    bossHpBar.parentElement.style.borderColor = '#991b1b';
+                }
             } else { bossHpContainer.classList.add('hidden'); }
             
             camera.x = player ? player.x - w / 2 : 0; camera.y = player ? player.y - h / 2 : 0;
@@ -7138,7 +7143,7 @@
             ctx.save();
             ctx.font = 'bold 12px Orbitron, Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
             ctx.shadowBlur = 10; ctx.shadowColor = '#000';
-            ctx.fillText(boss.isApeOverlord ? 'OVERLORD' : (boss.isMonkey ? 'MONKEY' : 'BOSS'), edgeX, edgeY - 22);
+            ctx.fillText(boss.isApeOverlordSecondPhase ? '第二形態' : (boss.isApeOverlord ? 'OVERLORD' : (boss.isMonkey ? 'MONKEY' : 'BOSS')), edgeX, edgeY - 22);
             ctx.restore();
         }
 
@@ -7331,7 +7336,7 @@
             
             frameCount = 0; gameTime = 0; score = 0; isTimeStopped = false; isMuryokushoActive = false;
             if (isOnlineMode) startOnlineMode(); else stopOnlineMode();
-            isLavaDomainActive = false; lavaDomainTimer = 0; document.getElementById('lavaOverlay').classList.remove('active'); document.getElementById('domainTimerContainer').classList.add('hidden');
+            isLavaDomainActive = false; apeOverlordReviveUsed = false; lavaDomainTimer = 0; document.getElementById('lavaOverlay').classList.remove('active'); document.getElementById('domainTimerContainer').classList.add('hidden');
             
             whiteFlash = 0; purpleFlash = 0; blueFlash = 0; redFlash = 0; timeAccumulator = 0; gameSpeedMultiplier = 1.0;
             const speedRadios = document.getElementsByName('gameSpeed'); for(let r of speedRadios) { if(r.value === "1.0") r.checked = true; }
@@ -7363,7 +7368,6 @@
         document.getElementById('openCollectionBtn').addEventListener('click', () => { renderCollectionScreen(); showScreen('collectionScreen'); });
         document.getElementById('closeCollectionBtn').addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('openWeaponCodexBtn')?.addEventListener('click', () => { renderWeaponCodexScreen(); showScreen('weaponCodexScreen'); });
-        document.getElementById('openEnemyCodexBtn')?.addEventListener('click', () => { renderEnemyCodexScreen(); showScreen('enemyCodexScreen'); });
         document.getElementById('closeWeaponCodexBtn')?.addEventListener('click', () => { showScreen('startScreen'); });
         document.getElementById('closeOnlineRoleBtn')?.addEventListener('click', () => { selectedOnlineRoleId = null; showScreen('startScreen'); });
         document.getElementById('tutorialStartBtn')?.addEventListener('click', closeTutorialOverlay);
@@ -7744,10 +7748,35 @@
                 triggerAdvancedBossPattern = function(boss) {
                     if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
                     boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 140)) + 1;
-                    const interval = boss.isMonkey ? 300 : boss.isMidBoss ? 420 : 360; // about half as frequent
+                    const interval = boss.isApeOverlordSecondPhase ? 240 : (boss.isMonkey ? 300 : boss.isMidBoss ? 420 : 360); // 第二形態だけ少し攻撃テンポを変える
                     if (boss.nsvBossPatternTimer < interval) return;
                     boss.nsvBossPatternTimer = 0;
                     const a = MathUtils.angle(boss.x, boss.y, player.x, player.y);
+                    if (boss.isApeOverlordSecondPhase) {
+                        const phaseRoll = Math.random();
+                        if (phaseRoll < 0.34) {
+                            for (let i = 0; i < 3; i++) {
+                                const ang = a + (i - 1) * 0.38;
+                                effects.push(new BossConeBeam(boss.x, boss.y, ang, 20));
+                            }
+                            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM BEAM', '#fb923c', 16));
+                            return;
+                        }
+                        if (phaseRoll < 0.68) {
+                            effects.push(new BossWarningExplosion(player.x + MathUtils.random(-110,110), player.y + MathUtils.random(-110,110), 250, 26));
+                            effects.push(new BossWarningExplosion(player.x + MathUtils.random(-220,220), player.y + MathUtils.random(-220,220), 190, 20));
+                            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM SMASH', '#ef4444', 16));
+                            return;
+                        }
+                        const bh = new BossTemporaryBlackHole(player.x - Math.cos(a) * 90, player.y - Math.sin(a) * 90);
+                        bh.pull *= 0.62;
+                        bh.damage = Math.max(1, Math.floor((bh.damage || 8) * 0.6));
+                        bh.radius *= 0.84;
+                        bh.maxTime = Math.floor((bh.maxTime || 260) * 0.62);
+                        effects.push(bh);
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM GRAVITY', '#a855f7', 16));
+                        return;
+                    }
                     const roll = Math.random();
                     if (roll < 0.22) {
                         effects.push(new BossWarningExplosion(player.x + MathUtils.random(-150,150), player.y + MathUtils.random(-150,150), boss.isMonkey ? 230 : 180, boss.isMonkey ? 23 : 17));
@@ -7784,6 +7813,37 @@
                 };
             } catch(e) { console.warn('V3 boss pattern override skipped', e); }
         })();
+
+
+        // ===== 2026-05-03 Add-on: ボス撃破リザルト演出 =====
+        // 画面構成は大きく変えず、ボスを倒した瞬間だけ短く出る達成演出。
+        function showBossClearResult(boss) {
+            try {
+                if (!boss || gameState !== 'playing') return;
+                const old = document.getElementById('bossClearResultToast');
+                if (old) old.remove();
+                const isSecond = !!boss.isApeOverlordSecondPhase;
+                const isOverlord = !!boss.isApeOverlord || isSecond;
+                const title = isSecond ? '第二形態 撃破！' : (isOverlord ? '最恐大猿王 撃破！' : (boss.isMonkey ? 'MONKEY KING 撃破！' : 'BOSS 撃破！'));
+                const bonusText = isSecond ? '完全討伐達成' : 'HP回復 + スコア獲得';
+                const el = document.createElement('div');
+                el.id = 'bossClearResultToast';
+                el.style.cssText = 'position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:260;pointer-events:none;min-width:min(86vw,460px);text-align:center;background:rgba(0,0,0,.78);border:2px solid '+(isSecond ? '#a855f7' : '#facc15')+';border-radius:22px;padding:18px 22px;box-shadow:0 0 32px '+(isSecond ? 'rgba(168,85,247,.55)' : 'rgba(250,204,21,.45)')+';animation:bossClearPop 2.4s ease forwards;';
+                el.innerHTML = `
+                    <div style="font-family:Orbitron, sans-serif;font-weight:900;font-size:clamp(24px,5vw,42px);color:${isSecond ? '#c084fc' : '#fde047'};text-shadow:0 0 14px currentColor;">${title}</div>
+                    <div style="margin-top:8px;color:#e5e7eb;font-weight:800;font-size:16px;">${bonusText}</div>
+                    <div style="margin-top:10px;color:#67e8f9;font-weight:900;font-size:14px;letter-spacing:.08em;">CLEAR RESULT</div>
+                `;
+                if (!document.getElementById('bossClearResultStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'bossClearResultStyle';
+                    style.textContent = '@keyframes bossClearPop{0%{opacity:0;transform:translate(-50%,-20px) scale(.92)}14%{opacity:1;transform:translate(-50%,0) scale(1.02)}72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-16px) scale(.96)}}';
+                    document.head.appendChild(style);
+                }
+                document.body.appendChild(el);
+                setTimeout(() => { if (el && el.parentNode) el.remove(); }, 2500);
+            } catch(e) { console.warn('boss clear result skipped', e); }
+        }
 
     </script>
 </body>
