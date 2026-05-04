@@ -10180,7 +10180,6 @@
         box.innerHTML = [
             renderRankSection20260504('今日のハイスコア', s.today?.[today] || [], 'score'),
             renderRankSection20260504('今週のランキング', s.week?.[week] || [], 'score'),
-            renderRankSection20260504('友達コードランキング', friends, 'bestScore'),
             renderRankSection20260504('ボス討伐数ランキング', s.boss?.all || friends, 'totalBoss', '体'),
             `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">使用武器ランキング</h3>${weaponUse.length ? `<div class="mt-2">${weaponUse.slice(0,8).map((r,i)=>`<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#${i+1}</div><div><b>${nsvEscape20260504(r.name)}</b><div class="text-xs text-gray-400">使った回数</div></div><div class="text-right text-white font-bold">${Math.floor(r.count)}回</div></div>`).join('')}</div>` : '<p class="text-gray-400 text-sm mt-2">武器を使うと記録されます。</p>'}</div>`
         ].join('');
@@ -11595,6 +11594,276 @@
                 console.warn('Ultimate/no-map-blackhole/phantom patch skipped', err);
             }
         })();
+
+
+// ===== 2026-05-04 Hotfix: Reliable save code + friend-only rankings + same-row toggles =====
+(() => {
+    'use strict';
+    const HOTFIX_VERSION = '2026-05-04-save-friends-toggle-v1';
+    const KEEP_BEST_FLAG = '2026-05-04-keep-highscore-only-v3';
+
+    function nsvJsonToB64Url(obj) {
+        const json = JSON.stringify(obj || {});
+        return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+    function nsvB64UrlToJson(body) {
+        const s = String(body || '').trim().replace(/-/g, '+').replace(/_/g, '/');
+        const padded = s + '='.repeat((4 - s.length % 4) % 4);
+        return JSON.parse(decodeURIComponent(escape(atob(padded))));
+    }
+    function extractSaveCodeText(input) {
+        const t = String(input || '').trim();
+        const m = t.match(/NS[0-9]\.[A-Za-z0-9_-]+/);
+        if (m) return m[0];
+        // 旧式の長いBase64だけ貼った場合も受け取る
+        const old = t.match(/[A-Za-z0-9+/=_-]{80,}/);
+        return old ? old[0].trim() : t;
+    }
+    function compactSavePayload20260504() {
+        try { saveNicknameFromInput?.(); } catch(e) {}
+        try { ensureProgressionData?.(); } catch(e) {}
+        const nick = (typeof getNickname === 'function') ? getNickname() : (userData?.nickname || '');
+        const u = Object.assign({}, userData || {});
+        // IMPORT後に次回起動で「ハイスコア以外リセット」に巻き込まれないようにする
+        u.keepBestOnlyResetVersion = KEEP_BEST_FLAG;
+        u.resetVersion = SAVE_RESET_VERSION;
+        return { v: 4, g: 'NSV', n: nick, u };
+    }
+    async function robustDecodeSaveCode20260504(input) {
+        const rawCode = extractSaveCodeText(input);
+        if (!rawCode) throw new Error('empty');
+        if (rawCode.startsWith('NS4.')) return nsvB64UrlToJson(rawCode.slice(4));
+        // NS3は一部ブラウザでDecompressionStreamが無いと失敗するので、使える時だけ復元
+        if (rawCode.startsWith('NS3.')) {
+            const decoded = await decodeShortSaveCode(rawCode);
+            return decoded;
+        }
+        if (rawCode.startsWith('NS1.')) return nsvB64UrlToJson(rawCode.slice(4));
+        return JSON.parse(decodeURIComponent(escape(atob(rawCode))));
+    }
+    async function exportSaveCodeFixed20260504(ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); }
+        try {
+            const code = 'NS4.' + nsvJsonToB64Url(compactSavePayload20260504());
+            try { await navigator.clipboard?.writeText(code); } catch(e) {}
+            alert('セーブコードをコピーしました。\nハイスコア・進行状況・バトルパス・装備を保存しました。\n\n' + code);
+        } catch(e) {
+            console.warn('export save failed', e);
+            alert('セーブコードの発行に失敗しました。');
+        }
+    }
+    async function importSaveCodeFixed20260504(ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); }
+        const code = prompt('セーブコードを入力してください\n※「NS4.」から始まる部分だけでも、文章ごと貼ってもOKです。');
+        if (!code) return;
+        try {
+            const parsed = await robustDecodeSaveCode20260504(code);
+            const raw = parsed.u || parsed.userData || parsed;
+            if (!raw || typeof raw !== 'object') throw new Error('invalid object');
+            const upgradeBase = (createFreshUserData?.(raw.nickname || parsed.n || '')?.upgrades) || { hp:0, damage:0, speed:0, exp:0, armor:0, magnet:0, rapid:0, pierce:0 };
+            const nick = normalizeNickname(parsed.n || parsed.nickname || raw.nickname || '');
+            userData = Object.assign({}, createFreshUserData?.(nick) || {}, raw, {
+                score: Number(raw.score || 0),
+                coins: Number(raw.coins || 0),
+                nickname: nick,
+                upgrades: Object.assign({}, upgradeBase, raw.upgrades || {}),
+                resetVersion: SAVE_RESET_VERSION,
+                keepBestOnlyResetVersion: KEEP_BEST_FLAG
+            });
+            try { ensureProgressionData?.(); } catch(e) {}
+            // 念のため、各追加機能の保存場所も復元対象に残す
+            if (nick) {
+                localStorage.setItem('neon_survivor_nickname', nick);
+                const input = document.getElementById('nicknameInput');
+                if (input) input.value = nick;
+            }
+            localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
+            try { saveData?.(); } catch(e) {}
+            try { renderUpgradeScreen?.(); } catch(e) {}
+            try { renderMissionScreen?.(); } catch(e) {}
+            try { renderCollectionScreen?.(); } catch(e) {}
+            const bestEl = document.getElementById('currentBestDisplay');
+            if (bestEl) bestEl.innerText = String(userData.score || 0);
+            alert('セーブデータを復元しました。\n途中から続けられます。');
+        } catch(e) {
+            console.warn('import save failed', e);
+            alert('コードが正しくありません。\nコピーした文章全体ではなく、「NS4.」から始まるコード部分を貼ってください。');
+        }
+    }
+
+    // 既存ボタンの古いイベントより先に実行して止める
+    function bindFixedSaveButtons20260504() {
+        const ex = document.getElementById('exportBtn');
+        const im = document.getElementById('importBtn');
+        if (ex && !ex.dataset.nsvSaveFixed) {
+            ex.dataset.nsvSaveFixed = '1';
+            ex.addEventListener('click', exportSaveCodeFixed20260504, true);
+        }
+        if (im && !im.dataset.nsvSaveFixed) {
+            im.dataset.nsvSaveFixed = '1';
+            im.addEventListener('click', importSaveCodeFixed20260504, true);
+        }
+    }
+
+    // 最初の画面：スマホでもジョイスティックと軽量モードを同じ段にする
+    function patchSameRowToggles20260504() {
+        if (document.getElementById('nsvSameRowToggleStyle20260504')) return;
+        const st = document.createElement('style');
+        st.id = 'nsvSameRowToggleStyle20260504';
+        st.textContent = `
+          #nsvCleanStartScreenDone .nsv-clean-settings{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
+          #nsvCleanStartScreenDone .nsv-clean-settings > *{min-width:0!important;}
+          #nsvCleanStartScreenDone .nsv-clean-settings .bg-gray-900\/80{padding:12px!important;}
+          @media(max-width:420px){#nsvCleanStartScreenDone .nsv-clean-settings{grid-template-columns:repeat(2,minmax(0,1fr))!important;}#nsvCleanStartScreenDone .nsv-clean-settings span{font-size:.78rem!important;}#nsvCleanStartScreenDone .nsv-clean-settings .w-14{width:3rem!important;}}
+        `;
+        document.head.appendChild(st);
+    }
+
+    // ランキングを「自分＋登録した友達」との比較に統一
+    function makeFriendCodeFixed20260504() {
+        const stats = (userData && userData.stats) || {};
+        const weaponUse = Object.entries(stats.weaponUseCounts || {}).sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))[0] || ['',0];
+        const s = getLeaderboardStore20260504?.() || {};
+        const today = nsvTodayKey20260504?.() || '';
+        const week = nsvWeekKey20260504?.() || '';
+        const todays = (s.today && s.today[today]) || [];
+        const weeks = (s.week && s.week[week]) || [];
+        const myToday = Math.max(0, ...todays.filter(r => (r.name || '') === (userData.nickname || 'PLAYER')).map(r => Number(r.score || 0)), Number(score || 0));
+        const myWeek = Math.max(0, ...weeks.filter(r => (r.name || '') === (userData.nickname || 'PLAYER')).map(r => Number(r.score || 0)), Number(userData.score || 0));
+        const payload = {
+            v:2,
+            n:userData.nickname || 'PLAYER',
+            s:Math.floor(userData.score || 0),
+            ts:Math.floor(myToday || 0),
+            ws:Math.floor(myWeek || 0),
+            b:Math.floor(stats.totalBossLikeKills || 0),
+            wn:String(weaponUse[0] || ''),
+            wc:Math.floor(Number(weaponUse[1] || 0)),
+            w:week,
+            d:today
+        };
+        return nsvJsonToB64Url(payload);
+    }
+    function parseFriendCodeFixed20260504(code) {
+        try { return nsvB64UrlToJson(String(code || '').trim()); }
+        catch(e) {
+            try { return JSON.parse(decodeURIComponent(escape(atob(String(code || '').trim())))); } catch(e2) { return null; }
+        }
+    }
+    function copyFriendCodeFixed20260504(ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); }
+        const code = makeFriendCodeFixed20260504();
+        try { navigator.clipboard?.writeText(code); } catch(e) {}
+        showMissionToast?.('FRIEND CODE', '友達コードをコピーしました。対応ランキングで友達と比べられます。');
+    }
+    function addFriendCodeFixed20260504(ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); }
+        const code = prompt('友達コードを貼り付けてください');
+        const d = parseFriendCodeFixed20260504(code);
+        if (!d || !d.n) { showMissionToast?.('FRIEND CODE ERROR', 'コードを読み取れませんでした。'); return; }
+        const s = getLeaderboardStore20260504?.() || {};
+        s.friends = Array.isArray(s.friends) ? s.friends : [];
+        const entry = {
+            name:String(d.n).slice(0,12),
+            bestScore:Number(d.s || 0),
+            todayScore:Number(d.ts || d.s || 0),
+            weekScore:Number(d.ws || d.s || 0),
+            totalBoss:Number(d.b || 0),
+            weaponName:String(d.wn || ''),
+            weaponCount:Number(d.wc || 0),
+            week:d.w || '',
+            date:d.d || '',
+            time:Date.now()
+        };
+        // 同じ名前は新しいコードで上書き
+        s.friends = s.friends.filter(f => f.name !== entry.name);
+        s.friends.push(entry);
+        s.friends = s.friends.slice(-50);
+        saveLeaderboardStore20260504?.(s);
+        renderLeaderboardFixed20260504();
+        showMissionToast?.('FRIEND ADDED', `${entry.name} を友達ランキングに追加しました。`);
+    }
+    function myFriendRankEntry20260504() {
+        const stats = (userData && userData.stats) || {};
+        const s = getLeaderboardStore20260504?.() || {};
+        const today = nsvTodayKey20260504?.() || '';
+        const week = nsvWeekKey20260504?.() || '';
+        const weaponUse = Object.entries(stats.weaponUseCounts || {}).sort((a,b)=>Number(b[1]||0)-Number(a[1]||0))[0] || ['',0];
+        const todays = (s.today && s.today[today]) || [];
+        const weeks = (s.week && s.week[week]) || [];
+        return {
+            name:userData.nickname || 'YOU',
+            bestScore:Number(userData.score || 0),
+            todayScore:Math.max(0, ...todays.map(r => Number(r.score || 0)), Number(score || 0)),
+            weekScore:Math.max(0, ...weeks.map(r => Number(r.score || 0)), Number(userData.score || 0)),
+            totalBoss:Number(stats.totalBossLikeKills || 0),
+            weaponName:String(weaponUse[0] || '未記録'),
+            weaponCount:Number(weaponUse[1] || 0),
+            date:today,
+            week:week
+        };
+    }
+    function renderFriendRankSection20260504(title, rows, valueKey, suffix = '') {
+        rows = Array.isArray(rows) ? rows : [];
+        rows = rows.sort((a,b)=>Number(b[valueKey]||0)-Number(a[valueKey]||0));
+        if (!rows.length) return `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">${title}</h3><p class="text-gray-400 text-sm mt-2">友達コードを追加すると表示されます。</p></div>`;
+        return `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">${title}</h3><div class="text-xs text-yellow-200 mt-1">登録した友達との勝負</div><div class="mt-2">${rows.slice(0,8).map((r,i)=>`<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#${i+1}</div><div><b>${nsvEscape20260504?.(r.name || 'PLAYER') || r.name || 'PLAYER'}</b><div class="text-xs text-gray-400">${nsvEscape20260504?.(r.date || r.week || '') || ''}</div></div><div class="text-right text-white font-bold">${Math.floor(Number(r[valueKey] || 0)).toLocaleString()}${suffix}</div></div>`).join('')}</div></div>`;
+    }
+    function renderWeaponFriendRank20260504(rows) {
+        rows = rows.sort((a,b)=>Number(b.weaponCount||0)-Number(a.weaponCount||0));
+        return `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">使用武器ランキング</h3><div class="text-xs text-yellow-200 mt-1">自分と友達の一番使った武器で勝負</div>${rows.length ? `<div class="mt-2">${rows.slice(0,8).map((r,i)=>`<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#${i+1}</div><div><b>${nsvEscape20260504?.(r.name || 'PLAYER') || r.name}</b><div class="text-xs text-gray-400">${nsvEscape20260504?.(r.weaponName || '未記録') || r.weaponName || '未記録'}</div></div><div class="text-right text-white font-bold">${Math.floor(Number(r.weaponCount || 0))}回</div></div>`).join('')}</div>` : '<p class="text-gray-400 text-sm mt-2">まだ記録がありません。</p>'}</div>`;
+    }
+    function renderLeaderboardFixed20260504() {
+        ensureLeaderboardScreen20260504?.();
+        const box = document.getElementById('leaderboardListContainer');
+        if (!box) return;
+        const s = getLeaderboardStore20260504?.() || {};
+        const rows = [myFriendRankEntry20260504(), ...((s.friends || []).map(f => ({
+            name:f.name || 'FRIEND',
+            bestScore:Number(f.bestScore || 0),
+            todayScore:Number(f.todayScore || f.bestScore || 0),
+            weekScore:Number(f.weekScore || f.bestScore || 0),
+            totalBoss:Number(f.totalBoss || 0),
+            weaponName:f.weaponName || '未記録',
+            weaponCount:Number(f.weaponCount || 0),
+            date:f.date || '', week:f.week || ''
+        })) )];
+        box.innerHTML = [
+            renderFriendRankSection20260504('今日のハイスコア', rows, 'todayScore'),
+            renderFriendRankSection20260504('今週のランキング', rows, 'weekScore'),
+            renderFriendRankSection20260504('ボス討伐数ランキング', rows, 'totalBoss', '体'),
+            renderWeaponFriendRank20260504(rows)
+        ].join('');
+    }
+    function bindFriendRankButtons20260504() {
+        const copy = document.getElementById('copyFriendCodeBtn');
+        const add = document.getElementById('addFriendCodeBtn');
+        const open = document.getElementById('openLeaderboardBtn');
+        if (copy && !copy.dataset.nsvFriendFixed) { copy.dataset.nsvFriendFixed='1'; copy.addEventListener('click', copyFriendCodeFixed20260504, true); }
+        if (add && !add.dataset.nsvFriendFixed) { add.dataset.nsvFriendFixed='1'; add.addEventListener('click', addFriendCodeFixed20260504, true); }
+        if (open && !open.dataset.nsvFriendFixed) { open.dataset.nsvFriendFixed='1'; open.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); renderLeaderboardFixed20260504(); showScreen?.('leaderboardScreen'); }, true); }
+    }
+
+    // 元の関数も差し替えられる範囲で差し替え
+    try { exportSaveCode = exportSaveCodeFixed20260504; } catch(e) {}
+    try { importSaveCode = importSaveCodeFixed20260504; } catch(e) {}
+    try { renderLeaderboard20260504 = renderLeaderboardFixed20260504; } catch(e) {}
+    try { makeFriendCode20260504 = makeFriendCodeFixed20260504; } catch(e) {}
+    try { parseFriendCode20260504 = parseFriendCodeFixed20260504; } catch(e) {}
+
+    function bootHotfix20260504() {
+        patchSameRowToggles20260504();
+        bindFixedSaveButtons20260504();
+        try { ensureLeaderboardScreen20260504?.(); } catch(e) {}
+        bindFriendRankButtons20260504();
+        window.NSV_SAVE_FRIEND_TOGGLE_HOTFIX = HOTFIX_VERSION;
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootHotfix20260504);
+    else bootHotfix20260504();
+    setTimeout(bootHotfix20260504, 500);
+    setTimeout(bootHotfix20260504, 1500);
+})();
+
 </script>
 
 
