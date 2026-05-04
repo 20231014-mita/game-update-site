@@ -2553,8 +2553,8 @@
             else if (player.onlinePoisonLevel < 3) pool.push({ name:'トキシックトラップ強化', desc:'毒沼のサイズとダメージがUP', color:'#a3e635', icon:'☣️', apply:()=>{ player.onlinePoisonLevel += 1; }});
 
             // --- 新規オンライン武器 ---
-            if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'10秒ごとに70ダメージの誘導弾を5発放つ', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
-            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'誘導性能が少しUPし、まとまった弾幕で相手を追い込む', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
+            if ((player.onlinePhantomLevel || 0) === 0) pool.push({ name:'【追尾】ファントムダガー', desc:'より強く曲がる誘導ダガーを6発放つ。敵の周りを回りにくい改良版', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel = 1; }});
+            else if (player.onlinePhantomLevel < 3) pool.push({ name:'ファントムダガー強化', desc:'誘導性能・命中判定・ダメージがUP。敵の周りで空回りしにくくなる', color:'#c084fc', icon:'🗡️', apply:()=>{ player.onlinePhantomLevel += 1; }});
 
             if ((player.onlineGravityLevel || 0) === 0) pool.push({ name:'【重圧】グラビティ・パルサー', desc:'相手の位置に重力場を生成し、範囲内の相手を削る', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel = 1; }});
             else if (player.onlineGravityLevel < 3) pool.push({ name:'グラビティ・パルサー強化', desc:'重力場の安定性・範囲・威力がさらにUP', color:'#0ea5e9', icon:'🌌', apply:()=>{ player.onlineGravityLevel += 1; }});
@@ -5765,7 +5765,7 @@
                     }
                     if (this.onlinePhantomLevel > 0) {
                         this.onlinePhantomTimer++;
-                        if (this.onlinePhantomTimer >= 600) {
+                        if (this.onlinePhantomTimer >= Math.max(360, 560 - (this.onlinePhantomLevel || 1) * 55)) {
                             this.fireOnlinePhantom(); this.onlinePhantomTimer = 0;
                         }
                     }
@@ -7474,8 +7474,8 @@
             if (player.evoToxicAegis) pushCooldown(skills, 'evoToxicAegis', '🛡️☣️', player.onlinePoisonTimer, 180);
             else if (player.onlinePoisonLevel > 0) pushCooldown(skills, 'onlinePoison', '☣️', player.onlinePoisonTimer, 180);
 
-            if (player.evoGravitonDagger) pushCooldown(skills, 'evoGravitonDagger', '🗡️🌌', player.onlinePhantomTimer, 600);
-            else if (player.onlinePhantomLevel > 0) pushCooldown(skills, 'onlinePhantom', '🗡️×5', player.onlinePhantomTimer, 600);
+            if (player.evoGravitonDagger) pushCooldown(skills, 'evoGravitonDagger', '🗡️🌌', player.onlinePhantomTimer, Math.max(360, 560 - (player.onlinePhantomLevel || 1) * 55));
+            else if (player.onlinePhantomLevel > 0) pushCooldown(skills, 'onlinePhantom', '🗡️×5', player.onlinePhantomTimer, Math.max(360, 560 - (player.onlinePhantomLevel || 1) * 55));
 
             if (player.onlineGravityLevel > 0 && !player.evoGravitonDagger && !player.evoSingularityBomb) pushCooldown(skills, 'onlineGravity', '🌌', player.onlineGravityTimer, 300);
             if (player.onlineBananaLevel > 0) pushCooldown(skills, 'onlineBanana', '🍌', player.onlineBananaTimer, 360);
@@ -7587,9 +7587,8 @@
             phantomDaggers = []; gravityPulsars = []; bananaPeels = []; mapBlackholes = []; onlineLegendaryChests = []; astralJudgements = []; harisenNovas = []; overlordFlames = []; cosmicSushiStorms = [];
             
             bgStars = [];
-            const bhAngle = Math.random() * Math.PI * 2;
-            const bhDist = MathUtils.random(1300, 2600);
-            mapBlackholes.push(new RealisticMapBlackHole(spawn.x + Math.cos(bhAngle) * bhDist, spawn.y + Math.sin(bhAngle) * bhDist));
+            // 2026-05-04: マップ自然発生ブラックホールは削除。
+            if (Array.isArray(mapBlackholes)) mapBlackholes.length = 0;
             if (isOnlineMode) {
                 // 伝説宝箱はレア化：2か所の候補があるが、出現するかは運。距離もかなり遠くする。
                 for (let i = 0; i < 2; i++) {
@@ -10230,7 +10229,7 @@
         return {
             bossrush: { day:6, label:'土曜日限定', open:day === 6, title:'週末限定ボスラッシュ', desc:'ボス出現間隔が短くなり、ボス討伐ランキングを狙いやすい。' },
             jackpot: { day:0, label:'日曜日限定', open:day === 0, title:'1日1回 高報酬ステージ', desc:'その日の初回だけ獲得コインにボーナス。' },
-            blackhole: { day:3, label:'水曜日限定', open:day === 3, title:'ブラックホールまみれイベント', desc:'マップ上のブラックホールが増える高難度イベント。' }
+            neonRush: { day:null, label:'近日開催予定', open:false, title:'ネオンラッシュ', desc:'短時間で敵を大量討伐してバトルスターを集める予定イベント。' }
         };
     }
     function ensureEventModeScreen20260504() {
@@ -10261,6 +10260,7 @@
         box.innerHTML = Object.entries(info).map(([id, e]) => `<div class="nsv-event-card ${e.open ? '' : 'locked'}"><div class="text-xs text-yellow-300 font-bold">${e.label}</div><h3 class="text-xl font-bold text-white mt-1">${e.title}</h3><p class="text-sm text-gray-300 mt-2">${e.desc}</p><button class="start-event-mode btn-gold px-4 py-2 rounded font-bold mt-4 w-full" data-event="${id}" ${e.open ? '' : 'disabled'}>${e.open ? 'START' : '今日は未開催'}</button></div>`).join('');
         box.querySelectorAll('.start-event-mode').forEach(btn => btn.addEventListener('click', () => {
             nsvSelectedEventMode20260504 = btn.dataset.event || null;
+            if (nsvSelectedEventMode20260504 === 'blackhole') nsvSelectedEventMode20260504 = null;
             initGame('solo');
         }));
     }
@@ -10268,12 +10268,7 @@
         try {
             if (!nsvSelectedEventMode20260504 || !player) return;
             showMissionToast('EVENT MODE', eventDayInfo20260504()[nsvSelectedEventMode20260504]?.title || 'イベント開始');
-            if (nsvSelectedEventMode20260504 === 'blackhole') {
-                for (let i = 0; i < 3 && mapBlackholes.length < 4; i++) {
-                    const a = Math.random() * Math.PI * 2; const d = MathUtils.random(900, 2600);
-                    mapBlackholes.push(new RealisticMapBlackHole(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d));
-                }
-            }
+            if (nsvSelectedEventMode20260504 === 'blackhole') { nsvSelectedEventMode20260504 = null; if (Array.isArray(mapBlackholes)) mapBlackholes.length = 0; }
             if (nsvSelectedEventMode20260504 === 'bossrush') nsvLastBossRushFrame20260504 = 0;
         } catch(e) {}
     }
@@ -10292,11 +10287,7 @@
                     triggerBossWarning?.();
                 }
             }
-            if (nsvSelectedEventMode20260504 === 'blackhole' && frameCount % (60 * 50) === 0 && mapBlackholes.length < 4) {
-                const a = Math.random() * Math.PI * 2; const d = MathUtils.random(1200, 2900);
-                mapBlackholes.push(new RealisticMapBlackHole(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d));
-                showMissionToast('BLACKHOLE EVENT', 'ブラックホールが追加発生しました。');
-            }
+            if (nsvSelectedEventMode20260504 === 'blackhole') { nsvSelectedEventMode20260504 = null; if (Array.isArray(mapBlackholes)) mapBlackholes.length = 0; }
         } catch(e) {}
     }
     function patchEventMode20260504() {
@@ -11330,6 +11321,280 @@
     } catch(e) { console.warn('keep best / collection patch init skipped', e); }
 })();
 
+
+
+        // ==========================================================
+        // 2026-05-04 Patch: Ultimate weapons mission locked / map blackholes removed / Phantom Dagger buff
+        // ==========================================================
+        (function applyUltimateMissionNoMapBlackholePhantomPatch20260504() {
+            try {
+                const ALL_ULTIMATE_LOCK_IDS_20260504C = [
+                    'hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic',
+                    'infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep',
+                    'neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor',
+                    'thunderAegis','solarDrill','chronoLotus'
+                ];
+                try {
+                    if (typeof MISSION_LOCKED_WEAPON_IDS_20260504 !== 'undefined' && MISSION_LOCKED_WEAPON_IDS_20260504) {
+                        ALL_ULTIMATE_LOCK_IDS_20260504C.forEach(id => MISSION_LOCKED_WEAPON_IDS_20260504.add(id));
+                    }
+                } catch(e) {}
+
+                const ULTIMATE_NAME_TO_ID_20260504C = [
+                    ['創世の光芒','ironBlaster'], ['アイアンマン','ironBlaster'], ['機神','ironBlaster'],
+                    ['深淵の重力刃','vader'], ['暗黒卿','vader'], ['暗黒','vader'],
+                    ['星砕きの流星群','funnel'], ['流星群','funnel'],
+                    ['雷霆砕破','thor'], ['轟','thor'], ['ハンマー','thor'],
+                    ['星夢の輪舞曲','disneyMagic'], ['星無の輪舞曲','disneyMagic'], ['幻奏','disneyMagic'],
+                    ['無量空処','muryoku'], ['無量空所','muryoku'], ['無料空所','muryoku'], ['領域','muryoku'],
+                    ['絶対防壁の反響','shieldThrow'], ['不壊','shieldThrow'],
+                    ['虚式','hollowMurasaki'], ['茈','hollowMurasaki'],
+                    ['龍星','kamehameha'], ['崩命破','kamehameha'], ['かめはめ波','kamehameha'],
+                    ['終焉の指弾','infinitySnap'], ['指パッチン','infinitySnap'], ['神威','infinitySnap'],
+                    ['無限の剣陣','infiniteBlade'], ['王の財宝','infiniteBlade'],
+                    ['天帝の裁界','keraunos'], ['天帝の雷','keraunos'], ['神雷','keraunos'], ['霹靂','keraunos'],
+                    ['ファントムステップ','phantomStep'],
+                    ['ネオンランス','neonLance'], ['フェニックスコア','phoenixCore'], ['星落としの王冠','starfallCrown'],
+                    ['虚空コレクター','voidCollector'], ['レールキャノン','railCannon'], ['ブラックホールエンペラー','blackholeEmperor'],
+                    ['サンダーイージス','thunderAegis'], ['ソーラードリル','solarDrill'], ['クロノロータス','chronoLotus']
+                ];
+                function getUltimateIdFromText20260504C(text) {
+                    const t = String(text || '');
+                    let found = ULTIMATE_NAME_TO_ID_20260504C.find(([key]) => t.includes(key));
+                    if (found) return found[1];
+                    try {
+                        const def = typeof findWeaponCodexDefFromText === 'function' ? findWeaponCodexDefFromText(t) : null;
+                        if (def && ALL_ULTIMATE_LOCK_IDS_20260504C.includes(def.id)) return def.id;
+                    } catch(e) {}
+                    return null;
+                }
+                function isUltimateUnlocked20260504C(id) {
+                    if (!id) return true;
+                    const u = (userData && userData.unlocks && userData.unlocks.legendaryWeapons) || {};
+                    return !!u[id];
+                }
+                try {
+                    const oldShould = shouldOfferWeaponUpgrade20260504;
+                    shouldOfferWeaponUpgrade20260504 = function(upgrade) {
+                        try {
+                            const id = getUltimateIdFromText20260504C(upgrade && upgrade.name);
+                            if (id && !isUltimateUnlocked20260504C(id)) return false;
+                        } catch(e) {}
+                        return oldShould.apply(this, arguments);
+                    };
+                } catch(e) {}
+
+                // 強いアルティメットほど難しいミッションになるよう、既存ミッションの最低目標値を底上げ。
+                try {
+                    const hardMinByWeapon = {
+                        hollowMurasaki: { totalKills: 2600, bestScore: 900000, bestLevel: 70 },
+                        kamehameha: { totalKills: 3200, bestScore: 1100000, bestLevel: 75 },
+                        keraunos: { totalKills: 4200, totalBossKills: 35, bestLevel: 85 },
+                        muryoku: { totalKills: 5000, bestScore: 1600000, bestLevel: 95 },
+                        infinitySnap: { totalBossKills: 45, bestScore: 1800000, bestLevel: 100 },
+                        infiniteBlade: { totalKills: 3800, bestLevel: 80 },
+                        ironBlaster: { totalKills: 2200, totalOnlineHits: 800, bestScore: 650000 },
+                        funnel: { totalKills: 1800, bestLevel: 55 },
+                        disneyMagic: { totalKills: 3000, bestScore: 1000000 },
+                        vader: { totalBossKills: 22, bestLevel: 65 },
+                        thor: { totalBossKills: 28, bestScore: 950000 },
+                        shieldThrow: { totalBossKills: 14, bestLevel: 48 },
+                        blackholeEmperor: { bestLevel: 90, bestScore: 2200000, bestTime: 1500 },
+                        railCannon: { totalKills: 5200, bestScore: 2400000 },
+                        solarDrill: { bestScore: 2600000, bestLevel: 105 },
+                        chronoLotus: { completedMissionCount: 55, bestLevel: 110 },
+                        phoenixCore: { totalBossKills: 16, bestTime: 700 },
+                        starfallCrown: { bestTime: 900, bestLevel: 60 },
+                        voidCollector: { bestLevel: 65, totalGems: 9000 },
+                        thunderAegis: { totalBossKills: 30, bestLevel: 75 },
+                        neonLance: { totalKills: 900 }
+                    };
+                    if (Array.isArray(MISSION_DEFS)) {
+                        MISSION_DEFS.forEach(m => {
+                            const wid = m && m.reward && m.reward.weapon;
+                            if (!wid || !hardMinByWeapon[wid]) return;
+                            const min = hardMinByWeapon[wid];
+                            if (m.metric && min[m.metric] != null) m.target = Math.max(Number(m.target || 0), min[m.metric]);
+                            if (!String(m.title || '').includes('ULTIMATE解放')) m.title = `${m.title}【ULTIMATE解放】`;
+                            if (!String(m.desc || '').includes('ミッション達成後')) m.desc = `${m.desc}。達成後、このアルティメット武器が出現するようになる`;
+                        });
+                    }
+                    try { renderMissionsScreen?.(); } catch(e) {}
+                } catch(e) { console.warn('Ultimate mission difficulty patch skipped', e); }
+
+                // 武器図鑑の説明も「ミッション解放」に統一。
+                try {
+                    const lists = [];
+                    if (Array.isArray(WEAPON_CODEX_DEFS)) lists.push(WEAPON_CODEX_DEFS);
+                    if (Array.isArray(WEAPON_CODEX_MORE_DEFS)) lists.push(WEAPON_CODEX_MORE_DEFS);
+                    lists.forEach(list => list.forEach(w => {
+                        if (w && ALL_ULTIMATE_LOCK_IDS_20260504C.includes(w.id)) {
+                            w.unlock = 'ミッション達成後に解放';
+                            w.weak = '解放ミッションを達成するまで出現しない';
+                        }
+                    }));
+                    renderWeaponCodexScreen?.();
+                } catch(e) {}
+
+                function clearMapBlackholes20260504C() {
+                    try { if (Array.isArray(mapBlackholes)) mapBlackholes.length = 0; } catch(e) {}
+                }
+                try {
+                    const oldInit = initGame;
+                    initGame = function() {
+                        const ret = oldInit.apply(this, arguments);
+                        clearMapBlackholes20260504C();
+                        return ret;
+                    };
+                } catch(e) {}
+                try {
+                    const oldUpdate = updateGame;
+                    updateGame = function() {
+                        clearMapBlackholes20260504C();
+                        const ret = oldUpdate.apply(this, arguments);
+                        clearMapBlackholes20260504C();
+                        return ret;
+                    };
+                } catch(e) {}
+                clearMapBlackholes20260504C();
+
+                // 削除済みイベントを一覧から外す。
+                try {
+                    eventDayInfo20260504 = function() {
+                        const day = new Date().getDay();
+                        return {
+                            bossrush: { day:6, label:'土曜日限定', open:day === 6, title:'週末限定ボスラッシュ', desc:'ボスが多く出る高難度イベント。ボス討伐ランキングを狙える。' },
+                            jackpot: { day:0, label:'日曜日限定', open:day === 0, title:'1日1回 高報酬ステージ', desc:'その日の初回だけ獲得コインにボーナスが入るイベント。' },
+                            neonRush: { day:null, label:'近日開催予定', open:false, title:'ネオンラッシュ', desc:'短時間で敵を大量討伐してバトルスターを集める予定イベント。' }
+                        };
+                    };
+                    renderEventModeScreen20260504 = function() {
+                        ensureEventModeScreen20260504?.();
+                        const box = document.getElementById('eventModeListContainer');
+                        if (!box) return;
+                        const info = eventDayInfo20260504();
+                        box.innerHTML = Object.entries(info).map(([id, e]) => `<div class="nsv-event-card ${e.open ? '' : 'locked'}"><div class="text-xs text-yellow-300 font-bold">${e.label}</div><h3 class="text-xl font-bold text-white mt-1">${e.title}</h3><p class="text-sm text-gray-300 mt-2">${e.desc}</p><button class="start-event-mode btn-gold px-4 py-2 rounded font-bold mt-4 w-full" data-event="${id}" ${e.open ? '' : 'disabled'}>${e.open ? 'START' : '今は未開催'}</button></div>`).join('');
+                        box.querySelectorAll('.start-event-mode').forEach(btn => btn.addEventListener('click', () => {
+                            nsvSelectedEventMode20260504 = btn.dataset.event || null;
+                            if (nsvSelectedEventMode20260504 === 'blackhole') nsvSelectedEventMode20260504 = null;
+                            initGame('solo');
+                        }));
+                    };
+                    updateEventMode20260504 = function() {
+                        try {
+                            if (nsvSelectedEventMode20260504 === 'blackhole') nsvSelectedEventMode20260504 = null;
+                            if (!nsvSelectedEventMode20260504 || gameState !== 'playing' || !player || isOnlineMode) return;
+                            if (nsvSelectedEventMode20260504 === 'bossrush') {
+                                const bossCount = enemies.filter(e => e && !e.markedForDeletion && (e.isBoss || e.isMonkey || e.isMidBoss)).length;
+                                if (frameCount - nsvLastBossRushFrame20260504 > 60 * 42 && bossCount < 2) {
+                                    const a = Math.random() * Math.PI * 2; const d = MathUtils.random(850, 1400);
+                                    const boss = new Enemy(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d, 3);
+                                    const patterns = ['FIRE BOSS','THUNDER BOSS','GRAVITY BOSS','MIRROR BOSS'];
+                                    boss.bossPattern = patterns[MathUtils.randomInt(0, patterns.length - 1)];
+                                    enemies.push(boss);
+                                    nsvLastBossRushFrame20260504 = frameCount;
+                                    triggerBossWarning?.();
+                                }
+                            }
+                        } catch(e) {}
+                    };
+                    renderEventModeScreen20260504?.();
+                } catch(e) { console.warn('Blackhole event removal patch skipped', e); }
+
+                // ファントムダガー強化：回り続ける動きを減らし、近距離では強制的にロックオンして命中しやすくする。
+                try {
+                    PhantomDagger.prototype.update = function() {
+                        if (!this.__nsvBuffed20260504C) {
+                            this.__nsvBuffed20260504C = true;
+                            this.speed = Math.max(this.speed || 0, 7 + (this.level || 1) * 0.6);
+                            this.maxSpeed = 18 + (this.level || 1) * 3.2;
+                            this.life = Math.max(this.life || 0, 240);
+                            this.trail = Array.isArray(this.trail) ? this.trail : [];
+                        }
+                        this.life--;
+                        this.trail.push({x:this.x, y:this.y});
+                        if (this.trail.length > (isLightMode ? 5 : 10)) this.trail.shift();
+                        let target = null; let minDist = Infinity;
+                        if (isOnlineMode) {
+                            remotePlayers.forEach(r => {
+                                if (r && Number(r.hp || 0) > 0) {
+                                    const d = MathUtils.distance(this.x, this.y, r.x, r.y);
+                                    if (d < minDist) { minDist = d; target = r; }
+                                }
+                            });
+                        }
+                        if (!target) {
+                            for (const e of enemies) {
+                                if (e && !e.isCharmed && !e.markedForDeletion) {
+                                    const d = MathUtils.distance(this.x, this.y, e.x, e.y);
+                                    if (d < minDist) { minDist = d; target = e; }
+                                }
+                            }
+                        }
+                        if (target) {
+                            const leadX = target.x + (target.vx || 0) * 7;
+                            const leadY = target.y + (target.vy || 0) * 7;
+                            const targetAngle = MathUtils.angle(this.x, this.y, leadX, leadY);
+                            let diff = targetAngle - this.angle;
+                            while (diff < -Math.PI) diff += Math.PI * 2;
+                            while (diff > Math.PI) diff -= Math.PI * 2;
+                            const closeLock = minDist < 150;
+                            const turn = closeLock ? 0.46 : (0.18 + (this.level || 1) * 0.045);
+                            this.angle += diff * turn;
+                            if (closeLock) this.angle = targetAngle;
+                        }
+                        this.speed = Math.min(this.maxSpeed, this.speed + 0.32);
+                        if (target && minDist < 110) this.speed = Math.max(this.speed, this.maxSpeed * 0.95);
+                        this.vx = Math.cos(this.angle) * this.speed;
+                        this.vy = Math.sin(this.angle) * this.speed;
+                        this.x += this.vx; this.y += this.vy;
+
+                        let hit = false;
+                        if (isOnlineMode) {
+                            remotePlayers.forEach(r => {
+                                if (!hit && r && Number(r.hp || 0) > 0 && MathUtils.distance(this.x, this.y, r.x, r.y) < 42) {
+                                    const dmg = Math.round((this.damage || 70) * (1.08 + (this.level || 1) * 0.08));
+                                    sendOnlineHit(r.id, dmg); hit = true;
+                                    createParticles(this.x, this.y, 10, '#c084fc', 3);
+                                }
+                            });
+                        }
+                        if (!hit) {
+                            for (const e of enemies) {
+                                if (e && !e.isCharmed && !e.markedForDeletion && MathUtils.distance(this.x, this.y, e.x, e.y) < (e.radius || 18) + 28) {
+                                    e.takeDamage(Math.round((this.damage || 70) * (1.18 + (this.level || 1) * 0.1)));
+                                    hit = true;
+                                    createParticles(this.x, this.y, 7, '#c084fc', 3);
+                                    break;
+                                }
+                            }
+                        }
+                        if (hit || this.life <= 0) {
+                            this.markedForDeletion = true;
+                            if (this.isGraviton && gravityPulsars.length < 15) gravityPulsars.push(new GravityPulsar(this.x, this.y, (this.damage || 70) * 0.75, this.level || 1));
+                        }
+                    };
+                    Player.prototype.fireOnlinePhantom = function() {
+                        const level = Math.max(1, this.onlinePhantomLevel || 1);
+                        const damage = 78 + level * 16;
+                        const spread = [-0.42, -0.22, 0, 0.22, 0.42, MathUtils.random(-0.12, 0.12)];
+                        const target = getPriorityOnlineTarget(this.x, this.y, Infinity) || enemies.find(e => e && !e.markedForDeletion && !e.isCharmed);
+                        const baseAngle = target ? MathUtils.angle(this.x, this.y, target.x, target.y) : this.faceAngle;
+                        for (const offset of spread) {
+                            const angle = baseAngle + offset + MathUtils.random(-0.025, 0.025);
+                            if (this.evoGravitonDagger) {
+                                if (phantomDaggers.length < 80) phantomDaggers.push(new GravitonDagger(this.x, this.y, angle, damage, level));
+                            } else {
+                                if (phantomDaggers.length < 80) phantomDaggers.push(new PhantomDagger(this.x, this.y, angle, damage, level));
+                            }
+                        }
+                        floatingTexts.push(new FloatingText(this.x, this.y - 62, '強化追尾ダガー×6', '#c084fc', 16));
+                    };
+                } catch(e) { console.warn('Phantom Dagger buff patch skipped', e); }
+            } catch(err) {
+                console.warn('Ultimate/no-map-blackhole/phantom patch skipped', err);
+            }
+        })();
 </script>
 
 
@@ -11442,6 +11707,19 @@
     const missionBtn = document.getElementById('openMissionBtn');
     const collectionBtn = document.getElementById('openCollectionBtn');
     const codexBtn = document.getElementById('openWeaponCodexBtn');
+    let adminContactBtn = document.getElementById('adminContactBtn');
+    if (!adminContactBtn) {
+      adminContactBtn = document.createElement('button');
+      adminContactBtn.id = 'adminContactBtn';
+      adminContactBtn.type = 'button';
+      adminContactBtn.className = 'btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+      adminContactBtn.innerHTML = '管理者への連絡<br><span class="text-xs text-cyan-100 font-bold">お問い合わせフォーム</span>';
+      adminContactBtn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        try { window.open('https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform', '_blank', 'noopener,noreferrer'); }
+        catch(e) { location.href = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform'; }
+      });
+    }
     const joy = document.getElementById('joystickToggle')?.closest('.bg-gray-900\/80');
     const light = document.getElementById('lightModeToggle')?.closest('.bg-gray-900\/80');
     const saveBox = document.getElementById('exportBtn')?.closest('.bg-gray-900\/80');
@@ -11498,7 +11776,7 @@
     const menuSec = makeSection('MENU', '');
     const menuGrid = document.createElement('div');
     menuGrid.className = 'nsv-clean-menu-grid';
-    [upgradeBtn, missionBtn, collectionBtn, codexBtn].forEach(el => menuGrid.appendChild(el));
+    [upgradeBtn, missionBtn, collectionBtn, codexBtn, adminContactBtn].forEach(el => menuGrid.appendChild(el));
     menuSec.appendChild(menuGrid);
     root.appendChild(menuSec);
 
@@ -11692,6 +11970,58 @@
   else boot();
   setTimeout(boot, 700);
   setTimeout(cleanAllImportantScreens, 1500);
+})();
+</script>
+
+
+
+<script>
+/* =========================================================
+   2026-05-04 Add-on: Admin contact button
+========================================================= */
+(function(){
+  'use strict';
+  const URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
+  function makeBtn(){
+    let btn = document.getElementById('adminContactBtn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'adminContactBtn';
+      btn.type = 'button';
+      btn.className = 'btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+      btn.innerHTML = '管理者への連絡<br><span class="text-xs text-cyan-100 font-bold">お問い合わせフォーム</span>';
+      btn.addEventListener('click', function(ev){
+        ev.preventDefault();
+        try { window.open(URL, '_blank', 'noopener,noreferrer'); }
+        catch(e) { location.href = URL; }
+      });
+    }
+    return btn;
+  }
+  function placeBtn(){
+    const btn = makeBtn();
+    const cleanMenu = document.querySelector('#nsvCleanStartScreenDone .nsv-clean-menu-grid');
+    if (cleanMenu && !cleanMenu.contains(btn)) {
+      cleanMenu.appendChild(btn);
+      return true;
+    }
+    const rawGrid = document.querySelector('#startScreen .menu-grid');
+    if (rawGrid && !rawGrid.contains(btn)) {
+      rawGrid.appendChild(btn);
+      return true;
+    }
+    return false;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){
+    placeBtn();
+    setTimeout(placeBtn, 700);
+    setTimeout(placeBtn, 1600);
+  });
+  else {
+    placeBtn();
+    setTimeout(placeBtn, 700);
+    setTimeout(placeBtn, 1600);
+  }
 })();
 </script>
 
