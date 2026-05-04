@@ -3600,8 +3600,51 @@
             constructor(x, y, angle, damage, speed, radius, pierce = 1, color = '#4ade80', shadow = '#22c55e') {
                 super(x, y, angle, damage, speed, radius, pierce, color, shadow, false);
                 this.angle = angle;
+                // 星砕きの流星群用：見えやすい軌跡・強い追尾・着弾爆発に対応
+                this.isFunnelMeteor = false;
+                this.homingPower = 0;
+                this.splashRadius = 0;
+                this.visualScale = 0.5;
+                this.trailMax = 5;
+                this.targetEnemy = null;
             }
             update() {
+                if (this.isFunnelMeteor) {
+                    this.trail.push({x: this.x, y: this.y});
+                    if (this.trail.length > this.trailMax) this.trail.shift();
+
+                    // ターゲットが消えたら近くの敵を取り直す。これでどこかへ飛び去りにくくする。
+                    if (!this.targetEnemy || this.targetEnemy.markedForDeletion || this.targetEnemy.isCharmed) {
+                        let best = null;
+                        let bestD = Infinity;
+                        const maxScan = Math.min(enemies.length, 70);
+                        for (let i = 0; i < maxScan; i++) {
+                            const e = enemies[i];
+                            if (!e || e.markedForDeletion || e.isCharmed) continue;
+                            const d = distSq(this.x, this.y, e.x, e.y);
+                            if (d < bestD) { bestD = d; best = e; }
+                        }
+                        this.targetEnemy = best;
+                    }
+
+                    if (this.targetEnemy) {
+                        const targetAngle = MathUtils.angle(this.x, this.y, this.targetEnemy.x, this.targetEnemy.y);
+                        const currentAngle = Math.atan2(this.vy, this.vx);
+                        let diff = targetAngle - currentAngle;
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+                        const nextAngle = currentAngle + diff * this.homingPower;
+                        const speed = Math.hypot(this.vx, this.vy) || 18;
+                        this.vx = Math.cos(nextAngle) * speed;
+                        this.vy = Math.sin(nextAngle) * speed;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.angle = Math.atan2(this.vy, this.vx);
+                    if (this.x < camera.x - 1400 || this.x > camera.x + width + 1400 || this.y < camera.y - 1400 || this.y > camera.y + height + 1400) this.markedForDeletion = true;
+                    return;
+                }
                 super.update();
                 this.angle = Math.atan2(this.vy, this.vx);
             }
@@ -3609,51 +3652,66 @@
                 ctx.save();
                 ctx.translate(safe(this.x), safe(this.y));
                 ctx.rotate(safe(this.angle));
-                ctx.scale(0.5, 0.5); // ロケット弾のサイズを2分の1に縮小
+                ctx.scale(this.visualScale, this.visualScale);
                 ctx.globalCompositeOperation = 'screen';
+
+                if (this.isFunnelMeteor && this.trail.length > 1) {
+                    ctx.save();
+                    ctx.rotate(-safe(this.angle));
+                    ctx.beginPath();
+                    ctx.moveTo(safe(this.trail[0].x - this.x), safe(this.trail[0].y - this.y));
+                    for (let i = 1; i < this.trail.length; i++) ctx.lineTo(safe(this.trail[i].x - this.x), safe(this.trail[i].y - this.y));
+                    ctx.strokeStyle = 'rgba(74,222,128,.82)';
+                    ctx.lineWidth = isLightMode ? 7 : 11;
+                    ctx.lineCap = 'round';
+                    ctx.shadowBlur = isLightMode ? 10 : 24;
+                    ctx.shadowColor = '#22c55e';
+                    ctx.stroke();
+                    ctx.restore();
+                }
 
                 ctx.beginPath();
                 ctx.moveTo(-20, 0);
                 ctx.lineTo(-34 - Math.random() * 8, -6);
                 ctx.lineTo(-34 - Math.random() * 8, 6);
                 ctx.closePath();
-                ctx.fillStyle = 'rgba(255, 120, 0, 0.75)';
-                ctx.shadowBlur = 18;
-                ctx.shadowColor = '#f97316';
-                ctx.fill();
-
-                ctx.beginPath();
-                ctx.moveTo(22, 0);
-                ctx.lineTo(8, -9);
-                ctx.lineTo(-16, -7);
-                ctx.lineTo(-22, 0);
-                ctx.lineTo(-16, 7);
-                ctx.lineTo(8, 9);
-                ctx.closePath();
-                ctx.fillStyle = '#e5e7eb';
-                ctx.shadowBlur = 16;
-                ctx.shadowColor = this.shadow;
+                ctx.fillStyle = this.isFunnelMeteor ? 'rgba(74,222,128,0.9)' : 'rgba(255, 120, 0, 0.75)';
+                ctx.shadowBlur = this.isFunnelMeteor ? 28 : 18;
+                ctx.shadowColor = this.isFunnelMeteor ? '#bbf7d0' : '#f97316';
                 ctx.fill();
 
                 ctx.beginPath();
                 ctx.moveTo(24, 0);
-                ctx.lineTo(7, -8);
-                ctx.lineTo(7, 8);
+                ctx.lineTo(8, -11);
+                ctx.lineTo(-18, -8);
+                ctx.lineTo(-25, 0);
+                ctx.lineTo(-18, 8);
+                ctx.lineTo(8, 11);
                 ctx.closePath();
-                ctx.fillStyle = '#22c55e';
+                ctx.fillStyle = this.isFunnelMeteor ? '#dcfce7' : '#e5e7eb';
+                ctx.shadowBlur = this.isFunnelMeteor ? 26 : 16;
+                ctx.shadowColor = this.shadow;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(27, 0);
+                ctx.lineTo(7, -9);
+                ctx.lineTo(7, 9);
+                ctx.closePath();
+                ctx.fillStyle = this.isFunnelMeteor ? '#4ade80' : '#22c55e';
                 ctx.fill();
 
                 ctx.beginPath();
                 ctx.moveTo(-10, -7);
-                ctx.lineTo(-22, -17);
-                ctx.lineTo(-17, -3);
+                ctx.lineTo(-24, -18);
+                ctx.lineTo(-18, -3);
                 ctx.closePath();
-                ctx.fillStyle = '#16a34a';
+                ctx.fillStyle = this.isFunnelMeteor ? '#86efac' : '#16a34a';
                 ctx.fill();
                 ctx.beginPath();
                 ctx.moveTo(-10, 7);
-                ctx.lineTo(-22, 17);
-                ctx.lineTo(-17, 3);
+                ctx.lineTo(-24, 18);
+                ctx.lineTo(-18, 3);
                 ctx.closePath();
                 ctx.fill();
 
@@ -5995,19 +6053,43 @@
             startKeraunos() { if (isOnlineMode) return; if (keraunosCharges.length < 10) keraunosCharges.push(new KeraunosCharge(1000 * this.keraunosLevel, this.keraunosLevel)); }
             startFunnel() { 
                 if (isOnlineMode) return; 
-                // 15秒に1回、ロケット弾を一気に10発放つ仕様に変更
-                for (let i = 0; i < 10; i++) {
+                // 星砕きの流星群 強化版：狙う・当たる・見える。
+                // 弱点だった「どこへ飛んだか分からない」「敵の横を抜ける」を改善。
+                const level = Math.max(1, this.funnelLevel || 1);
+                const shotCount = Math.min(18, 8 + level * 3);
+                const bossTargets = enemies.filter(e => e && !e.markedForDeletion && !e.isCharmed && (e.isBoss || e.isMidBoss || e.isMonkey));
+                const livingEnemies = enemies.filter(e => e && !e.markedForDeletion && !e.isCharmed);
+                for (let i = 0; i < shotCount; i++) {
                     let target = null;
-                    if (enemies.length > 0) target = enemies[MathUtils.randomInt(0, enemies.length - 1)];
-                    
-                    let angle = this.faceAngle + MathUtils.random(-Math.PI/1.5, Math.PI/1.5); // 前方を中心に広範囲にばらけさせる
-                    if (target && Math.random() > 0.3) {
-                        angle = MathUtils.angle(this.x, this.y, target.x, target.y) + MathUtils.random(-0.3, 0.3);
+                    if (bossTargets.length && i < Math.ceil(shotCount * 0.45)) {
+                        target = bossTargets[i % bossTargets.length];
+                    } else if (livingEnemies.length) {
+                        // プレイヤーに近い敵を優先しつつ、少しばらけさせる
+                        const sample = livingEnemies[MathUtils.randomInt(0, livingEnemies.length - 1)];
+                        target = sample;
+                        let bestD = distSq(this.x, this.y, sample.x, sample.y);
+                        for (let s = 0; s < Math.min(8, livingEnemies.length); s++) {
+                            const e = livingEnemies[MathUtils.randomInt(0, livingEnemies.length - 1)];
+                            const d = distSq(this.x, this.y, e.x, e.y);
+                            if (d < bestD) { bestD = d; target = e; }
+                        }
                     }
-                    
-                    let damage = 150 + this.funnelLevel * 50;
-                    bullets.push(new RocketBullet(this.x, this.y, angle, damage, 18, 6, 2, '#4ade80', '#22c55e'));
+
+                    let angle = target ? MathUtils.angle(this.x, this.y, target.x, target.y) : this.faceAngle;
+                    angle += MathUtils.random(-0.12, 0.12);
+                    const damage = 240 + level * 120;
+                    const rocket = new RocketBullet(this.x, this.y, angle, damage, 24 + level * 1.5, 12 + level * 2, 3 + level, '#bbf7d0', '#22c55e');
+                    rocket.isFunnelMeteor = true;
+                    rocket.targetEnemy = target;
+                    rocket.homingPower = Math.min(0.28, 0.14 + level * 0.035);
+                    rocket.splashRadius = 90 + level * 28;
+                    rocket.visualScale = isLightMode ? 0.62 : 0.76;
+                    rocket.trailMax = isLightMode ? 8 : 16;
+                    bullets.push(rocket);
                 }
+                floatingTexts.push(new FloatingText(this.x, this.y - 82, 'STARFALL METEOR+', '#bbf7d0', 20));
+                Sound.playTone(660, 'triangle', 0.13, 0.07);
+                setTimeout(() => Sound.playTone(990, 'sawtooth', 0.12, 0.05), 90);
             }
             startVader() { if (isOnlineMode) return; if (vaderSkills.length < 5) vaderSkills.push(new DarkLordSkill(this.x, this.y, this.vaderLevel)); }
             startUnibeam() { if (isOnlineMode) return; if (unibeams.length < 10) unibeams.push(new Unibeam(7777, this.faceAngle)); }
@@ -7131,7 +7213,23 @@
                             let rSum = bullet.radius + target.radius;
                             if (distSq(bullet.x, bullet.y, target.x, target.y) < rSum * rSum) {
                                 target.takeDamage(bullet.damage); bullet.hitEnemies.add(target); bullet.pierce--; 
-                                createParticles(bullet.x, bullet.y, 5, '#0ff', 2);
+                                if (bullet.isFunnelMeteor) {
+                                    const splash = Number(bullet.splashRadius || 0);
+                                    if (splash > 0) {
+                                        for (const other of enemies) {
+                                            if (!other || other === target || other.markedForDeletion || other.isCharmed) continue;
+                                            if (MathUtils.distance(bullet.x, bullet.y, other.x, other.y) <= splash) {
+                                                other.takeDamage(bullet.damage * 0.55);
+                                                bullet.hitEnemies.add(other);
+                                            }
+                                        }
+                                        if (effects.length < 80 && !isLightMode) effects.push(new ElectricEffect(bullet.x, bullet.y, splash));
+                                        createParticles(bullet.x, bullet.y, isLightMode ? 8 : 18, '#bbf7d0', 4);
+                                        floatingTexts.push(new FloatingText(bullet.x, bullet.y - 20, 'METEOR HIT!', '#bbf7d0', 15));
+                                    }
+                                } else {
+                                    createParticles(bullet.x, bullet.y, 5, '#0ff', 2);
+                                }
                                 if (bullet.pierce <= 0) { bullet.markedForDeletion = true; break; }
                             }
                         }
