@@ -74,9 +74,109 @@
         body.light-mode #lavaOverlay.active { opacity:.16; }
         body.light-mode .cutin-base { animation-duration: 1.4s; }
         @media (max-width:720px){ .solo-hero { min-height: 92px; } .result-grid{grid-template-columns:1fr;} .beginner-badge{font-size:.72rem; left:10px;} }
+
+
+        /* ===== Season 1 First Open Intro ===== */
+        #seasonLaunchIntro {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at center, rgba(6,182,212,.25), transparent 38%),
+                radial-gradient(circle at 70% 30%, rgba(168,85,247,.22), transparent 32%),
+                rgba(0,0,0,.92);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+            overflow: hidden;
+        }
+        #seasonLaunchIntro.active { display: flex; animation: seasonIntroFadeIn .28s ease-out both; }
+        #seasonLaunchIntro.closing { animation: seasonIntroFadeOut .55s ease-in both; }
+        .season-intro-box {
+            width: min(92vw, 760px);
+            text-align: center;
+            padding: 34px 22px;
+            border: 2px solid rgba(34,211,238,.85);
+            border-radius: 28px;
+            background: linear-gradient(180deg, rgba(2,6,23,.82), rgba(0,0,0,.7));
+            box-shadow: 0 0 28px rgba(34,211,238,.55), inset 0 0 26px rgba(34,211,238,.12);
+            position: relative;
+        }
+        .season-intro-box::before, .season-intro-box::after {
+            content: '';
+            position: absolute;
+            left: 8%;
+            right: 8%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22d3ee, #f0abfc, #22d3ee, transparent);
+            box-shadow: 0 0 18px #22d3ee;
+        }
+        .season-intro-box::before { top: 16px; }
+        .season-intro-box::after { bottom: 16px; }
+        .season-intro-kicker {
+            font-family: 'Orbitron', sans-serif;
+            color: #a5f3fc;
+            letter-spacing: .35em;
+            font-weight: 900;
+            font-size: clamp(.85rem, 2.5vw, 1.2rem);
+            text-shadow: 0 0 12px #22d3ee;
+        }
+        .season-intro-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(4rem, 15vw, 8.5rem);
+            line-height: .9;
+            font-weight: 900;
+            color: #fff;
+            margin: 10px 0 8px;
+            letter-spacing: .05em;
+            text-shadow: 0 0 8px #fff, 0 0 22px #22d3ee, 0 0 48px #06b6d4, 0 0 74px #a855f7;
+            animation: seasonIntroPulse 1.3s ease-in-out infinite alternate;
+        }
+        .season-intro-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(1.45rem, 5vw, 3rem);
+            color: #67e8f9;
+            font-weight: 900;
+            letter-spacing: .12em;
+            text-shadow: 0 0 12px #22d3ee, 0 0 28px #a855f7;
+        }
+        .season-intro-msg {
+            margin-top: 16px;
+            color: #e0f2fe;
+            font-size: clamp(.95rem, 2.6vw, 1.25rem);
+            font-weight: 800;
+        }
+        .season-intro-tap {
+            margin-top: 18px;
+            color: #fde68a;
+            font-size: .9rem;
+            font-weight: 900;
+            letter-spacing: .12em;
+            animation: seasonIntroBlink 1s infinite alternate;
+        }
+        @keyframes seasonIntroFadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+        @keyframes seasonIntroFadeOut { from { opacity: 1; } to { opacity: 0; transform: scale(1.04); } }
+        @keyframes seasonIntroPulse { from { filter: brightness(1); } to { filter: brightness(1.28); transform: scale(1.015); } }
+        @keyframes seasonIntroBlink { from { opacity: .45; } to { opacity: 1; } }
+        @media (max-width:720px){ .season-intro-box{padding:28px 14px;} .season-intro-kicker{letter-spacing:.22em;} }
+
     </style>
 </head>
 <body class="text-white">
+
+    <!-- Season 1 first-open intro overlay -->
+    <div id="seasonLaunchIntro" aria-live="polite">
+        <div class="season-intro-box">
+            <div class="season-intro-kicker">NEW SEASON START</div>
+            <div class="season-intro-title">SEASON 1</div>
+            <div class="season-intro-name">NEON GENESIS</div>
+            <div class="season-intro-msg">新しいシーズンが始まりました！</div>
+            <div class="season-intro-tap">TAP / CLICK TO START</div>
+        </div>
+    </div>
+
 
     <div id="lavaOverlay" class="lava-bg"></div>
     <canvas id="gameCanvas" class="relative z-10"></canvas>
@@ -414,7 +514,7 @@
         let lavaDomainTimer = 0;
         const LAVA_DOMAIN_MAX_TIME = 45 * 60;
         const restrictedSkills = ['kamehameha', 'orbitalStrike', 'hollowMurasaki', 'unibeam', 'keraunos', 'infinitySnap', 'infiniteBlade', 'funnel', 'disneyMagic', 'muryoku'];
-        const SAVE_RESET_VERSION = '2026-05-01-reset-collection-upgrades-v2';
+        const SAVE_RESET_VERSION = '2026-05-04-full-progression-reset-v1';
         // 今回の調整：現在のコイン量をさらに半分にする。
         // 以前のミッション報酬倍率 1/3 → 1/6、通常プレイ報酬も後で 1/2 に調整。
         const COIN_GAIN_RATE = 1 / 6;
@@ -554,7 +654,6 @@
             { type:'BASIC', name:'円環の刃界', icon:'🌀', desc:'周囲を回る刃で近くの敵を削る。' },
             { type:'BASIC', name:'破滅の雷域', icon:'🌩️', desc:'一定間隔で周囲へ雷ダメージ。' },
             { type:'BASIC', name:'虚空次元の暴風', icon:'🌪️', desc:'巨大竜巻で敵を巻き込み、ジェムも集めやすくなる。' },
-            { type:'ULTIMATE', name:'天穹の裁き・極光', icon:'✨', desc:'敵の密集地を狙う極太レーザー。' },
             { type:'ULTIMATE', name:'深淵の重力刃', icon:'⚔️', desc:'敵を吸い寄せて巨大な刃で攻撃。' },
             { type:'ULTIMATE', name:'雷霆砕破・轟', icon:'🪓', desc:'雷神の斧を投げて広範囲を攻撃。' },
             { type:'ULTIMATE', name:'龍星・崩命破', icon:'🌊', desc:'狙った方向に強力なビームを放つ。' },
@@ -566,7 +665,6 @@
 
         const EVOLUTION_RECIPE_DEFS = [
             { name:'ブラックホール・ノヴァ', icon:'🌌', recipe:'虚空次元の暴風 Lv3 + 虚式系 Lv3', desc:'全てを吸い込む最上位の範囲攻撃。' },
-            { name:'神罰の剣雨', icon:'⚔️✨', recipe:'天穹の裁き Lv3 + 無限の剣陣 Lv3', desc:'光剣が広範囲に降り注ぐ。' },
             { name:'超重力・崩命破', icon:'🌌🌊', recipe:'深淵の重力刃 Lv3 + 龍星・崩命破 Lv3', desc:'敵を中心線に吸い寄せるビーム。' },
             { name:'雷鳴の剣域', icon:'⚡🌀', recipe:'円環の刃界 Lv3 + 破滅の雷域 Lv3', desc:'回転刃と雷が合体した常時攻撃。' },
             { name:'星核レールバースト', icon:'🔭', recipe:'レールキャノン Lv3 + ネオンランス Lv3', desc:'超高速の貫通弾が一直線に敵を削る。' },
@@ -578,7 +676,6 @@
             '円環の刃界': { attackType:'近距離・周囲', strong:'囲まれた時', weak:'遠い敵', unlock:'レベルアップ', recommend:'★★★★☆' },
             '破滅の雷域': { attackType:'範囲・自動', strong:'ザコ敵の群れ', weak:'単体ボス', unlock:'レベルアップ', recommend:'★★★★☆' },
             '虚空次元の暴風': { attackType:'吸引・範囲', strong:'ジェム回収、密集敵', weak:'離れたボス', unlock:'レベルアップ', recommend:'★★★★★' },
-            '天穹の裁き・極光': { attackType:'高火力・範囲', strong:'ボス、敵の密集', weak:'発動待ちの時間', unlock:'レベルアップで低確率', recommend:'★★★★★' },
             '深淵の重力刃': { attackType:'吸引・斬撃', strong:'敵をまとめる場面', weak:'高速敵', unlock:'レベルアップで低確率', recommend:'★★★★☆' },
             '雷霆砕破・轟': { attackType:'投てき・広範囲', strong:'中盤以降の群れ', weak:'狙いがずれる場面', unlock:'レベルアップで低確率', recommend:'★★★★☆' },
             '龍星・崩命破': { attackType:'ビーム・直線', strong:'ボス、一直線の敵', weak:'横から来る敵', unlock:'レベルアップで低確率', recommend:'★★★★★' },
@@ -599,20 +696,32 @@
             { id:'thunderAegis', name:'神話武器：サンダーイージス', icon:'🛡️⚡', desc:'防御力を上げ、周囲へ雷の反撃を出す守りの神話武器。ソロ専用。', hint:'ボスを大量に倒すと解放' },
             { id:'solarDrill', name:'神話武器：ソーラードリル', icon:'☀️', desc:'敵の密集地に太陽レーザーを落とす超火力武器。ソロ専用。', hint:'超高スコアで解放' },
             { id:'chronoLotus', name:'神話武器：クロノロータス', icon:'🪷', desc:'一定間隔で時間波を広げ、敵に大ダメージを与える。ソロ専用。', hint:'ミッションを大量達成すると解放' },
-            { id:'phantomStep', name:'解放武器：ファントムステップ', icon:'👻💨', desc:'残像を残して神速移動する強力な回避武器。ミッション達成後、レベルアップで選べる。', hint:'ミッション「幻影歩法の試練」で解放' }
+            { id:'phantomStep', name:'解放武器：ファントムステップ', icon:'👻💨', desc:'残像を残して神速移動する強力な回避武器。ミッション達成後、レベルアップで選べる。', hint:'ミッション「幻影歩法の試練」で解放' },
+            { id:'hollowMurasaki', name:'解放武器：虚式「茈」', icon:'🟣', desc:'超巨大な紫の一撃で広範囲を消し飛ばす。強力なので高難度ミッションで解放。', hint:'高難度ミッション「虚式解放試練」で解放' },
+            { id:'kamehameha', name:'解放武器：龍星・崩命破', icon:'🌊', desc:'極太ビームを照射する超火力武器。強力なので高難度ミッションで解放。', hint:'高難度ミッション「崩命破の継承」で解放' },
+            { id:'vader', name:'解放武器：深淵の重力刃', icon:'⚔️', desc:'敵を吸い寄せて巨大な斬撃でまとめて倒す。', hint:'ミッション「暗黒卿の試練」で解放' },
+            { id:'thor', name:'解放武器：雷霆砕破・轟', icon:'🪓', desc:'雷をまとったハンマー/斧を投げる高火力範囲武器。', hint:'ミッション「轟のハンマー」で解放' },
+            { id:'muryoku', name:'解放武器：無量空処', icon:'♾️', desc:'敵を止めて大ダメージを与える最強級の領域武器。高難度ミッションで解放。', hint:'高難度ミッション「領域到達」で解放' },
+            { id:'funnel', name:'解放武器：星砕きの流星群', icon:'🛰️', desc:'敵を自動追尾して連続爆破する扱いやすい強武器。', hint:'ミッション「流星群観測」で解放' },
+            { id:'ironBlaster', name:'解放武器：創世の光芒', icon:'🤖', desc:'高速ブラスターと極太ユニビームで戦う近未来武器。', hint:'ミッション「機神起動」で解放' },
+            { id:'disneyMagic', name:'解放武器：星夢の輪舞曲', icon:'🪄', desc:'敵を味方にする特殊武器。強力なのでミッションで解放。', hint:'ミッション「星夢のステージ」で解放' },
+            { id:'infinitySnap', name:'解放武器：終焉の指弾', icon:'🫰', desc:'多数の敵を一気に削る最強級武器。高難度ミッションで解放。', hint:'高難度ミッション「終焉の合図」で解放' },
+            { id:'infiniteBlade', name:'解放武器：無限の剣陣', icon:'🗡️', desc:'黄金の剣を大量に射出する弾幕武器。', hint:'ミッション「無限剣の契約」で解放' },
+            { id:'shieldThrow', name:'解放武器：絶対防壁の反響', icon:'🛡️', desc:'盾を投げて敵の間を跳ね返らせる防御寄り武器。', hint:'ミッション「不壊の守り」で解放' },
+            { id:'keraunos', name:'解放武器：天帝の裁界・霹靂', icon:'⚡', desc:'画面全体へ強烈な雷を落とす最強級武器。高難度ミッションで解放。', hint:'高難度ミッション「天帝の雷」で解放' }
         ];
 
         // ===== 2026-05-02 Update: Weapon Codex direct screen / used-weapon unlock tracking =====
         const WEAPON_CODEX_MORE_DEFS = [
-            { id:'ironBlaster', type:'ULTIMATE', name:'創世の光芒', icon:'🤖', desc:'高速ブラスターと極太ユニビームで攻撃する。', attackType:'連射・ビーム', strong:'中盤以降の敵の群れ', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['創世の光芒','機神'] },
+            { id:'ironBlaster', type:'ULTIMATE', name:'創世の光芒', icon:'🤖', desc:'高速ブラスターと極太ユニビームで攻撃する。', attackType:'連射・ビーム', strong:'中盤以降の敵の群れ', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['創世の光芒','アイアンマン','機神','ironBlaster'] },
             { id:'funnel', type:'ULTIMATE', name:'星砕きの流星群', icon:'🛰️', desc:'敵を自動追尾して連続爆破する。', attackType:'追尾・爆破', strong:'動き回る敵', weak:'単体火力は状況次第', unlock:'レベルアップで低確率', aliases:['星砕きの流星群','機動'] },
-            { id:'disneyMagic', type:'ULTIMATE', name:'星夢の輪舞曲', icon:'🪄', desc:'敵を味方にして大きく強化する特殊武器。', attackType:'魅了・味方化', strong:'敵が多い時', weak:'出現率がかなり低い', unlock:'レベルアップで低確率', aliases:['星夢の輪舞曲','幻奏'] },
-            { id:'muryoku', type:'ULTIMATE', name:'無量空処', icon:'♾️', desc:'領域で敵を止めて大ダメージを与える。', attackType:'停止・範囲', strong:'ピンチの時、ボス戦', weak:'発動待ちが必要', unlock:'レベルアップで低確率', aliases:['無量空処','領域'] },
+            { id:'disneyMagic', type:'ULTIMATE', name:'星夢の輪舞曲', icon:'🪄', desc:'敵を味方にして大きく強化する特殊武器。', attackType:'魅了・味方化', strong:'敵が多い時', weak:'出現率がかなり低い', unlock:'レベルアップで低確率', aliases:['星夢の輪舞曲','星無の輪舞曲','幻奏','disneyMagic'] },
+            { id:'muryoku', type:'ULTIMATE', name:'無量空処', icon:'♾️', desc:'領域で敵を止めて大ダメージを与える。', attackType:'停止・範囲', strong:'ピンチの時、ボス戦', weak:'発動待ちが必要', unlock:'レベルアップで低確率', aliases:['無量空処','無量空所','無料空所','領域','muryoku'] },
             { id:'shieldThrow', type:'ULTIMATE', name:'絶対防壁の反響', icon:'🛡️', desc:'盾を投げて敵の間を跳ね返らせる。', attackType:'反射・防御寄り', strong:'敵が横に広がる場面', weak:'狙いが分散する場面', unlock:'レベルアップで低確率', aliases:['絶対防壁の反響','不壊'] },
-            { id:'hollowMurasaki', type:'ULTIMATE', name:'虚式「茈」', icon:'🟣', desc:'巨大な紫の攻撃で広範囲を消し飛ばす。', attackType:'超火力・範囲', strong:'ボス、密集敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['虚式','茈','虚式「茈」'] },
-            { id:'infinitySnap', type:'ULTIMATE', name:'終焉の指弾', icon:'🫰', desc:'強力な衝撃で大量の敵を一気に削る。', attackType:'全体攻撃寄り', strong:'敵が多すぎる時', weak:'発動タイミングに左右される', unlock:'レベルアップで低確率', aliases:['終焉の指弾','神威'] },
+            { id:'hollowMurasaki', type:'ULTIMATE', name:'虚式「茈」', icon:'🟣', desc:'巨大な紫の攻撃で広範囲を消し飛ばす。', attackType:'超火力・範囲', strong:'ボス、密集敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['虚式','茈','虚式「茈」','hollowMurasaki'] },
+            { id:'infinitySnap', type:'ULTIMATE', name:'終焉の指弾', icon:'🫰', desc:'強力な衝撃で大量の敵を一気に削る。', attackType:'全体攻撃寄り', strong:'敵が多すぎる時', weak:'発動タイミングに左右される', unlock:'レベルアップで低確率', aliases:['終焉の指弾','サノスの指パッチン','神威','infinitySnap'] },
             { id:'infiniteBlade', type:'ULTIMATE', name:'無限の剣陣', icon:'🗡️', desc:'黄金の剣を大量に射出する。', attackType:'弾幕・範囲', strong:'広い範囲の敵', weak:'単体特化ではない', unlock:'レベルアップで低確率', aliases:['無限の剣陣','王の財宝'] },
-            { id:'keraunos', type:'ULTIMATE', name:'天帝の裁界・霹靂', icon:'⚡', desc:'画面全体に強力な雷を落とす。', attackType:'全体・雷', strong:'大量の敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['天帝の裁界','霹靂','神雷'] },
+            { id:'keraunos', type:'ULTIMATE', name:'天帝の裁界・霹靂', icon:'⚡', desc:'画面全体に強力な雷を落とす。', attackType:'全体・雷', strong:'大量の敵', weak:'出現率が低い', unlock:'レベルアップで低確率', aliases:['天帝の裁界','天帝の雷','霹靂','神雷','keraunos'] },
             { id:'onlinePhantomDagger', type:'ONLINE', name:'ファントムダガー', icon:'🗡️', desc:'誘導弾で相手を追い込むオンライン武器。', attackType:'追尾弾', strong:'逃げる相手', weak:'盾持ち相手', unlock:'オンラインのレベルアップ', aliases:['ファントムダガー','追尾'] },
             { id:'onlineBanana', type:'ONLINE', name:'バナナスリップ砲', icon:'🍌', desc:'バナナをばらまいて相手にダメージを与えるネタ武器。', attackType:'設置・妨害', strong:'相手の移動を崩す', weak:'まっすぐ火力は低め', unlock:'オンラインのレベルアップ', aliases:['バナナスリップ砲','爆笑'] },
             { id:'onlineAstral', type:'ONLINE', name:'アストラル・ジャッジメント', icon:'☄️', desc:'星の槍を落として広範囲を攻撃する。', attackType:'範囲・落下攻撃', strong:'相手のいる場所を狙う', weak:'避けられることがある', unlock:'オンラインのレベルアップ', aliases:['アストラル・ジャッジメント','星骸'] },
@@ -701,6 +810,28 @@
             userData.codex.weapons[def.id] = true;
             if (saveNow) saveData();
             return true;
+        }
+
+        function markWeaponCodexUsed(nameOrId, saveNow = true) {
+            return recordWeaponCodexUse(nameOrId, saveNow);
+        }
+
+
+        function purgeRemovedAstralJudgementWeapon20260504() {
+            try {
+                if (player) {
+                    player.orbitalStrikeLevel = 0;
+                    player.orbitalStrikeTimer = 0;
+                    player.evoDivineSword = false;
+                }
+                if (Array.isArray(orbitalStrikes)) orbitalStrikes.length = 0;
+                if (Array.isArray(divineSwords)) divineSwords.length = 0;
+                if (userData && userData.codex && userData.codex.weapons) {
+                    Object.keys(userData.codex.weapons).forEach(k => {
+                        if (String(k).includes('天穹') || String(k).includes('神罰') || String(k).includes('orbitalStrike') || String(k).includes('evoDivineSword')) delete userData.codex.weapons[k];
+                    });
+                }
+            } catch(e) {}
         }
 
 
@@ -926,6 +1057,22 @@
             { id:'m209', cat:'COLLECT', title:'オーラ完全主義者', desc:'オーラを10種類解放する', metric:'unlockedAuraCount', target:10, reward:{coins:65000} },
             { id:'m210', cat:'FINAL', title:'真・ネオンサバイバー', desc:'ミッションを150個達成する', metric:'completedMissionCount', target:150, reward:{coins:180000, weapon:'chronoLotus', skin:'galaxyKnight', aura:'crownBurst'} },
             { id:'m211', cat:'KILL', title:'幻影歩法の試練', desc:'敵を合計600体倒して、強力な回避武器「ファントムステップ」を解放する', metric:'totalKills', target:600, reward:{coins:1800, weapon:'phantomStep'} }
+        );
+
+        // 2026-05-04追加：強武器はミッション達成で解放する方式に変更。
+        MISSION_DEFS.push(
+            { id:'m212', cat:'HARD', title:'虚式解放試練', desc:'最高レベル45に到達して、虚式「茈」を解放する', metric:'bestLevel', target:45, reward:{coins:18000, weapon:'hollowMurasaki'} },
+            { id:'m213', cat:'HARD', title:'崩命破の継承', desc:'1回のプレイで敵を2200体倒して、龍星・崩命破を解放する', metric:'bestRunKills', target:2200, reward:{coins:20000, weapon:'kamehameha'} },
+            { id:'m214', cat:'BOSS', title:'暗黒卿の試練', desc:'ボス系の敵を合計70体倒して、深淵の重力刃を解放する', metric:'totalBossLikeKills', target:70, reward:{coins:16000, weapon:'vader'} },
+            { id:'m215', cat:'BOSS', title:'轟のハンマー', desc:'MONKEY KINGを合計7体倒して、雷霆砕破・轟を解放する', metric:'totalMonkeyKills', target:7, reward:{coins:17000, weapon:'thor'} },
+            { id:'m216', cat:'HARD', title:'領域到達', desc:'1回のプレイで900秒生き残って、無量空処を解放する', metric:'bestTime', target:900, reward:{coins:26000, weapon:'muryoku'} },
+            { id:'m217', cat:'KILL', title:'流星群観測', desc:'敵を合計9000体倒して、星砕きの流星群を解放する', metric:'totalKills', target:9000, reward:{coins:13000, weapon:'funnel'} },
+            { id:'m218', cat:'SCORE', title:'機神起動', desc:'自己ベスト250000点を超えて、創世の光芒を解放する', metric:'bestScore', target:250000, reward:{coins:14000, weapon:'ironBlaster'} },
+            { id:'m219', cat:'GEM', title:'星夢のステージ', desc:'ジェムを合計12000個集めて、星夢の輪舞曲を解放する', metric:'totalGems', target:12000, reward:{coins:15000, weapon:'disneyMagic'} },
+            { id:'m220', cat:'HARD', title:'終焉の合図', desc:'自己ベスト700000点を超えて、終焉の指弾を解放する', metric:'bestScore', target:700000, reward:{coins:32000, weapon:'infinitySnap'} },
+            { id:'m221', cat:'KILL', title:'無限剣の契約', desc:'敵を合計16000体倒して、無限の剣陣を解放する', metric:'totalKills', target:16000, reward:{coins:18000, weapon:'infiniteBlade'} },
+            { id:'m222', cat:'BOSS', title:'不壊の守り', desc:'ボス系の敵を合計120体倒して、絶対防壁の反響を解放する', metric:'totalBossLikeKills', target:120, reward:{coins:19000, weapon:'shieldThrow'} },
+            { id:'m223', cat:'HARD', title:'天帝の雷', desc:'最高レベル80に到達して、天帝の裁界・霹靂を解放する', metric:'bestLevel', target:80, reward:{coins:40000, weapon:'keraunos'} }
         );
 
         // 既存ミッションも全体的に難化。説明欄には強化後の目標値も追記してズレを防ぐ。
@@ -1348,7 +1495,7 @@
             let normal = [...MISSION_DEFS];
 
             if (tab.id === 'RECOMMENDED') {
-                addHeader('DAILY MISSIONS', `今日だけの3つ：${getTodayKey()}`);
+                addHeader('DAILY MISSIONS', `今日だけの6つ：${getTodayKey()}`);
                 allDaily.forEach(m => makeCard(m, true));
                 normal = normal.filter(m => !userData.missions.claimed[m.id]).sort((a,b) => {
                     const ac = userData.missions.completed[a.id] ? 0 : 1;
@@ -1362,7 +1509,7 @@
             }
 
             if (tab.id === 'ALL') {
-                addHeader('DAILY MISSIONS', `今日だけの3つ：${getTodayKey()}`);
+                addHeader('DAILY MISSIONS', `今日だけの6つ：${getTodayKey()}`);
                 allDaily.forEach(m => makeCard(m, true));
             } else if (Array.isArray(tab.cats)) {
                 normal = normal.filter(m => tab.cats.includes(m.cat));
@@ -1419,25 +1566,78 @@
             return easy[w.id] || (enabled ? 'ON：この解放武器がレベルアップ候補に出ます。' : 'OFF：この解放武器はレベルアップ候補に出ません。');
         }
 
+        const MISSION_LOCKED_WEAPON_IDS_20260504 = new Set([
+            'hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep'
+        ]);
+
+        function ensureWeaponSpawnSettings20260504() {
+            ensureProgressionData();
+            userData.settings = userData.settings || {};
+            userData.settings.disabledWeapons = userData.settings.disabledWeapons || {};
+            userData.settings.disabledLegendaryWeapons = userData.settings.disabledLegendaryWeapons || {};
+            return userData.settings.disabledWeapons;
+        }
+
+        function isWeaponMissionLocked20260504(id) {
+            return MISSION_LOCKED_WEAPON_IDS_20260504.has(id) && !(userData.unlocks && userData.unlocks.legendaryWeapons && userData.unlocks.legendaryWeapons[id]);
+        }
+
+        function isWeaponSpawnEnabled20260504(id) {
+            const disabled = ensureWeaponSpawnSettings20260504();
+            if (!id) return true;
+            if (isWeaponMissionLocked20260504(id)) return false;
+            return !disabled[id] && !userData.settings.disabledLegendaryWeapons[id];
+        }
+
+        function setWeaponSpawnEnabled20260504(id, enabled) {
+            const disabled = ensureWeaponSpawnSettings20260504();
+            if (enabled) {
+                delete disabled[id];
+                if (userData.settings.disabledLegendaryWeapons) delete userData.settings.disabledLegendaryWeapons[id];
+            } else {
+                disabled[id] = true;
+                if (isMissionWeaponCodexItem({id})) userData.settings.disabledLegendaryWeapons[id] = true;
+            }
+            saveData();
+            renderWeaponCodexScreen();
+        }
+
+        function shouldOfferWeaponUpgrade20260504(upgrade) {
+            if (!upgrade || !upgrade.name) return true;
+            const name = String(upgrade.name || '');
+            if (['天'+'穹の裁き', '神'+'罰の剣雨'].some(x => name.includes(x))) return false;
+            const def = findWeaponCodexDefFromText(name);
+            if (!def) return true;
+            return isWeaponSpawnEnabled20260504(def.id);
+        }
+
+        function filterSpawnEnabledItems20260504(items) {
+            if (!Array.isArray(items)) return [];
+            const kept = items.filter(shouldOfferWeaponUpgrade20260504);
+            return kept;
+        }
+
         function makeWeaponCodexCard(w) {
             ensureProgressionData();
+            ensureWeaponSpawnSettings20260504();
             const used = isWeaponCodexUsed(w.id);
-            const isMissionWeapon = isMissionWeaponCodexItem(w);
-            const unlockedMissionWeapon = isMissionWeapon && !!(userData.unlocks.legendaryWeapons || {})[w.id];
-            const enabled = !isMissionWeapon || isLegendaryWeaponEnabled(w.id);
-            const toggleHtml = isMissionWeapon ? `
+            const isMissionWeapon = isMissionWeaponCodexItem(w) || MISSION_LOCKED_WEAPON_IDS_20260504.has(w.id);
+            const unlockedMissionWeapon = !isMissionWeapon || !!(userData.unlocks.legendaryWeapons || {})[w.id];
+            const locked = isWeaponMissionLocked20260504(w.id);
+            const enabled = isWeaponSpawnEnabled20260504(w.id);
+            const toggleHtml = `
                 <div class="mt-3 border-t border-slate-700 pt-3">
-                    ${unlockedMissionWeapon ? `
+                    ${locked ? `<p class="text-xs text-gray-500">ミッション未達成なので、まだ出現しません。</p>` : `
                     <label class="flex items-center justify-between gap-3 cursor-pointer">
                         <span class="text-xs font-bold ${enabled?'text-green-300':'text-red-300'}">出現：${enabled?'ON':'OFF'}</span>
-                        <input type="checkbox" class="mission-weapon-toggle w-5 h-5" data-id="${w.id}" ${enabled?'checked':''}>
+                        <input type="checkbox" class="weapon-spawn-toggle w-5 h-5" data-id="${w.id}" ${enabled?'checked':''}>
                     </label>
-                    <p class="text-[11px] text-gray-300 mt-2 leading-relaxed">${getMissionWeaponToggleReason(w, enabled, unlockedMissionWeapon)}</p>` : `<p class="text-xs text-gray-500">未解放なので出現設定はまだ変更できません。</p>`}
-                </div>` : '';
+                    <p class="text-[11px] text-gray-300 mt-2 leading-relaxed">${enabled ? 'ON：この武器がレベルアップ候補に出ます。' : 'OFF：この武器は候補に出ません。重い武器を外す時にも使えます。'}</p>`}
+                </div>`;
             return `<div class="collection-card ${used || unlockedMissionWeapon ? 'unlocked':''}">
                 <div class="flex items-start justify-between gap-2">
                     <div class="text-3xl">${w.icon || '❔'}</div>
-                    <span class="text-[11px] font-bold px-2 py-1 rounded ${used?'bg-green-900/70 text-green-200 border border-green-400/50':'bg-slate-800 text-gray-300 border border-gray-500/40'}">${used?'使用済み':'未使用'}</span>
+                    <span class="text-[11px] font-bold px-2 py-1 rounded ${locked?'bg-red-950/80 text-red-200 border border-red-400/50':used?'bg-green-900/70 text-green-200 border border-green-400/50':'bg-slate-800 text-gray-300 border border-gray-500/40'}">${locked?'未解放':used?'使用済み':'未使用'}</span>
                 </div>
                 <h3 class="font-bold text-white mt-1">${w.name}</h3>
                 <p class="text-xs text-purple-200 font-bold mt-1">${w.type || 'WEAPON'}</p>
@@ -1467,8 +1667,8 @@
                 if (!list.length) return '';
                 return `<section><h3 class="text-2xl font-bold text-cyan-300 mb-2">${label[type] || type}</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3">${list.map(makeWeaponCodexCard).join('')}</div></section>`;
             }).join('');
-            container.querySelectorAll('.mission-weapon-toggle').forEach(t => {
-                t.addEventListener('change', () => setLegendaryWeaponEnabled(t.dataset.id, t.checked));
+            container.querySelectorAll('.weapon-spawn-toggle').forEach(t => {
+                t.addEventListener('change', () => setWeaponSpawnEnabled20260504(t.dataset.id, t.checked));
             });
         }
 
@@ -1838,7 +2038,7 @@
                 container.appendChild(header);
                 grouped[cat].forEach(upg => {
                     const level = Math.max(0, Number(userData.upgrades?.[upg.id] || 0));
-                    const cost = 100 * (level + 1);
+                    const cost = Math.floor(350 * Math.pow(1.28, level) + level * 120);
                     const canBuy = (userData.coins || 0) >= cost;
 
                     const card = document.createElement('div');
@@ -1871,32 +2071,98 @@
             });
         }
 
-        function exportSaveCode() {
+        // ==========================================
+        // 短いセーブコード v3
+        // - 進行状況・ハイスコア・パス状況を残したまま短縮
+        // - 対応ブラウザでは gzip 圧縮を使用
+        // - 古いセーブコードも読み込み可能
+        // ==========================================
+        function bytesToBase64Url(bytes) {
+            let bin = '';
+            const chunk = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunk) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+            }
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        function base64UrlToBytes(str) {
+            const b64 = String(str || '').trim().replace(/-/g, '+').replace(/_/g, '/');
+            const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+            const bin = atob(padded);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return bytes;
+        }
+
+        async function gzipText(text) {
+            if (!('CompressionStream' in window)) return null;
+            const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+            return new Uint8Array(await new Response(stream).arrayBuffer());
+        }
+
+        async function gunzipText(bytes) {
+            if (!('DecompressionStream' in window)) return null;
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+            return await new Response(stream).text();
+        }
+
+        function makeCompactSavePayload() {
+            saveNicknameFromInput();
+            // キーを短くしてから圧縮する。u = userData, n = nickname。
+            // userData 本体は削らず、ハイスコア・コイン・強化・ミッション・パス・装備を保存する。
+            return { v: 3, n: getNickname(), u: userData };
+        }
+
+        async function encodeShortSaveCode(payload) {
+            const json = JSON.stringify(payload);
+            const gz = await gzipText(json);
+            if (gz && gz.length > 0) return 'NS3.' + bytesToBase64Url(gz);
+            // 古いブラウザ用フォールバック。短縮キーは使うが圧縮なし。
+            return 'NS1.' + btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        async function decodeShortSaveCode(code) {
+            const rawCode = String(code || '').trim();
+            if (rawCode.startsWith('NS3.')) {
+                const text = await gunzipText(base64UrlToBytes(rawCode.slice(4)));
+                if (!text) throw new Error('gzip unsupported');
+                return JSON.parse(text);
+            }
+            if (rawCode.startsWith('NS1.')) {
+                const body = rawCode.slice(4);
+                const bytesText = atob(body.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - body.length % 4) % 4));
+                return JSON.parse(decodeURIComponent(escape(bytesText)));
+            }
+            // 以前の長いセーブコードも読み込めるように残す。
+            return JSON.parse(decodeURIComponent(escape(atob(rawCode))));
+        }
+
+        async function exportSaveCode() {
             try {
-                saveNicknameFromInput();
-                const payload = { version: 2, userData, nickname: getNickname() };
-                const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+                const payload = makeCompactSavePayload();
+                const code = await encodeShortSaveCode(payload);
                 navigator.clipboard?.writeText(code).catch(() => {});
-                alert('セーブコードをコピーしました。\n\n' + code);
+                alert('短縮セーブコードをコピーしました。\nハイスコア・進行状況・バトルパスも保存されています。\n\n' + code);
             } catch (e) {
                 alert('セーブコードの発行に失敗しました。');
             }
         }
 
-        function importSaveCode() {
+        async function importSaveCode() {
             const code = prompt('セーブコードを入力してください');
             if (!code) return;
             try {
-                const parsed = JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
-                const raw = parsed.userData || parsed;
+                const parsed = await decodeShortSaveCode(code);
+                const raw = parsed.u || parsed.userData || parsed;
                 if (!raw || typeof raw !== 'object' || !raw.upgrades) throw new Error('invalid');
-                const nick = normalizeNickname(parsed.nickname || raw.nickname || '');
+                const nick = normalizeNickname(parsed.n || parsed.nickname || raw.nickname || '');
                 userData = Object.assign({}, raw, {
                     score: Number(raw.score || 0),
                     coins: Number(raw.coins || 0),
                     nickname: nick,
                     upgrades: Object.assign({}, raw.upgrades || {}),
-                    resetVersion: SAVE_RESET_VERSION
+                    resetVersion: raw.resetVersion || SAVE_RESET_VERSION
                 });
                 ensureProgressionData();
                 if (nick) {
@@ -1911,7 +2177,6 @@
                 alert('コードが正しくありません。');
             }
         }
-
 
         function normalizeNickname(name) {
             return String(name || '').trim().replace(/\s+/g, ' ').slice(0, 12);
@@ -2329,13 +2594,20 @@
                 ultimateSkills.push({ name: '【進化】特異点ボム・メテオ', desc: '反射爆弾と重力場が融合。爆発時に広範囲を巻き込む特大の重力場を残す', color: '#f59e0b', icon: '💣🌌', apply: () => { player.evoSingularityBomb = true; finalizeEvolutionMerge('evoSingularityBomb'); triggerWeaponEvolved('バウンスボム', '特異点ボム・メテオ', '#f59e0b'); }});
             }
 
+            ultimateSkills = filterSpawnEnabledItems20260504(ultimateSkills);
+            pool = filterSpawnEnabledItems20260504(pool);
+
             let selected = [];
             let shuffledUlts = ultimateSkills.sort(() => 0.5 - Math.random());
             while(selected.length < 3 && shuffledUlts.length > 0) selected.push(shuffledUlts.shift());
 
             pool = rebalanceOnlineUpgradePool20260502(pool);
+            pool = filterSpawnEnabledItems20260504(pool);
             const shuffled = pool.sort(() => 0.5 - Math.random());
             while (selected.length < 3 && shuffled.length) selected.push(shuffled.shift());
+            if (selected.length === 0) {
+                selected.push({ name: '応急修復', desc: '全武器OFF時の救済。HPを少し回復する。', color: '#86efac', icon: '➕', apply: () => { if (player) player.hp = Math.min(player.maxHp, player.hp + Math.max(18, player.maxHp * 0.12)); } });
+            }
             selected.forEach(upgrade => {
                 const card = document.createElement('div');
                 card.className = 'upgrade-card p-6 rounded-lg w-64 text-center cursor-pointer flex flex-col items-center justify-between pointer-events-auto';
@@ -2510,7 +2782,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'bossCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2569,6 +2841,7 @@
             if (shouldReset) {
                 userData = createFreshUserData(savedNick);
                 localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
+                setTimeout(() => { try { saveDataToCloud(); } catch(e) {} }, 0);
             }
             ensureProgressionData();
             userData.resetVersion = SAVE_RESET_VERSION;
@@ -2860,12 +3133,6 @@
             const ultChance = 0.03; 
             const highChance = 0.06;
 
-            if (player.orbitalStrikeLevel === 0) {
-                if (Math.random() < highChance) ultimateSkills.push({ name: '【神技】天穹の裁き・極光', desc: '極太レーザーで敵密集地を焼き尽くす', color: '#fbbf24', icon: '✨', apply: () => { player.orbitalStrikeLevel = 1; } });
-            } else {
-                pool.push({ name: '天穹の裁き・極光 強化', desc: 'レーザーの攻撃範囲、威力、発動頻度がUP', color: '#fbbf24', icon: '✨', apply: () => { player.orbitalStrikeLevel += 1; } });
-            }
-
             if (player.ironmanSuitLevel === 0) {
                 if (Math.random() < ultChance) ultimateSkills.push({ name: '【機神】創世の光芒', desc: 'ブラスター高速連射、10秒毎に極太ユニビーム', color: '#ef4444', icon: '🤖', apply: () => { player.ironmanSuitLevel = 1; player.speed *= 2; player.unibeamTimer = 9999; triggerIronCutin(); } });
             }
@@ -2948,9 +3215,6 @@
                 if (player.voidTempestLevel >= 3 && player.hollowMurasakiLevel >= 3 && !player.evoBlackhole) {
                     ultimateSkills.push({ name: '【進化】ブラックホール・ノヴァ', desc: '暴風と茈が融合。全てを吸い込み消滅させる', color: '#000000', icon: '🌌', apply: () => { player.evoBlackhole = true; finalizeEvolutionMerge('evoBlackhole'); triggerWeaponEvolved('虚空次元の暴風', 'ブラックホール・ノヴァ', '#a855f7'); } });
                 }
-                if (player.orbitalStrikeLevel >= 3 && player.infiniteBladeLevel >= 3 && !player.evoDivineSword) {
-                    ultimateSkills.push({ name: '【進化】神罰の剣雨', desc: '裁きの光と王の財宝が融合。無数の光剣が降り注ぐ', color: '#ffea00', icon: '⚔️✨', apply: () => { player.evoDivineSword = true; finalizeEvolutionMerge('evoDivineSword'); triggerWeaponEvolved('天穹の裁き', '神罰の剣雨', '#ffea00'); } });
-                }
                 if (player.vaderLevel >= 3 && player.kamehamehaLevel >= 3 && !player.evoGravityBeam) {
                     ultimateSkills.push({ name: '【進化】超重力・崩命破', desc: '深淵と龍星が融合。敵を中心線に吸い寄せる極太ビーム', color: '#818cf8', icon: '🌌🌊', apply: () => { player.evoGravityBeam = true; finalizeEvolutionMerge('evoGravityBeam'); triggerWeaponEvolved('深淵の重力刃', '超重力・崩命破', '#818cf8'); } });
                 }
@@ -2958,14 +3222,16 @@
                     ultimateSkills.push({ name: '【進化】雷鳴の剣域', desc: '円環と雷域が融合。高速回転する剣が常に雷を放つ', color: '#2dd4bf', icon: '⚡🌀', apply: () => { player.evoThunderBlade = true; finalizeEvolutionMerge('evoThunderBlade'); triggerWeaponEvolved('円環の刃界', '雷鳴の剣域', '#2dd4bf'); } });
                 }
                 if ((player.legendaryRailCannonLevel || 0) >= 3 && (player.legendaryNeonLanceLevel || 0) >= 3 && !player.evoRailBurst) {
-                    ultimateSkills.push({ name: '【神話進化】星核レールバースト', desc: 'レールキャノンとネオンランスが融合。通常弾が超火力の星核弾になる', color: '#e0f2fe', icon: '🔭🔱', apply: () => { player.evoRailBurst = true; player.damage *= 1.35; player.pierce += 6; finalizeEvolutionMerge('evoRailBurst'); triggerWeaponEvolved('レールキャノン', '星核レールバースト', '#e0f2fe'); } });
+                    ultimateSkills.push({ name: '【神話進化】星核レールバースト', desc: 'レールキャノンとネオンランスが融合。通常弾が超火力の星核弾になる', color: '#e0f2fe', icon: '🔭🔱', apply: () => { player.evoRailBurst = true; player.damage *= 1.85; player.pierce += 14; finalizeEvolutionMerge('evoRailBurst'); triggerWeaponEvolved('レールキャノン', '星核レールバースト', '#e0f2fe'); } });
                 }
                 if ((player.legendaryBlackholeEmperorLevel || 0) >= 3 && (player.legendaryVoidCollectorLevel || 0) >= 3 && !player.evoEndBlackhole) {
-                    ultimateSkills.push({ name: '【神話進化】終焉ブラックホール', desc: 'ブラックホールと虚空コレクターが融合。吸引範囲と経験値回収がさらに強化', color: '#a855f7', icon: '⚫🌌', apply: () => { player.evoEndBlackhole = true; player.magnetBonus += 250; player.expBoost *= 1.25; finalizeEvolutionMerge('evoEndBlackhole'); triggerWeaponEvolved('ブラックホールエンペラー', '終焉ブラックホール', '#a855f7'); } });
+                    ultimateSkills.push({ name: '【神話進化】終焉ブラックホール', desc: 'ブラックホールと虚空コレクターが融合。吸引範囲と経験値回収がさらに強化', color: '#a855f7', icon: '⚫🌌', apply: () => { player.evoEndBlackhole = true; player.magnetBonus += 520; player.expBoost *= 1.55; finalizeEvolutionMerge('evoEndBlackhole'); triggerWeaponEvolved('ブラックホールエンペラー', '終焉ブラックホール', '#a855f7'); } });
                 }
             }
 
             addUnlockedLegendarySkills(pool);
+            ultimateSkills = filterSpawnEnabledItems20260504(ultimateSkills);
+            pool = filterSpawnEnabledItems20260504(pool);
 
             let selected = [];
             if (isLowHp && Math.random() < 0.8) selected.push(healSkill); else pool.push(healSkill);
@@ -5217,18 +5483,18 @@
                 let rapidUpg = safe(Number((userData && userData.upgrades && userData.upgrades.rapid) || 0));
                 let pierceUpg = safe(Number((userData && userData.upgrades && userData.upgrades.pierce) || 0));
 
-                this.speed = 4.2 + (spdUpg * 0.3);
-                this.maxHp = 100 + (hpUpg * 20); this.hp = this.maxHp; 
-                this.damage = 30 + (dmgUpg * 5); this.expBoost = 1.0 + (expUpg * 0.2);
-                this.armorRate = Math.min(0.45, armorUpg * 0.045);
-                this.magnetBonus = magnetUpg * 55;
-                this.rapidBonus = Math.min(0.45, rapidUpg * 0.045);
-                this.extraPierce = Math.floor(pierceUpg / 2);
+                this.speed = 4.2 + (spdUpg * 0.12);
+                this.maxHp = 100 + (hpUpg * 8); this.hp = this.maxHp; 
+                this.damage = 30 + (dmgUpg * 1.75); this.expBoost = 1.0 + (expUpg * 0.05);
+                this.armorRate = Math.min(0.28, armorUpg * 0.018);
+                this.magnetBonus = magnetUpg * 22;
+                this.rapidBonus = Math.min(0.25, rapidUpg * 0.018);
+                this.extraPierce = Math.floor(pierceUpg / 5);
                 if (isOnlineMode) {
                     // オンライン対戦用バランス：即死しにくく、撃ち合いが続くHPと低めの火力
-                    this.speed = 4.0 + (spdUpg * 0.18);
-                    this.maxHp = 260 + (hpUpg * 15); this.hp = this.maxHp;
-                    this.damage = 10 + (dmgUpg * 1.5);
+                    this.speed = 4.0 + (spdUpg * 0.07);
+                    this.maxHp = 260 + (hpUpg * 6); this.hp = this.maxHp;
+                    this.damage = 10 + (dmgUpg * 0.6);
                 }
 
                 const skinBonus = getEquippedSkinBonus();
@@ -6769,10 +7035,10 @@
             if (!isTimeStopped) {
                 const groups = [
                     {a:gems, l:300}, {a:particles, l:400}, {a:bullets, l:300}, {a:sniperBullets, l:100}, {a:enemyBullets, l:500},
-                    {a:ironBlasters, l:100}, {a:shields, l:20}, {a:floatingTexts, l:150}, {a:effects, l:100},
-                    {a:voidTempests, l:50}, {a:hollowMurasakis, l:50}, {a:orbitalStrikes, l:50},
-                    {a:kamehamehas, l:50}, {a:infinitySnaps, l:50}, {a:infiniteBladeSwords, l:200},
-                    {a:unibeams, l:50}, {a:keraunosStorms, l:50}, {a:vaderSkills, l:50},
+                    {a:ironBlasters, l:100}, {a:shields, l:20}, {a:floatingTexts, l:150}, {a:effects, l:72},
+                    {a:voidTempests, l:36}, {a:hollowMurasakis, l:32}, {a:orbitalStrikes, l:50},
+                    {a:kamehamehas, l:30}, {a:infinitySnaps, l:30}, {a:infiniteBladeSwords, l:200},
+                    {a:unibeams, l:30}, {a:keraunosStorms, l:30}, {a:vaderSkills, l:50},
                     {a:stormbreakers, l:50}, {a:disneyMagics, l:50}, {a:muryokushos, l:10},
                     {a:bounceBombs, l:50}, {a:poisonClouds, l:50}, {a:blackholes, l:10}, {a:divineSwords, l:10},
                     {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}, {a:overlordFlames, l:35}, {a:cosmicSushiStorms, l:6}
@@ -7341,6 +7607,7 @@
             whiteFlash = 0; purpleFlash = 0; blueFlash = 0; redFlash = 0; timeAccumulator = 0; gameSpeedMultiplier = 1.0;
             const speedRadios = document.getElementsByName('gameSpeed'); for(let r of speedRadios) { if(r.value === "1.0") r.checked = true; }
             
+            purgeRemovedAstralJudgementWeapon20260504();
             updateUI(); Sound.init(); Sound.startBGM();
             lastTime = performance.now();
             if (animationId) cancelAnimationFrame(animationId);
@@ -9605,6 +9872,7 @@
         const __oldUpdateLogic = updateLogic;
         updateLogic = function() {
             const ret = __oldUpdateLogic.apply(this, arguments);
+            try { purgeRemovedAstralJudgementWeapon20260504(); } catch(e) {}
             try { updateCursedChests(); } catch(e) {}
             try { updateMapEvent(); } catch(e) {}
             return ret;
@@ -9634,8 +9902,1414 @@
         ensureExtraEventStats();
         checkMissionCompletions(false);
     } catch(e) {}
+
+    // 2026-05-04 Fix: 万一、過去の追加コードがHTML本文として表示された場合だけ自動で非表示にする。
+    function removeAccidentalVisibleCodeFragments20260504() {
+        try {
+            const badPatterns = ['function ', 'const ', 'let ', '=>', 'try {', 'catch(e)', 'document.getElementById'];
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            const targets = [];
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                const s = String(node.nodeValue || '').trim();
+                if (s.length > 40 && badPatterns.some(p => s.includes(p))) targets.push(node);
+            }
+            targets.forEach(n => n.parentNode && n.parentNode.removeChild(n));
+        } catch(e) {}
+    }
+    removeAccidentalVisibleCodeFragments20260504();
+
+
+    // ============================================================
+    // 2026-05-04 Player Growth Update
+    // 目的：画面構成を大きく変えず、デイリー強化・ランキング・イベント・スマホ最適化を後ろから追加
+    // ============================================================
+    const NSV_PLAYER_GROWTH_VERSION_20260504 = 'player-growth-v1';
+    let nsvSelectedEventMode20260504 = null;
+    let nsvAutoLightModeEnabled20260504 = false;
+    let nsvLastFpsCheck20260504 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    let nsvLastBossRushFrame20260504 = 0;
+
+    function nsvEscape20260504(s) {
+        return String(s ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    }
+    function nsvWeekKey20260504(date = new Date()) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const day = (d.getDay() + 6) % 7;
+        d.setDate(d.getDate() - day + 3);
+        const firstThu = new Date(d.getFullYear(), 0, 4);
+        const firstDay = (firstThu.getDay() + 6) % 7;
+        firstThu.setDate(firstThu.getDate() - firstDay + 3);
+        const week = 1 + Math.round((d - firstThu) / (7 * 24 * 60 * 60 * 1000));
+        return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`;
+    }
+    function nsvTodayKey20260504() { return (typeof getTodayKey === 'function') ? getTodayKey() : new Date().toISOString().slice(0,10); }
+
+    function injectPlayerGrowthStyle20260504() {
+        if (document.getElementById('nsvPlayerGrowthStyle20260504')) return;
+        const style = document.createElement('style');
+        style.id = 'nsvPlayerGrowthStyle20260504';
+        style.textContent = `
+            .nsv-big-unlock { position:fixed; inset:0; z-index:350; display:flex; align-items:center; justify-content:center; pointer-events:none; background:radial-gradient(circle, rgba(250,204,21,.20), rgba(0,0,0,.72)); animation:nsvUnlockFade 3.3s ease forwards; }
+            .nsv-big-unlock-card { width:min(92vw,620px); border:3px solid #facc15; border-radius:28px; background:linear-gradient(180deg, rgba(2,6,23,.96), rgba(0,0,0,.92)); box-shadow:0 0 42px rgba(250,204,21,.7), inset 0 0 28px rgba(250,204,21,.22); text-align:center; padding:26px 22px; transform:scale(.96); animation:nsvUnlockPop .9s cubic-bezier(.2,1.4,.2,1) forwards; }
+            .nsv-big-unlock-title { color:#facc15; font-family:Orbitron, sans-serif; font-size:clamp(1.6rem, 6vw, 3.4rem); font-weight:900; text-shadow:0 0 18px #facc15; letter-spacing:.08em; }
+            .nsv-big-unlock-name { color:white; font-size:clamp(1.2rem, 5vw, 2.5rem); font-weight:900; margin-top:10px; text-shadow:0 0 14px #22d3ee; }
+            .nsv-big-unlock-sub { color:#cffafe; font-size:.95rem; margin-top:8px; }
+            @keyframes nsvUnlockPop { 0%{transform:scale(.78) rotate(-2deg); filter:brightness(2.2)} 60%{transform:scale(1.04) rotate(0deg)} 100%{transform:scale(1)} }
+            @keyframes nsvUnlockFade { 0%{opacity:0} 10%{opacity:1} 82%{opacity:1} 100%{opacity:0} }
+            .nsv-rank-card { background:rgba(2,6,23,.9); border:1px solid rgba(6,182,212,.45); border-radius:16px; padding:12px 14px; }
+            .nsv-rank-row { display:grid; grid-template-columns:44px 1fr auto; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid rgba(148,163,184,.18); }
+            .nsv-rank-row:last-child { border-bottom:0; }
+            .nsv-event-card { background:rgba(2,6,23,.9); border:1px solid rgba(250,204,21,.42); border-radius:18px; padding:16px; box-shadow:0 0 16px rgba(250,204,21,.12); }
+            .nsv-event-card.locked { opacity:.55; filter:grayscale(.25); }
+            @media (max-width:720px) {
+                #pauseBtn { min-width:86px; min-height:44px; font-size:14px !important; border-width:3px; }
+                #joystickZone { width:7.0rem !important; height:7.0rem !important; opacity:.66; right:1.0rem !important; bottom:1.0rem !important; }
+                #joystickStick { width:2.45rem !important; height:2.45rem !important; }
+                .menu-secondary { min-height:78px !important; font-size:1.08rem !important; }
+                .solo-hero { min-height:108px !important; }
+                .upgrade-card { min-width:min(92vw, 280px); }
+                #levelUpScreen #upgradesContainer { gap:12px !important; }
+                #levelUpScreen .upgrade-card { padding:16px !important; }
+                .mission-card, .collection-card, .nsv-event-card, .nsv-rank-card { border-radius:18px; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function showBigWeaponUnlock20260504(name, icon = '⚡') {
+        try {
+            injectPlayerGrowthStyle20260504();
+            const old = document.getElementById('nsvBigUnlockOverlay20260504');
+            if (old) old.remove();
+            const div = document.createElement('div');
+            div.id = 'nsvBigUnlockOverlay20260504';
+            div.className = 'nsv-big-unlock';
+            div.innerHTML = `<div class="nsv-big-unlock-card"><div class="text-6xl mb-2">${nsvEscape20260504(icon)}</div><div class="nsv-big-unlock-title">NEW WEAPON</div><div class="nsv-big-unlock-name">${nsvEscape20260504(name)}</div><div class="nsv-big-unlock-sub">ミッション達成で新武器が解放されました</div></div>`;
+            document.body.appendChild(div);
+            try { Sound.playSweep(220, 1760, 1.2, 'sawtooth', 0.035); } catch(e) {}
+            setTimeout(() => { if (div && div.parentNode) div.remove(); }, 3400);
+        } catch(e) {}
+    }
+
+    // 1) デイリーミッションを6個化し、種類と報酬を強化
+    function upgradeDailyMissionSystem20260504() {
+        try {
+            const extra = [
+                { id:'d_kill_360_x', cat:'DAILY', title:'今日の超討伐', desc:'今日中に敵を360体倒す', metric:'dailyKills', target:360, reward:{coins:2200} },
+                { id:'d_gem_360_x', cat:'DAILY', title:'今日の大量ジェム回収', desc:'今日中にジェムを360個集める', metric:'dailyGems', target:360, reward:{coins:2300} },
+                { id:'d_time_900_x', cat:'DAILY', title:'今日の15分サバイバー', desc:'今日中に合計900秒生き残る', metric:'dailyPlayTime', target:900, reward:{coins:2600} },
+                { id:'d_level_18_x', cat:'DAILY', title:'今日の高レベル到達', desc:'今日中に最高レベル18へ到達する', metric:'dailyBestLevel', target:18, reward:{coins:2500} },
+                { id:'d_boss_3_x', cat:'DAILY', title:'今日のボスラッシュ練習', desc:'今日中にボス系を3体倒す', metric:'dailyBossKills', target:3, reward:{coins:3000} },
+                { id:'d_score_25000_x', cat:'DAILY', title:'今日の本気スコアアタック', desc:'今日中にスコア25000を超える', metric:'dailyBestScore', target:25000, reward:{coins:3200} },
+                { id:'d_run_4_x', cat:'DAILY', title:'今日の4回出撃', desc:'今日中に4回プレイする', metric:'dailyRuns', target:4, reward:{coins:1900} },
+                { id:'d_online_12_x', cat:'DAILY', title:'今日のオンライン命中', desc:'今日中にオンライン攻撃を12回当てる', metric:'dailyOnlineHits', target:12, reward:{coins:2800} }
+            ];
+            const exists = new Set(DAILY_MISSION_POOL.map(m => m.id));
+            for (const m of extra) if (!exists.has(m.id)) DAILY_MISSION_POOL.push(m);
+
+            seededDailyMissionIds = function(dayKey) {
+                let seed = 0;
+                for (let i = 0; i < dayKey.length; i++) seed = ((seed * 31) + dayKey.charCodeAt(i)) >>> 0;
+                const pool = DAILY_MISSION_POOL.map(x => x.id);
+                for (let i = pool.length - 1; i > 0; i--) {
+                    seed = (seed * 1664525 + 1013904223) >>> 0;
+                    const j = seed % (i + 1);
+                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                }
+                return pool.slice(0, 6);
+            };
+
+            ensureDailyMissionData = function() {
+                if (!userData || typeof userData !== 'object') userData = {};
+                const today = getTodayKey();
+                const baseStats = {
+                    dailyKills:0, dailyBossKills:0, dailyGems:0, dailyRuns:0, dailyPlayTime:0,
+                    dailyBestLevel:1, dailyBestScore:0, dailyOnlineHits:0, dailyMissionCompletions:0
+                };
+                if (!userData.daily || userData.daily.date !== today || userData.daily.version !== NSV_PLAYER_GROWTH_VERSION_20260504) {
+                    userData.daily = { version: NSV_PLAYER_GROWTH_VERSION_20260504, date: today, ids: seededDailyMissionIds(today), stats:Object.assign({}, baseStats), completed:{}, claimed:{} };
+                }
+                userData.daily.stats = Object.assign({}, baseStats, userData.daily.stats || {});
+                userData.daily.completed = userData.daily.completed || {};
+                userData.daily.claimed = userData.daily.claimed || {};
+                if (!Array.isArray(userData.daily.ids) || userData.daily.ids.length !== 6) userData.daily.ids = seededDailyMissionIds(today);
+                for (const k of Object.keys(baseStats)) userData.daily.stats[k] = Number(userData.daily.stats[k] || 0);
+            };
+            getDailyMissionDefs = function() {
+                ensureDailyMissionData();
+                return userData.daily.ids.map(id => DAILY_MISSION_POOL.find(m => m.id === id)).filter(Boolean);
+            };
+        } catch(e) { console.warn('daily mission upgrade skipped', e); }
+    }
+
+    // 2) ミッションで武器解放した時に大きく表示
+    function patchUnlockPresentation20260504() {
+        try {
+            const oldGrantReward = grantReward;
+            grantReward = function(reward = {}, silent = false) {
+                ensureProgressionData();
+                const before = Object.assign({}, (userData.unlocks && userData.unlocks.legendaryWeapons) || {});
+                const ret = oldGrantReward.apply(this, arguments);
+                try {
+                    if (!silent && reward && reward.weapon) {
+                        const after = (userData.unlocks && userData.unlocks.legendaryWeapons) || {};
+                        if (!before[reward.weapon] && after[reward.weapon]) {
+                            const def = (LEGENDARY_WEAPON_DEFS || []).find(w => w.id === reward.weapon) || (getAllWeaponCodexDefs ? getAllWeaponCodexDefs().find(w => w.id === reward.weapon) : null);
+                            showBigWeaponUnlock20260504(def?.name || reward.weapon, def?.icon || '⚡');
+                        }
+                    }
+                } catch(e) {}
+                return ret;
+            };
+        } catch(e) { console.warn('unlock presentation patch skipped', e); }
+    }
+
+    // 3) ランキング・友達コード
+    function ensureLeaderboardScreen20260504() {
+        injectPlayerGrowthStyle20260504();
+        if (!document.getElementById('leaderboardScreen')) {
+            const div = document.createElement('div');
+            div.id = 'leaderboardScreen';
+            div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3';
+            div.innerHTML = `
+                <div class="menu-panel w-full flex flex-col gap-4">
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                        <div>
+                            <h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif; text-shadow:0 0 15px #22d3ee;">RANKING</h2>
+                            <p class="text-gray-300 text-sm mt-2">今日・今週・友達コード・ボス討伐・使用武器を比べられます。</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button id="copyFriendCodeBtn" class="btn-gold px-4 py-2 rounded font-bold">FRIEND CODE</button>
+                            <button id="addFriendCodeBtn" class="btn-green px-4 py-2 rounded font-bold">ADD FRIEND</button>
+                            <button id="closeLeaderboardBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+                        </div>
+                    </div>
+                    <div id="leaderboardListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[72vh] pr-1"></div>
+                </div>`;
+            document.body.appendChild(div);
+            document.getElementById('closeLeaderboardBtn')?.addEventListener('click', () => showScreen('startScreen'));
+            document.getElementById('copyFriendCodeBtn')?.addEventListener('click', copyFriendCode20260504);
+            document.getElementById('addFriendCodeBtn')?.addEventListener('click', addFriendCode20260504);
+        }
+        if (!document.getElementById('openLeaderboardBtn')) {
+            const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+            const btn = document.createElement('button');
+            btn.id = 'openLeaderboardBtn';
+            btn.className = 'btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'RANKING<br><span class="text-xs text-cyan-100 font-bold">友達と比べる</span>';
+            grid?.appendChild(btn);
+            btn.addEventListener('click', () => { renderLeaderboard20260504(); showScreen('leaderboardScreen'); });
+        }
+    }
+    function getLeaderboardStore20260504() {
+        try { return JSON.parse(localStorage.getItem('nsvLeaderboards20260504') || '{}') || {}; } catch(e) { return {}; }
+    }
+    function saveLeaderboardStore20260504(s) { try { localStorage.setItem('nsvLeaderboards20260504', JSON.stringify(s)); } catch(e) {} }
+    function currentPlayerEntry20260504(extra = {}) {
+        const stats = (userData && userData.stats) || {};
+        return Object.assign({
+            name: normalizeNickname ? normalizeNickname(userData.nickname || 'PLAYER') : (userData.nickname || 'PLAYER'),
+            score: Math.floor(score || userData.score || 0),
+            bestScore: Math.floor(userData.score || score || 0),
+            boss: Math.floor((runStats && runStats.bossKills) || stats.bestRunBossKills || stats.totalBossLikeKills || 0),
+            totalBoss: Math.floor(stats.totalBossLikeKills || 0),
+            date: nsvTodayKey20260504(),
+            week: nsvWeekKey20260504(),
+            time: Date.now()
+        }, extra);
+    }
+    function recordLeaderboardResult20260504() {
+        try {
+            const s = getLeaderboardStore20260504();
+            s.today = s.today || {}; s.week = s.week || {}; s.boss = s.boss || {}; s.weapon = s.weapon || {};
+            const today = nsvTodayKey20260504(); const week = nsvWeekKey20260504();
+            s.today[today] = s.today[today] || [];
+            s.week[week] = s.week[week] || [];
+            s.boss.all = s.boss.all || [];
+            const entry = currentPlayerEntry20260504({ score:Math.floor(score || 0), bestScore:Math.max(userData.score || 0, Math.floor(score || 0)) });
+            s.today[today].push(entry); s.week[week].push(entry); s.boss.all.push(entry);
+            s.today[today] = s.today[today].sort((a,b)=>b.score-a.score).slice(0,20);
+            s.week[week] = s.week[week].sort((a,b)=>b.score-a.score).slice(0,30);
+            s.boss.all = s.boss.all.sort((a,b)=>(b.totalBoss||b.boss||0)-(a.totalBoss||a.boss||0)).slice(0,30);
+            saveLeaderboardStore20260504(s);
+        } catch(e) {}
+    }
+    function makeFriendCode20260504() {
+        const stats = (userData && userData.stats) || {};
+        const payload = {
+            v:1, n:userData.nickname || 'PLAYER', s:Math.floor(userData.score || 0),
+            b:Math.floor(stats.totalBossLikeKills || 0), w:nsvWeekKey20260504(), d:nsvTodayKey20260504()
+        };
+        try { return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))); } catch(e) { return ''; }
+    }
+    function parseFriendCode20260504(code) {
+        try { return JSON.parse(decodeURIComponent(escape(atob(String(code || '').trim())))); } catch(e) { return null; }
+    }
+    function copyFriendCode20260504() {
+        const code = makeFriendCode20260504();
+        if (!code) return;
+        try { navigator.clipboard?.writeText(code); } catch(e) {}
+        showMissionToast('FRIEND CODE', '友達コードをコピーしました。友達に送ってランキングへ追加できます。');
+    }
+    function addFriendCode20260504() {
+        const code = prompt('友達コードを貼り付けてください');
+        const d = parseFriendCode20260504(code);
+        if (!d || !d.n) { showMissionToast('FRIEND CODE ERROR', 'コードを読み取れませんでした。'); return; }
+        const s = getLeaderboardStore20260504();
+        s.friends = s.friends || [];
+        s.friends.push({ name:String(d.n).slice(0,12), bestScore:Number(d.s||0), totalBoss:Number(d.b||0), week:d.w || '', date:d.d || '', time:Date.now() });
+        s.friends = s.friends.sort((a,b)=>(b.bestScore||0)-(a.bestScore||0)).slice(0,30);
+        saveLeaderboardStore20260504(s);
+        renderLeaderboard20260504();
+        showMissionToast('FRIEND ADDED', `${String(d.n).slice(0,12)} をランキングに追加しました。`);
+    }
+    function renderRankSection20260504(title, rows, valueKey, suffix = '') {
+        rows = Array.isArray(rows) ? rows : [];
+        if (!rows.length) return `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">${title}</h3><p class="text-gray-400 text-sm mt-2">まだ記録がありません。1回プレイすると表示されます。</p></div>`;
+        return `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">${title}</h3><div class="mt-2">${rows.slice(0,8).map((r,i)=>`<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#${i+1}</div><div><b>${nsvEscape20260504(r.name || 'PLAYER')}</b><div class="text-xs text-gray-400">${nsvEscape20260504(r.date || r.week || '')}</div></div><div class="text-right text-white font-bold">${Math.floor(Number(r[valueKey] || 0)).toLocaleString()}${suffix}</div></div>`).join('')}</div></div>`;
+    }
+    function renderLeaderboard20260504() {
+        ensureLeaderboardScreen20260504();
+        const box = document.getElementById('leaderboardListContainer');
+        if (!box) return;
+        const s = getLeaderboardStore20260504();
+        const today = nsvTodayKey20260504(); const week = nsvWeekKey20260504();
+        const friends = [{ name:userData.nickname || 'YOU', bestScore:userData.score || 0, totalBoss:(userData.stats||{}).totalBossLikeKills || 0, date:today }, ...(s.friends || [])].sort((a,b)=>(b.bestScore||0)-(a.bestScore||0));
+        const weaponUse = Object.entries(((userData.stats || {}).weaponUseCounts) || {}).map(([name, count]) => ({ name, count })).sort((a,b)=>b.count-a.count);
+        box.innerHTML = [
+            renderRankSection20260504('今日のハイスコア', s.today?.[today] || [], 'score'),
+            renderRankSection20260504('今週のランキング', s.week?.[week] || [], 'score'),
+            renderRankSection20260504('友達コードランキング', friends, 'bestScore'),
+            renderRankSection20260504('ボス討伐数ランキング', s.boss?.all || friends, 'totalBoss', '体'),
+            `<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">使用武器ランキング</h3>${weaponUse.length ? `<div class="mt-2">${weaponUse.slice(0,8).map((r,i)=>`<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#${i+1}</div><div><b>${nsvEscape20260504(r.name)}</b><div class="text-xs text-gray-400">使った回数</div></div><div class="text-right text-white font-bold">${Math.floor(r.count)}回</div></div>`).join('')}</div>` : '<p class="text-gray-400 text-sm mt-2">武器を使うと記録されます。</p>'}</div>`
+        ].join('');
+    }
+
+    // 4) ボス図鑑をキャラ化し、弱点・おすすめ武器・報酬を追加
+    function patchBossCodexCharacter20260504() {
+        try {
+            BOSS_CODEX_DEFS.length = 0;
+            BOSS_CODEX_DEFS.push(
+                { id:'monkey', icon:'🐵', name:'猿の鬼', stat:'totalMonkeyKills', attack:'突進と近距離攻撃で一気に近づいてくる。', weak:'正面に立ち続けず、円を描くように逃げる。', recommend:'円環の刃界 / 破滅の雷域', reward:'初回討伐でボス系ミッションが進む' },
+                { id:'second', icon:'🦍', name:'最恐大猿王：第二形態', stat:'totalSecondPhaseKills', attack:'復活後に巨大化し、ブラックホール系の攻撃を使う。', weak:'吸引が出たら攻撃より回避優先。移動速度UPが強い。', recommend:'虚式「茈」/ 轟のハンマー / 絶対防壁', reward:'高難度ミッション・大猿系スキン進行' },
+                { id:'gravity', icon:'⚫', name:'ブラックホールエンペラー', stat:'totalGravityBossKills', attack:'広い範囲で吸い寄せ、中心で大ダメージを狙う。', weak:'中心に直進で逆らわず、斜め方向に抜ける。', recommend:'星砕きの流星群 / 天帝の雷 / 移動速度UP', reward:'ブラックホール系ミッション進行' },
+                { id:'thunder', icon:'⚡', name:'雷帝', stat:'totalThunderBossKills', attack:'予告円のあとに落雷。止まると当たりやすい。', weak:'小さく動き続ける。予告円が出たらすぐ離れる。', recommend:'絶対防壁の反響 / 遠距離武器', reward:'雷帝オーラ・雷系ミッション進行' },
+                { id:'fire', icon:'🔥', name:'炎王', stat:'totalFireBossKills', attack:'火柱を出して移動ルートをふさぐ。', weak:'火柱の円が見えたら横に逃げる。', recommend:'かめはめ波 / 轟のハンマー / スナイパー', reward:'炎系スキン・イベントミッション進行' },
+                { id:'mirror', icon:'🪞', name:'ミラージュロード', stat:'totalMirrorBossKills', attack:'分身で画面を混乱させる。', weak:'分身が増える前に範囲攻撃でまとめて削る。', recommend:'星夢の輪舞曲 / サノスの指パッチン', reward:'属性ボス研究ミッション進行' }
+            );
+            renderBossCodexScreen = function() {
+                ensureExtraEventStats?.();
+                const summary = document.getElementById('bossCodexSummary');
+                const container = document.getElementById('bossCodexListContainer');
+                if (!container) return;
+                const stats = userData.stats || {};
+                const unlockedCount = BOSS_CODEX_DEFS.filter(b => Number(stats[b.stat] || 0) > 0).length;
+                if (summary) summary.textContent = `確認済み：${unlockedCount} / ${BOSS_CODEX_DEFS.length}｜弱点・おすすめ武器・討伐報酬つき`;
+                container.innerHTML = BOSS_CODEX_DEFS.map(b => {
+                    const kills = Number(stats[b.stat] || 0);
+                    const unlocked = kills > 0;
+                    return `<div class="collection-card ${unlocked ? 'unlocked' : ''}">
+                        <div class="flex items-start gap-3"><div class="text-4xl">${b.icon}</div><div><h3 class="text-xl font-bold ${unlocked ? 'text-white' : 'text-gray-400'}">${unlocked ? '' : '??? / '}${b.name}</h3><p class="text-xs ${unlocked ? 'text-green-300' : 'text-gray-500'} mt-1">討伐数: ${kills}</p></div></div>
+                        <div class="mt-3 text-sm text-gray-300 space-y-2">
+                            <p><span class="text-red-300 font-bold">攻撃:</span> ${unlocked ? b.attack : '一度倒すと確認できます。'}</p>
+                            <p><span class="text-cyan-300 font-bold">弱点:</span> ${unlocked ? b.weak : '一度倒すと確認できます。'}</p>
+                            <p><span class="text-yellow-300 font-bold">おすすめ武器:</span> ${unlocked ? b.recommend : '？？？'}</p>
+                            <p><span class="text-green-300 font-bold">討伐報酬:</span> ${unlocked ? b.reward : '？？？'}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+            };
+        } catch(e) { console.warn('boss codex character patch skipped', e); }
+    }
+
+    // 5) 週1イベントモード
+    function eventDayInfo20260504() {
+        const day = new Date().getDay();
+        return {
+            bossrush: { day:6, label:'土曜日限定', open:day === 6, title:'週末限定ボスラッシュ', desc:'ボス出現間隔が短くなり、ボス討伐ランキングを狙いやすい。' },
+            jackpot: { day:0, label:'日曜日限定', open:day === 0, title:'1日1回 高報酬ステージ', desc:'その日の初回だけ獲得コインにボーナス。' },
+            blackhole: { day:3, label:'水曜日限定', open:day === 3, title:'ブラックホールまみれイベント', desc:'マップ上のブラックホールが増える高難度イベント。' }
+        };
+    }
+    function ensureEventModeScreen20260504() {
+        injectPlayerGrowthStyle20260504();
+        if (!document.getElementById('eventModeScreen')) {
+            const div = document.createElement('div');
+            div.id = 'eventModeScreen';
+            div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3';
+            div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family:Orbitron,sans-serif; text-shadow:0 0 15px #facc15;">EVENT MODE</h2><p class="text-gray-300 text-sm mt-2">それぞれ毎週1日だけ開くイベントモードです。</p></div><button id="closeEventModeBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="eventModeListContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div></div>`;
+            document.body.appendChild(div);
+            document.getElementById('closeEventModeBtn')?.addEventListener('click', () => showScreen('startScreen'));
+        }
+        if (!document.getElementById('openEventModeBtn')) {
+            const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+            const btn = document.createElement('button');
+            btn.id = 'openEventModeBtn';
+            btn.className = 'btn-gold menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'EVENT MODE<br><span class="text-xs text-yellow-100 font-bold">週1イベント</span>';
+            grid?.appendChild(btn);
+            btn.addEventListener('click', () => { renderEventModeScreen20260504(); showScreen('eventModeScreen'); });
+        }
+    }
+    function renderEventModeScreen20260504() {
+        ensureEventModeScreen20260504();
+        const box = document.getElementById('eventModeListContainer');
+        if (!box) return;
+        const info = eventDayInfo20260504();
+        box.innerHTML = Object.entries(info).map(([id, e]) => `<div class="nsv-event-card ${e.open ? '' : 'locked'}"><div class="text-xs text-yellow-300 font-bold">${e.label}</div><h3 class="text-xl font-bold text-white mt-1">${e.title}</h3><p class="text-sm text-gray-300 mt-2">${e.desc}</p><button class="start-event-mode btn-gold px-4 py-2 rounded font-bold mt-4 w-full" data-event="${id}" ${e.open ? '' : 'disabled'}>${e.open ? 'START' : '今日は未開催'}</button></div>`).join('');
+        box.querySelectorAll('.start-event-mode').forEach(btn => btn.addEventListener('click', () => {
+            nsvSelectedEventMode20260504 = btn.dataset.event || null;
+            initGame('solo');
+        }));
+    }
+    function applyEventModeAfterInit20260504() {
+        try {
+            if (!nsvSelectedEventMode20260504 || !player) return;
+            showMissionToast('EVENT MODE', eventDayInfo20260504()[nsvSelectedEventMode20260504]?.title || 'イベント開始');
+            if (nsvSelectedEventMode20260504 === 'blackhole') {
+                for (let i = 0; i < 3 && mapBlackholes.length < 4; i++) {
+                    const a = Math.random() * Math.PI * 2; const d = MathUtils.random(900, 2600);
+                    mapBlackholes.push(new RealisticMapBlackHole(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d));
+                }
+            }
+            if (nsvSelectedEventMode20260504 === 'bossrush') nsvLastBossRushFrame20260504 = 0;
+        } catch(e) {}
+    }
+    function updateEventMode20260504() {
+        try {
+            if (!nsvSelectedEventMode20260504 || gameState !== 'playing' || !player || isOnlineMode) return;
+            if (nsvSelectedEventMode20260504 === 'bossrush') {
+                const bossCount = enemies.filter(e => e && !e.markedForDeletion && (e.isBoss || e.isMonkey || e.isMidBoss)).length;
+                if (frameCount - nsvLastBossRushFrame20260504 > 60 * 42 && bossCount < 2) {
+                    const a = Math.random() * Math.PI * 2; const d = MathUtils.random(850, 1400);
+                    const boss = new Enemy(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d, 3);
+                    const patterns = ['FIRE BOSS','THUNDER BOSS','GRAVITY BOSS','MIRROR BOSS'];
+                    boss.bossPattern = patterns[MathUtils.randomInt(0, patterns.length - 1)];
+                    enemies.push(boss);
+                    nsvLastBossRushFrame20260504 = frameCount;
+                    triggerBossWarning?.();
+                }
+            }
+            if (nsvSelectedEventMode20260504 === 'blackhole' && frameCount % (60 * 50) === 0 && mapBlackholes.length < 4) {
+                const a = Math.random() * Math.PI * 2; const d = MathUtils.random(1200, 2900);
+                mapBlackholes.push(new RealisticMapBlackHole(player.x + Math.cos(a) * d, player.y + Math.sin(a) * d));
+                showMissionToast('BLACKHOLE EVENT', 'ブラックホールが追加発生しました。');
+            }
+        } catch(e) {}
+    }
+    function patchEventMode20260504() {
+        try {
+            const oldInitGame = initGame;
+            initGame = function(mode = 'solo') {
+                const ret = oldInitGame.apply(this, arguments);
+                applyEventModeAfterInit20260504();
+                return ret;
+            };
+            const oldFinish = finishMissionRun;
+            finishMissionRun = function(earnedCoins = 0) {
+                const ret = oldFinish.apply(this, arguments);
+                try {
+                    if (nsvSelectedEventMode20260504 === 'jackpot') {
+                        const key = 'nsvJackpotClaimed_' + nsvTodayKey20260504();
+                        if (!localStorage.getItem(key)) {
+                            const bonus = Math.max(100, Math.floor(Number(earnedCoins || 0) * 1.5 + 800));
+                            userData.coins += bonus;
+                            userData.stats.totalCoinsEarned = (userData.stats.totalCoinsEarned || 0) + bonus;
+                            const el = document.getElementById('earnedCoinsDisplay');
+                            if (el) el.innerText = `${el.innerText} + EVENT ${bonus}`;
+                            localStorage.setItem(key, '1');
+                            showMissionToast('DAILY JACKPOT!', `イベントボーナス +${bonus} COINS`);
+                            saveData();
+                        }
+                    }
+                    nsvSelectedEventMode20260504 = null;
+                } catch(e) {}
+                return ret;
+            };
+        } catch(e) { console.warn('event mode patch skipped', e); }
+    }
+
+    // 6) スマホ・自動軽量化・使用武器ランキング
+    function patchMobileAndPerformance20260504() {
+        try {
+            const oldUpdateLogic = updateLogic;
+            updateLogic = function() {
+                const ret = oldUpdateLogic.apply(this, arguments);
+                try { updateEventMode20260504(); } catch(e) {}
+                try {
+                    if (frameCount % 90 === 0 && !nsvAutoLightModeEnabled20260504) {
+                        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+                        const dt = now - nsvLastFpsCheck20260504;
+                        nsvLastFpsCheck20260504 = now;
+                        if (dt > 2100 && gameState === 'playing') {
+                            nsvAutoLightModeEnabled20260504 = true;
+                            isLightMode = true;
+                            document.body.classList.add('light-mode');
+                            const lm = document.getElementById('lightModeToggle'); if (lm) lm.checked = true;
+                            const plm = document.getElementById('pauseLightModeToggle'); if (plm) plm.checked = true;
+                            showMissionToast('AUTO LIGHT MODE', '重くなったため、エフェクトを自動で少し減らしました。');
+                        }
+                    }
+                } catch(e) {}
+                return ret;
+            };
+        } catch(e) {}
+        try {
+            const oldRecordWeapon = recordWeaponCodexUse;
+            recordWeaponCodexUse = function(id, saveNow = true) {
+                const ret = oldRecordWeapon.apply(this, arguments);
+                try {
+                    ensureProgressionData();
+                    userData.stats.weaponUseCounts = userData.stats.weaponUseCounts || {};
+                    const key = String(id || 'UNKNOWN').slice(0, 40);
+                    userData.stats.weaponUseCounts[key] = Number(userData.stats.weaponUseCounts[key] || 0) + 1;
+                    if (saveNow) saveData();
+                } catch(e) {}
+                return ret;
+            };
+        } catch(e) {}
+        try {
+            const oldGameOver = gameOver;
+            gameOver = function() {
+                const ret = oldGameOver.apply(this, arguments);
+                try { recordLeaderboardResult20260504(); } catch(e) {}
+                return ret;
+            };
+        } catch(e) {}
+    }
+
+    // 7) 新画面もshowScreenで隠れるようにする
+    function patchShowScreenExtra20260504() {
+        try {
+            const oldShowScreen = showScreen;
+            showScreen = function(screenId) {
+                const ret = oldShowScreen.apply(this, arguments);
+                ['leaderboardScreen','eventModeScreen'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (id === screenId) el.classList.remove('hidden');
+                        else el.classList.add('hidden');
+                    }
+                });
+                return ret;
+            };
+        } catch(e) {}
+    }
+
+    try {
+        injectPlayerGrowthStyle20260504();
+        upgradeDailyMissionSystem20260504();
+        patchUnlockPresentation20260504();
+        patchBossCodexCharacter20260504();
+        patchEventMode20260504();
+        patchMobileAndPerformance20260504();
+        patchShowScreenExtra20260504();
+        ensureLeaderboardScreen20260504();
+        ensureEventModeScreen20260504();
+        ensureDailyMissionData();
+        renderMissionMiniHud?.();
+        checkMissionCompletions?.(false);
+    } catch(e) { console.warn('player growth update init skipped', e); }
+
+
+})();
+
+
+// ===== 2026-05-04 Add-on: GAME SHOP + NEON PASS =====
+(() => {
+    const NSV_PASS_PATCH_VERSION = '2026-05-04-shop-pass-v1';
+    const PASS_FIRST_TICKET_COST = 1500;
+    const PASS_REPEAT_TICKET_COST = 15000;
+    const PASS_LEVELS = [50, 150, 300, 500, 750, 1050, 1400, 1800, 2250, 2750, 3300, 3900, 4550, 5250, 6000, 6800, 7650, 8550, 9500, 10500];
+    const PASS_REWARDS = [
+        { free:{ coins:120 }, premium:{ coins:300, title:'NEON PASS入門者' } },
+        { free:{ coins:180 }, premium:{ aura:'cyanFlame', coins:450 } },
+        { free:{ coins:240 }, premium:{ coins:650 } },
+        { free:{ title:'討伐ビギナー' }, premium:{ skin:'sapphire', coins:800 } },
+        { free:{ coins:350 }, premium:{ coins:1000, title:'KILL COLLECTOR' } },
+        { free:{ coins:450 }, premium:{ aura:'goldSpark', coins:1200 } },
+        { free:{ coins:550 }, premium:{ coins:1500 } },
+        { free:{ title:'ネオン討伐隊' }, premium:{ skin:'phantomSkin', coins:1800 } },
+        { free:{ coins:700 }, premium:{ coins:2200 } },
+        { free:{ coins:900 }, premium:{ aura:'galaxyTrail', coins:2600 } },
+        { free:{ coins:1100 }, premium:{ title:'BATTLE PASS HUNTER', coins:3000 } },
+        { free:{ coins:1300 }, premium:{ skin:'infernoSkin', coins:3400 } },
+        { free:{ coins:1500 }, premium:{ coins:3900 } },
+        { free:{ title:'連戦の覇者' }, premium:{ aura:'infernoRing', coins:4300 } },
+        { free:{ coins:1800 }, premium:{ coins:4800 } },
+        { free:{ coins:2100 }, premium:{ skin:'galaxyKnight', coins:5200 } },
+        { free:{ coins:2400 }, premium:{ title:'NEON PASS MASTER', coins:5800 } },
+        { free:{ coins:2700 }, premium:{ aura:'thunderCrown', coins:6500 } },
+        { free:{ title:'シーズン完走者' }, premium:{ coins:7500 } },
+        { free:{ coins:3500 }, premium:{ skin:'blackholeCore', aura:'blackholeAura', title:'SEASON LEGEND', coins:9000 } }
+    ];
+
+    function seasonInfo20260504() {
+        const now = new Date();
+        const start = new Date(2026, 0, 1);
+        const day = Math.floor((now - start) / 86400000);
+        const idx = Math.max(0, Math.floor(day / 14));
+        const seasonStart = new Date(start.getTime() + idx * 14 * 86400000);
+        const seasonEnd = new Date(seasonStart.getTime() + 14 * 86400000);
+        const id = `${seasonStart.getFullYear()}-${String(seasonStart.getMonth()+1).padStart(2,'0')}-${String(seasonStart.getDate()).padStart(2,'0')}`;
+        const remain = Math.max(0, Math.ceil((seasonEnd - now) / 86400000));
+        return { id, idx, seasonStart, seasonEnd, remain };
+    }
+
+    function injectShopPassStyle20260504() {
+        if (document.getElementById('nsvShopPassStyle20260504')) return;
+        const style = document.createElement('style');
+        style.id = 'nsvShopPassStyle20260504';
+        style.textContent = `
+            .nsv-shop-card,.nsv-pass-card{background:rgba(2,6,23,.9);border:1px solid rgba(6,182,212,.45);border-radius:18px;padding:16px;box-shadow:0 0 18px rgba(6,182,212,.18)}
+            .nsv-shop-card.premium,.nsv-pass-card.premium{border-color:rgba(250,204,21,.75);box-shadow:0 0 20px rgba(250,204,21,.22)}
+            .nsv-pass-track{display:grid;grid-template-columns:70px 1fr 1fr;gap:10px;align-items:stretch}
+            .nsv-pass-head{font-size:.8rem;font-weight:900;color:#facc15;text-align:center}
+            .nsv-pass-level{display:flex;align-items:center;justify-content:center;border-radius:14px;background:rgba(15,23,42,.8);border:1px solid rgba(148,163,184,.3);font-weight:900;color:#a5f3fc}
+            .nsv-pass-reward{border-radius:14px;background:rgba(15,23,42,.78);border:1px solid rgba(148,163,184,.3);padding:10px;min-height:74px}
+            .nsv-pass-reward.ready{border-color:#22c55e;box-shadow:0 0 12px rgba(34,197,94,.25)}
+            .nsv-pass-reward.claimed{opacity:.55;filter:grayscale(.2)}
+            .nsv-pass-reward.locked{opacity:.42}
+            .nsv-pass-reward.premium-locked{opacity:.5;border-color:rgba(250,204,21,.28)}
+            .nsv-pass-progress{height:14px;border-radius:999px;background:rgba(15,23,42,.95);overflow:hidden;border:1px solid rgba(148,163,184,.35)}
+            .nsv-pass-progress>div{height:100%;background:linear-gradient(90deg,#06b6d4,#facc15);box-shadow:0 0 12px #06b6d4}
+            @media(max-width:720px){.nsv-pass-track{grid-template-columns:52px 1fr}.nsv-pass-track .premium-col{grid-column:2}.nsv-pass-head.premium-col{display:none}.nsv-pass-head.free-col{display:none}.nsv-pass-level{font-size:.8rem}.nsv-pass-reward{font-size:.82rem}}
+        `;
+        document.head.appendChild(style);
+    }
+
+    function ensureShopPassData20260504() {
+        try { ensureProgressionData?.(); } catch(e) {}
+        if (!userData.shop) userData.shop = {};
+        userData.shop.firstPassTicketBought = !!userData.shop.firstPassTicketBought;
+        userData.passTickets = Number(userData.passTickets || 0);
+        userData.titles = userData.titles || {};
+        userData.battlePass = userData.battlePass || {};
+        const s = seasonInfo20260504();
+        if (userData.battlePass.seasonId !== s.id) {
+            userData.battlePass = {
+                seasonId: s.id,
+                premium: false,
+                kills: 0,
+                claimedFree: {},
+                claimedPremium: {},
+                startedAt: new Date().toISOString()
+            };
+        }
+        userData.battlePass.kills = Number(userData.battlePass.kills || 0);
+        userData.battlePass.claimedFree = userData.battlePass.claimedFree || {};
+        userData.battlePass.claimedPremium = userData.battlePass.claimedPremium || {};
+    }
+
+    function rewardText20260504(reward) {
+        if (!reward) return '報酬なし';
+        const parts = [];
+        if (reward.coins) parts.push(`🪙 ${reward.coins}`);
+        if (reward.title) parts.push(`称号「${reward.title}」`);
+        if (reward.skin) parts.push(`スキン ${reward.skin}`);
+        if (reward.aura) parts.push(`オーラ ${reward.aura}`);
+        if (reward.weapon) parts.push(`武器 ${reward.weapon}`);
+        return parts.join(' / ') || '報酬なし';
+    }
+
+    function grantPassReward20260504(reward) {
+        ensureShopPassData20260504();
+        if (!reward) return;
+        if (reward.coins) {
+            userData.coins = Number(userData.coins || 0) + Number(reward.coins || 0);
+            userData.stats = userData.stats || {};
+            userData.stats.totalCoinsEarned = Number(userData.stats.totalCoinsEarned || 0) + Number(reward.coins || 0);
+        }
+        if (reward.title) userData.titles[reward.title] = true;
+        if (reward.skin) {
+            userData.unlocks = userData.unlocks || {}; userData.unlocks.skins = userData.unlocks.skins || {};
+            userData.unlocks.skins[reward.skin] = true;
+        }
+        if (reward.aura) {
+            userData.unlocks = userData.unlocks || {}; userData.unlocks.auras = userData.unlocks.auras || {};
+            userData.unlocks.auras[reward.aura] = true;
+        }
+        if (reward.weapon) {
+            userData.unlocks = userData.unlocks || {}; userData.unlocks.legendaryWeapons = userData.unlocks.legendaryWeapons || {};
+            userData.unlocks.legendaryWeapons[reward.weapon] = true;
+        }
+    }
+
+    function currentPassLevel20260504() {
+        ensureShopPassData20260504();
+        const kills = Number(userData.battlePass.kills || 0);
+        let level = 0;
+        for (let i = 0; i < PASS_LEVELS.length; i++) if (kills >= PASS_LEVELS[i]) level = i + 1;
+        return level;
+    }
+
+    function ensureShopScreen20260504() {
+        injectShopPassStyle20260504();
+        if (!document.getElementById('shopScreen')) {
+            const div = document.createElement('div');
+            div.id = 'shopScreen';
+            div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3';
+            div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family:Orbitron,sans-serif; text-shadow:0 0 15px #facc15;">GAME SHOP</h2><p class="text-gray-300 text-sm mt-2">銀コインをバトルパスチケットに交換できます。</p></div><button id="closeShopBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="shopListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>`;
+            document.body.appendChild(div);
+            document.getElementById('closeShopBtn')?.addEventListener('click', () => showScreen('startScreen'));
+        }
+        if (!document.getElementById('openShopBtn')) {
+            const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+            const btn = document.createElement('button');
+            btn.id = 'openShopBtn';
+            btn.className = 'btn-gold menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'SHOP<br><span class="text-xs text-yellow-100 font-bold">チケット交換</span>';
+            grid?.appendChild(btn);
+            btn.addEventListener('click', () => { renderShopScreen20260504(); showScreen('shopScreen'); });
+        }
+    }
+
+    function ensurePassScreen20260504() {
+        injectShopPassStyle20260504();
+        if (!document.getElementById('battlePassScreen')) {
+            const div = document.createElement('div');
+            div.id = 'battlePassScreen';
+            div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3';
+            div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif; text-shadow:0 0 15px #22d3ee;">NEON PASS</h2><p class="text-gray-300 text-sm mt-2">敵を倒した数で進みます。1シーズンは2週間です。</p></div><button id="closeBattlePassBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="battlePassTopContainer"></div><div id="battlePassTrackContainer" class="overflow-y-auto max-h-[64vh] pr-1"></div></div>`;
+            document.body.appendChild(div);
+            document.getElementById('closeBattlePassBtn')?.addEventListener('click', () => showScreen('startScreen'));
+        }
+        if (!document.getElementById('openBattlePassBtn')) {
+            const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+            const btn = document.createElement('button');
+            btn.id = 'openBattlePassBtn';
+            btn.className = 'btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'NEON PASS<br><span class="text-xs text-purple-100 font-bold">2週間シーズン</span>';
+            grid?.appendChild(btn);
+            btn.addEventListener('click', () => { renderBattlePassScreen20260504(); showScreen('battlePassScreen'); });
+        }
+    }
+
+    function renderShopScreen20260504() {
+        ensureShopScreen20260504();
+        ensureShopPassData20260504();
+        const box = document.getElementById('shopListContainer');
+        if (!box) return;
+        const cost = userData.shop.firstPassTicketBought ? PASS_REPEAT_TICKET_COST : PASS_FIRST_TICKET_COST;
+        const canBuy = Number(userData.coins || 0) >= cost;
+        box.innerHTML = `
+            <div class="nsv-shop-card premium">
+                <div class="text-5xl mb-2">🎟️</div>
+                <h3 class="text-2xl font-bold text-yellow-300">バトルパスチケット交換</h3>
+                <p class="text-sm text-gray-300 mt-2">アップグレード用の銀コイン🪙を使って、NEON PASS用チケットに交換します。</p>
+                <div class="mt-4 bg-black/40 rounded-xl p-3 border border-yellow-400/40">
+                    <p class="text-sm text-gray-300">所持銀コイン：<b class="text-yellow-300">${Math.floor(userData.coins || 0)}</b></p>
+                    <p class="text-sm text-gray-300">所持チケット：<b class="text-cyan-300">${Math.floor(userData.passTickets || 0)}</b></p>
+                    <p class="text-xl font-black text-yellow-200 mt-2">必要：${cost} コイン</p>
+                    <p class="text-xs text-gray-400 mt-1">${userData.shop.firstPassTicketBought ? '2回目以降は15000コインです。' : '初回だけ1500コインです。'}</p>
+                </div>
+                <button id="buyPassTicketBtn" class="btn-gold px-5 py-3 rounded font-bold mt-4 w-full ${canBuy ? '' : 'opacity-40 cursor-not-allowed'}" ${canBuy ? '' : 'disabled'}>🎟️ チケットを1枚交換</button>
+            </div>
+            <div class="nsv-shop-card">
+                <div class="text-5xl mb-2">🧾</div>
+                <h3 class="text-2xl font-bold text-cyan-300">NEON PASS購入</h3>
+                <p class="text-sm text-gray-300 mt-2">チケット1枚で、現在の2週間シーズンのバトルパスを解放できます。</p>
+                <div class="mt-4 bg-black/40 rounded-xl p-3 border border-cyan-400/40">
+                    <p class="text-sm text-gray-300">現在のシーズン：<b class="text-cyan-300">${seasonInfo20260504().id}</b></p>
+                    <p class="text-sm text-gray-300">残り：約<b class="text-yellow-300">${seasonInfo20260504().remain}</b>日</p>
+                    <p class="text-sm text-gray-300">状態：<b class="${userData.battlePass.premium ? 'text-green-300' : 'text-gray-300'}">${userData.battlePass.premium ? '購入済み' : '未購入'}</b></p>
+                </div>
+                <button id="buyNeonPassBtn" class="btn-neon px-5 py-3 rounded font-bold mt-4 w-full ${(userData.passTickets > 0 && !userData.battlePass.premium) ? '' : 'opacity-40 cursor-not-allowed'}" ${(userData.passTickets > 0 && !userData.battlePass.premium) ? '' : 'disabled'}>NEON PASSを購入</button>
+                <button id="openPassFromShopBtn" class="btn-purple px-5 py-3 rounded font-bold mt-3 w-full">NEON PASSを見る</button>
+            </div>
+        `;
+        document.getElementById('buyPassTicketBtn')?.addEventListener('click', () => {
+            ensureShopPassData20260504();
+            const price = userData.shop.firstPassTicketBought ? PASS_REPEAT_TICKET_COST : PASS_FIRST_TICKET_COST;
+            if (Number(userData.coins || 0) < price) return;
+            userData.coins -= price;
+            userData.passTickets = Number(userData.passTickets || 0) + 1;
+            userData.shop.firstPassTicketBought = true;
+            saveData?.();
+            showMissionToast?.('TICKET GET!', `バトルパスチケット +1`);
+            renderShopScreen20260504();
+        });
+        document.getElementById('buyNeonPassBtn')?.addEventListener('click', buyNeonPass20260504);
+        document.getElementById('openPassFromShopBtn')?.addEventListener('click', () => { renderBattlePassScreen20260504(); showScreen('battlePassScreen'); });
+    }
+
+    function buyNeonPass20260504() {
+        ensureShopPassData20260504();
+        if (userData.battlePass.premium) return;
+        if (Number(userData.passTickets || 0) <= 0) return;
+        userData.passTickets -= 1;
+        userData.battlePass.premium = true;
+        saveData?.();
+        showMissionToast?.('NEON PASS UNLOCKED!', '2週間シーズンパスを購入しました。');
+        renderShopScreen20260504();
+        renderBattlePassScreen20260504();
+    }
+
+    function claimPassReward20260504(type, index) {
+        ensureShopPassData20260504();
+        const level = currentPassLevel20260504();
+        const n = Number(index || 0);
+        if (level < n + 1) return;
+        if (type === 'premium' && !userData.battlePass.premium) return;
+        const key = String(n);
+        const claimed = type === 'premium' ? userData.battlePass.claimedPremium : userData.battlePass.claimedFree;
+        if (claimed[key]) return;
+        const reward = PASS_REWARDS[n]?.[type];
+        grantPassReward20260504(reward);
+        claimed[key] = true;
+        saveData?.();
+        showMissionToast?.('PASS REWARD!', rewardText20260504(reward));
+        renderBattlePassScreen20260504();
+        try { renderCollectionScreen?.(); renderUpgradeScreen?.(); } catch(e) {}
+    }
+
+    function renderBattlePassScreen20260504() {
+        ensurePassScreen20260504();
+        ensureShopPassData20260504();
+        const s = seasonInfo20260504();
+        const top = document.getElementById('battlePassTopContainer');
+        const track = document.getElementById('battlePassTrackContainer');
+        if (!top || !track) return;
+        const kills = Number(userData.battlePass.kills || 0);
+        const level = currentPassLevel20260504();
+        const next = PASS_LEVELS[Math.min(level, PASS_LEVELS.length - 1)] || PASS_LEVELS[PASS_LEVELS.length - 1];
+        const prev = level > 0 ? PASS_LEVELS[level - 1] : 0;
+        const pct = level >= PASS_LEVELS.length ? 100 : Math.max(0, Math.min(100, ((kills - prev) / Math.max(1, next - prev)) * 100));
+        top.innerHTML = `<div class="nsv-pass-card premium"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><div class="text-xs text-yellow-300 font-bold">SEASON ${s.id} / 残り約${s.remain}日</div><h3 class="text-2xl font-bold text-white mt-1">敵を倒してパスを進めよう</h3><p class="text-sm text-gray-300 mt-1">現在：LV ${level} / ${PASS_LEVELS.length}｜シーズン討伐数：${kills}体｜チケット：${Math.floor(userData.passTickets || 0)}枚</p></div><button id="buyPassTopBtn" class="btn-gold px-5 py-3 rounded font-bold ${(userData.passTickets > 0 && !userData.battlePass.premium) ? '' : 'opacity-40 cursor-not-allowed'}" ${(userData.passTickets > 0 && !userData.battlePass.premium) ? '' : 'disabled'}>${userData.battlePass.premium ? '購入済み' : 'チケット1枚で購入'}</button></div><div class="nsv-pass-progress mt-4"><div style="width:${pct}%"></div></div><p class="text-xs text-gray-400 mt-2">次のLVまで：${level >= PASS_LEVELS.length ? '完走済み' : Math.max(0, next - kills) + '体'}</p></div>`;
+        document.getElementById('buyPassTopBtn')?.addEventListener('click', buyNeonPass20260504);
+        let html = `<div class="nsv-pass-track"><div class="nsv-pass-head">LV</div><div class="nsv-pass-head free-col">FREE</div><div class="nsv-pass-head premium-col">NEON PASS</div>`;
+        PASS_REWARDS.forEach((row, i) => {
+            const ready = level >= i + 1;
+            const freeClaimed = !!userData.battlePass.claimedFree[String(i)];
+            const premClaimed = !!userData.battlePass.claimedPremium[String(i)];
+            html += `<div class="nsv-pass-level">${i+1}<br><span class="text-xs text-gray-400">${PASS_LEVELS[i]}体</span></div>`;
+            html += `<div class="nsv-pass-reward ${ready ? 'ready' : 'locked'} ${freeClaimed ? 'claimed' : ''}"><div class="text-xs text-cyan-300 font-bold">無料報酬</div><div class="text-sm text-white mt-1">${rewardText20260504(row.free)}</div><button class="claim-pass-free btn-neon px-3 py-1 rounded text-xs font-bold mt-2" data-i="${i}" ${ready && !freeClaimed ? '' : 'disabled'}>${freeClaimed ? 'CLAIMED' : ready ? 'CLAIM' : 'LOCKED'}</button></div>`;
+            const premClass = userData.battlePass.premium ? (ready ? 'ready' : 'locked') : 'premium-locked';
+            html += `<div class="nsv-pass-reward premium-col ${premClass} ${premClaimed ? 'claimed' : ''}"><div class="text-xs text-yellow-300 font-bold">パス報酬</div><div class="text-sm text-white mt-1">${rewardText20260504(row.premium)}</div><button class="claim-pass-premium btn-gold px-3 py-1 rounded text-xs font-bold mt-2" data-i="${i}" ${ready && userData.battlePass.premium && !premClaimed ? '' : 'disabled'}>${premClaimed ? 'CLAIMED' : userData.battlePass.premium ? (ready ? 'CLAIM' : 'LOCKED') : 'PASS必要'}</button></div>`;
+        });
+        html += `</div>`;
+        track.innerHTML = html;
+        track.querySelectorAll('.claim-pass-free').forEach(btn => btn.addEventListener('click', () => claimPassReward20260504('free', Number(btn.dataset.i))));
+        track.querySelectorAll('.claim-pass-premium').forEach(btn => btn.addEventListener('click', () => claimPassReward20260504('premium', Number(btn.dataset.i))));
+    }
+
+    function patchBattlePassKillProgress20260504() {
+        try {
+            const oldRecordEnemyDefeat = recordEnemyDefeat;
+            recordEnemyDefeat = function(enemy) {
+                const ret = oldRecordEnemyDefeat.apply(this, arguments);
+                try {
+                    ensureShopPassData20260504();
+                    userData.battlePass.kills = Number(userData.battlePass.kills || 0) + 1;
+                    const lv = currentPassLevel20260504();
+                    if (lv > Number(userData.battlePass.lastShownLevel || 0)) {
+                        userData.battlePass.lastShownLevel = lv;
+                        if (lv > 0) showMissionToast?.('NEON PASS LEVEL UP!', `LV ${lv} に到達しました。`);
+                    }
+                    if ((userData.battlePass.kills % 10) === 0) saveData?.();
+                } catch(e) {}
+                return ret;
+            };
+        } catch(e) { console.warn('battle pass kill patch skipped', e); }
+    }
+
+    function patchShowScreenShopPass20260504() {
+        try {
+            const oldShowScreen = showScreen;
+            showScreen = function(screenId) {
+                const ret = oldShowScreen.apply(this, arguments);
+                ['shopScreen','battlePassScreen'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        if (id === screenId) el.classList.remove('hidden');
+                        else el.classList.add('hidden');
+                    }
+                });
+                return ret;
+            };
+        } catch(e) {}
+    }
+
+    try {
+        injectShopPassStyle20260504();
+        ensureShopPassData20260504();
+        ensureShopScreen20260504();
+        ensurePassScreen20260504();
+        patchBattlePassKillProgress20260504();
+        patchShowScreenShopPass20260504();
+        saveData?.();
+    } catch(e) { console.warn('shop/pass update init skipped', e); }
+})();
+
+
+
+// ===== 2026-05-04 Add-on V2: Fortnite-style Battle Star Pass =====
+(() => {
+    // Season 1 reset: the first important season is NEON.
+    // Changing this version forces old battle-pass progress/rewards to reset safely.
+    const NSV_PASS_V2_VERSION = '2026-05-04-neon-season-1-keep-best-reset-v5';
+    const PASS_FIRST_TICKET_COST = 1500;
+    const PASS_REPEAT_TICKET_COST = 15000;
+    const FRIDAY_SEASON_ANCHOR = new Date(2026, 4, 8, 0, 0, 0); // 2026-05-08 Friday / Season 1 display anchor. Next season starts 2026-05-22.
+
+    const PASS_THEMES = [
+        {
+            key:'neon_season_1', name:'NEON GENESIS', icon:'💠', color:'#22d3ee', sub:'Season 1。青・紫・白光で作る、最初の伝説シーズン',
+            rewards:[
+                {id:'n1_skin_runner', type:'skin', icon:'🧬', rarity:'LEGENDARY', name:'ネオン・プロトランナー', cost:3, desc:'全身に発光ラインが走るSeason 1の主役スキン。初期シーズン限定の特別モデル。', cosmeticId:'skin_neon_runner_s1'},
+                {id:'n1_aura_pulse', type:'aura', icon:'💠', rarity:'EPIC', name:'ネオンパルス・コア', cost:3, desc:'心臓のように青白く点滅する円形オーラ。近未来感を一気に上げる。', cosmeticId:'aura_neon_pulse_s1'},
+                {id:'n1_back_core', type:'backpack', icon:'🔷', rarity:'EPIC', name:'ゼロライト・リアクター', cost:4, desc:'背中に浮く小型ネオン炉。コアが回転し、青い光を放つ背中アクセ。', cosmeticId:'back_neon_core_s1'},
+                {id:'n1_trail_line', type:'trail', icon:'〰️', rarity:'RARE', name:'ブルーグリッド・トレイル', cost:4, desc:'走ったあとに細い光のラインと小さな四角粒子が残るトレイル。', cosmeticId:'trail_neon_line_s1'},
+                {id:'n1_emote_pose', type:'emote', icon:'🕶️', rarity:'RARE', name:'ライトアップ・ポーズ', cost:5, desc:'リザルトで使える勝利ポーズ。サングラス風の光が一瞬走る。', cosmeticId:'emote_neon_pose_s1'},
+                {id:'n1_pet_slime', type:'pet', icon:'🟦', rarity:'EPIC', name:'ネオンスライム・ピクセル', cost:5, desc:'プレイヤーの近くを跳ねる小さな相棒。光る顔がかわいいSeason 1ペット。', cosmeticId:'pet_neon_slime_s1'},
+                {id:'n1_intro_scan', type:'intro', icon:'📡', rarity:'RARE', name:'ホログラム・スキャン登場', cost:6, desc:'ゲーム開始時、体がスキャン線で組み上がる登場演出。', cosmeticId:'intro_neon_scan_s1'},
+                {id:'n1_elim_pixel', type:'elimination', icon:'▣', rarity:'RARE', name:'ピクセルブレイク撃破', cost:6, desc:'敵撃破時に青いデジタル粒子がはじける撃破演出。', cosmeticId:'elim_neon_pixel_s1'},
+                {id:'n1_boss_finish', type:'bossFinish', icon:'🏆', rarity:'EPIC', name:'NEON OVERDRIVE フィニッシュ', cost:7, desc:'ボス撃破時に金青の大文字演出が出る。スクショ映え用の目玉報酬。', cosmeticId:'finish_neon_clear_s1'},
+                {id:'n1_nameplate_city', type:'nameplate', icon:'📛', rarity:'RARE', name:'ネオンシティ・ネームプレート', cost:7, desc:'ランキングやリザルトの名前を青紫の街ライト風にするプレート。', cosmeticId:'plate_neon_city_s1'},
+                {id:'n1_badge_s1', type:'badge', icon:'💠', rarity:'LEGENDARY', name:'Founder Season 1 バッジ', cost:8, desc:'最初の大事なシーズンを遊んだ証。名前横に付けられる限定バッジ。', cosmeticId:'badge_neon_s1'},
+                {id:'n1_box_first', type:'box', icon:'🎁', rarity:'LEGENDARY', name:'NEON GENESIS BOX', cost:10, desc:'中身固定の豪華BOX。限定称号とコインをまとめて獲得。', title:'NEON GENESIS', coins:3500, cosmeticId:'box_neon_s1'}
+            ],
+            special:[
+                {id:'n1_sp_skin_galaxy', type:'skin', icon:'🌌', rarity:'MYTHIC', name:'ネオン・プロトランナー Galaxy', cost:6, desc:'基本スキンの銀河バージョン。体のラインに星雲カラーが流れる。', cosmeticId:'skin_neon_runner_galaxy_s1'},
+                {id:'n1_sp_aura_rainbow', type:'aura', icon:'🌈', rarity:'MYTHIC', name:'ネオンパルス・Rainbow Core', cost:6, desc:'オーラの虹色スペシャル版。白→青→紫→虹に変化する。', cosmeticId:'aura_neon_pulse_rainbow_s1'},
+                {id:'n1_sp_back_galaxy', type:'backpack', icon:'🪐', rarity:'MYTHIC', name:'ゼロライト・Galaxy Reactor', cost:7, desc:'背中アクセの銀河版。小さな星雲がコアの中で回る。', cosmeticId:'back_neon_core_galaxy_s1'},
+                {id:'n1_sp_trail_galaxy', type:'trail', icon:'✨', rarity:'MYTHIC', name:'ブルーグリッド・Galaxy Trail', cost:7, desc:'トレイルの最上位カラー。走るたびに星屑とネオン線が残る。', cosmeticId:'trail_neon_line_galaxy_s1'}
+            ]
+        }
+    ];
+
+    function fridaySeasonInfoV2() {
+        const now = new Date();
+        let diffDays = Math.floor((now - FRIDAY_SEASON_ANCHOR) / 86400000);
+        if (diffDays < 0) diffDays = 0;
+        const idx = Math.floor(diffDays / 14);
+        const start = new Date(FRIDAY_SEASON_ANCHOR.getTime() + idx * 14 * 86400000);
+        const end = new Date(start.getTime() + 14 * 86400000);
+        const id = `NEON-S1-${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+        const theme = PASS_THEMES[idx % PASS_THEMES.length];
+        return { id, idx, start, end, remain:Math.max(0, Math.ceil((end - now) / 86400000)), theme };
+    }
+
+    function resetOldBattlePassRewardsForNeonS1() {
+        try {
+            userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+            userData.cosmetics.unlocked = userData.cosmetics.unlocked || {};
+            userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+            const oldPrefixes = ['tg_','pv_','sn_','skin_thunder_','aura_thunder_','back_mini_blackhole','trail_stardust','plate_thunder','badge_thunder','box_legend_tg','skin_thunder_ronin','aura_thunder_crown','back_mini_blackhole_galaxy','trail_stardust_galaxy'];
+            const shouldRemove = (id) => oldPrefixes.some(prefix => String(id || '').startsWith(prefix) || String(id || '').includes(prefix));
+            if (userData.passV2ResetVersion !== NSV_PASS_V2_VERSION) {
+                for (const id of Object.keys(userData.cosmetics.unlocked || {})) {
+                    if (shouldRemove(id)) delete userData.cosmetics.unlocked[id];
+                }
+                for (const k of Object.keys(userData.cosmetics.equipped || {})) {
+                    if (shouldRemove(userData.cosmetics.equipped[k])) delete userData.cosmetics.equipped[k];
+                }
+                if (userData.unlocks && userData.unlocks.skins) {
+                    for (const id of Object.keys(userData.unlocks.skins)) if (shouldRemove(id)) delete userData.unlocks.skins[id];
+                }
+                if (userData.unlocks && userData.unlocks.auras) {
+                    for (const id of Object.keys(userData.unlocks.auras)) if (shouldRemove(id)) delete userData.unlocks.auras[id];
+                }
+                userData.battlePassV2 = {};
+                userData.passV2ResetVersion = NSV_PASS_V2_VERSION;
+            }
+        } catch(e) {}
+    }
+
+    function ensurePassV2Data() {
+        try { ensureShopPassData20260504?.(); } catch(e) {}
+        resetOldBattlePassRewardsForNeonS1();
+        const s = fridaySeasonInfoV2();
+        userData.shop = userData.shop || {};
+        userData.passTickets = Number(userData.passTickets || 0);
+        userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+        userData.cosmetics.unlocked = userData.cosmetics.unlocked || {};
+        userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+        userData.titles = userData.titles || {};
+        userData.battlePassV2 = userData.battlePassV2 || {};
+        if (userData.battlePassV2.seasonId !== s.id) {
+            userData.battlePassV2 = {
+                seasonId:s.id, themeKey:s.theme.key, premium:false,
+                battleStars:0, earnedStars:0, seasonKills:0,
+                claimed:{}, specialClaimed:{}, specialUnlocked:false,
+                lastKillStarAt:0, performanceRuns:{}, startedAt:new Date().toISOString()
+            };
+        }
+        const p = userData.battlePassV2;
+        p.battleStars = Number(p.battleStars || 0);
+        p.earnedStars = Number(p.earnedStars || 0);
+        p.seasonKills = Number(p.seasonKills || 0);
+        p.claimed = p.claimed || {};
+        p.specialClaimed = p.specialClaimed || {};
+        p.performanceRuns = p.performanceRuns || {};
+        p.specialUnlocked = !!p.specialUnlocked || s.theme.rewards.every(r => p.claimed[r.id]);
+    }
+
+    function injectPassV2Style() {
+        if (document.getElementById('nsvPassV2Style')) return;
+        const style = document.createElement('style');
+        style.id = 'nsvPassV2Style';
+        style.textContent = `
+            .nsv-star-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(250,204,21,.65);background:rgba(250,204,21,.12);border-radius:999px;padding:6px 10px;color:#fde68a;font-weight:900}
+            .nsv-v2-tabs{display:flex;gap:8px;flex-wrap:wrap}.nsv-v2-tab{border:1px solid rgba(6,182,212,.55);background:rgba(15,23,42,.8);border-radius:999px;padding:8px 12px;color:#a5f3fc;font-weight:900}.nsv-v2-tab.active{background:#facc15;color:#111827;border-color:#fde68a}
+            .nsv-v2-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.nsv-v2-card{position:relative;min-height:170px;border-radius:18px;padding:14px;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.88));border:1px solid rgba(148,163,184,.35);box-shadow:0 0 16px rgba(6,182,212,.12);overflow:hidden}.nsv-v2-card.ready{border-color:#22c55e;box-shadow:0 0 16px rgba(34,197,94,.24)}.nsv-v2-card.claimed{border-color:#facc15;box-shadow:0 0 18px rgba(250,204,21,.24)}.nsv-v2-card.locked{opacity:.55}.nsv-v2-icon{font-size:2.5rem;filter:drop-shadow(0 0 12px rgba(255,255,255,.35))}.nsv-v2-type{font-size:.68rem;letter-spacing:.12em;color:#67e8f9;font-weight:900}.nsv-v2-cost{position:absolute;right:10px;top:10px}.nsv-v2-special{border-color:rgba(168,85,247,.75);box-shadow:0 0 22px rgba(168,85,247,.25)}
+            .nsv-cosmetic-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid rgba(148,163,184,.25);border-radius:12px;padding:10px;background:rgba(15,23,42,.55);margin-top:8px}
+            .nsv-v2-card::before{content:'';position:absolute;inset:-2px;background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.22),transparent 28%),linear-gradient(135deg,rgba(34,211,238,.14),transparent 40%,rgba(168,85,247,.16));opacity:.85;pointer-events:none}.nsv-v2-card>*{position:relative;z-index:1}.nsv-v2-rarity{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;font-size:.65rem;font-weight:1000;letter-spacing:.08em;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35)}.nsv-rarity-RARE{color:#67e8f9;box-shadow:0 0 12px rgba(103,232,249,.18)}.nsv-rarity-EPIC{color:#d8b4fe;box-shadow:0 0 14px rgba(216,180,254,.2)}.nsv-rarity-LEGENDARY{color:#fde68a;box-shadow:0 0 16px rgba(253,230,138,.25)}.nsv-rarity-MYTHIC{color:#f0abfc;box-shadow:0 0 20px rgba(240,171,252,.32)}
+            .nsv-season-hero{width:100%;position:relative;overflow:hidden;border:2px solid rgba(34,211,238,.72);border-radius:22px;background:linear-gradient(135deg,rgba(8,47,73,.72),rgba(2,6,23,.9) 52%,rgba(88,28,135,.58));box-shadow:0 0 32px rgba(34,211,238,.32),inset 0 0 28px rgba(34,211,238,.14);padding:14px 16px;text-align:center}.nsv-season-hero::before{content:'';position:absolute;inset:-40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);transform:rotate(18deg);animation:nsvSeasonShine 4s infinite}.nsv-season-kicker{position:relative;z-index:1;color:#a5f3fc;font-size:.78rem;font-weight:1000;letter-spacing:.28em}.nsv-season-title{position:relative;z-index:1;font-family:Orbitron,sans-serif;font-size:clamp(2.2rem,8vw,5.6rem);font-weight:1000;line-height:.92;color:#fff;text-shadow:0 0 6px #fff,0 0 18px #22d3ee,0 0 44px #22d3ee,0 0 70px #a855f7;letter-spacing:.08em}.nsv-season-sub{position:relative;z-index:1;color:#fef3c7;font-weight:900;font-size:.9rem;margin-top:6px}@keyframes nsvSeasonShine{0%{transform:translateX(-80%) rotate(18deg)}45%,100%{transform:translateX(120%) rotate(18deg)}}
+            @media(max-width:820px){.nsv-v2-grid{grid-template-columns:1fr}.nsv-v2-card{min-height:150px}.nsv-star-chip{font-size:.82rem}.nsv-v2-tab{font-size:.82rem}.nsv-season-hero{padding:12px}.nsv-season-sub{font-size:.78rem}}
+        `;
+        document.head.appendChild(style);
+    }
+
+    function injectNeonSeason1Banner() {
+        try {
+            if (document.getElementById('nsvSeason1Hero')) return;
+            const title = document.querySelector('#startScreen .menu-panel h1');
+            if (!title || !title.parentNode) return;
+            const banner = document.createElement('div');
+            banner.id = 'nsvSeason1Hero';
+            banner.className = 'nsv-season-hero';
+            banner.innerHTML = `<div class="nsv-season-kicker">NEON SURVIVOR FIRST BATTLE PASS</div><div class="nsv-season-title">SEASON 1</div><div class="nsv-season-sub">NEON GENESIS / 2週間限定シーズン</div>`;
+            title.insertAdjacentElement('afterend', banner);
+        } catch(e) {}
+    }
+
+    function cosmeticTypeLabel(t) {
+        return ({skin:'スキン',aura:'オーラ',backpack:'背中アクセ',trail:'トレイル',emote:'エモート',pet:'ペット',intro:'登場演出',elimination:'撃破演出',bossFinish:'ボス撃破演出',nameplate:'ネームプレート',badge:'称号バッジ',box:'BOX'})[t] || t;
+    }
+    function ownedRewardText(r) {
+        const parts = [`${r.icon || '🎁'} ${r.name}`];
+        if (r.coins) parts.push(`🪙 ${r.coins}`);
+        if (r.title) parts.push(`称号「${r.title}」`);
+        return parts.join(' / ');
+    }
+    function grantPassV2Reward(r) {
+        ensurePassV2Data();
+        if (!r) return;
+        if (r.cosmeticId) { const _s = fridaySeasonInfoV2(); userData.cosmetics.unlocked[r.cosmeticId] = { id:r.cosmeticId, name:r.name, type:r.type, icon:r.icon, theme:_s.theme.name, source:'battlePass', seasonId:_s.id, seasonName:'Season 1 - NEON GENESIS', seasonLabel:'Season 1 / NEON GENESIS' }; }
+        if (r.type === 'skin') { userData.unlocks = userData.unlocks || {}; userData.unlocks.skins = userData.unlocks.skins || {}; userData.unlocks.skins[r.cosmeticId] = true; userData.equippedSkin = r.cosmeticId; }
+        if (r.type === 'aura') { userData.unlocks = userData.unlocks || {}; userData.unlocks.auras = userData.unlocks.auras || {}; userData.unlocks.auras[r.cosmeticId] = true; userData.equippedAura = r.cosmeticId; }
+        if (['backpack','trail','pet','emote','intro','elimination','bossFinish','nameplate','badge'].includes(r.type)) userData.cosmetics.equipped[r.type] = r.cosmeticId;
+        if (r.title) userData.titles[r.title] = true;
+        if (r.coins) userData.coins = Number(userData.coins || 0) + Number(r.coins || 0);
+    }
+    function addBattleStarsV2(n, reason='') {
+        ensurePassV2Data();
+        n = Math.max(0, Math.floor(Number(n || 0)));
+        if (!n) return;
+        userData.battlePassV2.battleStars += n;
+        userData.battlePassV2.earnedStars += n;
+        try { showMissionToast?.('BATTLE STAR GET!', `⭐ +${n}${reason ? ' / ' + reason : ''}`); } catch(e) {}
+    }
+    function allBaseClaimedV2() {
+        ensurePassV2Data();
+        const { theme } = fridaySeasonInfoV2();
+        return theme.rewards.every(r => !!userData.battlePassV2.claimed[r.id]);
+    }
+    function buyNeonPassV2() {
+        ensurePassV2Data();
+        const p = userData.battlePassV2;
+        if (p.premium || Number(userData.passTickets || 0) <= 0) return;
+        userData.passTickets -= 1;
+        p.premium = true;
+        addBattleStarsV2(3, '購入ボーナス');
+        saveData?.();
+        renderBattlePassV2();
+        try { renderShopV2(); } catch(e) {}
+        showMissionToast?.('NEON PASS UNLOCKED!', 'チケット1枚で現在シーズンを購入しました。');
+    }
+    function claimV2Reward(id, special=false) {
+        ensurePassV2Data();
+        const { theme } = fridaySeasonInfoV2();
+        const list = special ? theme.special : theme.rewards;
+        const r = list.find(x => x.id === id);
+        const p = userData.battlePassV2;
+        if (!r) return;
+        if (!special && !p.premium) { showMissionToast?.('PASS REQUIRED', 'SHOPでチケットを使ってNEON PASSを購入してください。'); return; }
+        if (special && !p.specialUnlocked && !allBaseClaimedV2()) return;
+        const claimed = special ? p.specialClaimed : p.claimed;
+        if (claimed[id]) return;
+        if (p.battleStars < r.cost) return;
+        p.battleStars -= r.cost;
+        claimed[id] = true;
+        grantPassV2Reward(r);
+        if (!special && allBaseClaimedV2()) {
+            p.specialUnlocked = true;
+            showMissionToast?.('SPECIAL PASS OPEN!', '基本12個を全て入手。無料スペシャルパス解放！');
+        } else {
+            showMissionToast?.('PASS REWARD!', ownedRewardText(r));
+        }
+        saveData?.();
+        renderBattlePassV2(special ? 'special' : 'base');
+        try { renderCollectionScreen?.(); } catch(e) {}
+    }
+
+    function ensurePassScreenV2() {
+        injectPassV2Style();
+        let div = document.getElementById('battlePassScreen');
+        if (!div) {
+            div = document.createElement('div'); div.id = 'battlePassScreen'; div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3'; document.body.appendChild(div);
+        }
+        div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">SEASON 1 NEON PASS</h2><p class="text-gray-300 text-sm mt-2">バトルスター⭐で好きな報酬を交換。次シーズン開始は2026年5月22日（金）。報酬は期間限定で、今後基本的に入手できません。</p></div><button id="closeBattlePassBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="battlePassTopContainer"></div><div class="nsv-v2-tabs"><button id="passTabBase" class="nsv-v2-tab active">基本パス 12個</button><button id="passTabSpecial" class="nsv-v2-tab">無料スペシャル</button><button id="passTabLocker" class="nsv-v2-tab">LOCKER</button></div><div id="battlePassTrackContainer" class="overflow-y-auto max-h-[64vh] pr-1"></div></div>`;
+        document.getElementById('closeBattlePassBtn')?.addEventListener('click', () => showScreen('startScreen'));
+        document.getElementById('passTabBase')?.addEventListener('click', () => renderBattlePassV2('base'));
+        document.getElementById('passTabSpecial')?.addEventListener('click', () => renderBattlePassV2('special'));
+        document.getElementById('passTabLocker')?.addEventListener('click', () => renderBattlePassV2('locker'));
+    }
+    function renderBattlePassV2(tab='base') {
+        ensurePassV2Data(); ensurePassScreenV2();
+        const s = fridaySeasonInfoV2(); const p = userData.battlePassV2;
+        const top = document.getElementById('battlePassTopContainer'); const box = document.getElementById('battlePassTrackContainer');
+        ['passTabBase','passTabSpecial','passTabLocker'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+        document.getElementById(tab === 'special' ? 'passTabSpecial' : tab === 'locker' ? 'passTabLocker' : 'passTabBase')?.classList.add('active');
+        const baseCount = s.theme.rewards.filter(r => p.claimed[r.id]).length;
+        top.innerHTML = `<div class="nsv-pass-card premium" style="border-color:${s.theme.color};box-shadow:0 0 22px ${s.theme.color}44"><div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><div class="text-xs text-yellow-300 font-bold">${s.icon || s.theme.icon} SEASON ${s.id} / 次のシーズン開始：2026年5月22日（金）</div><h3 class="text-2xl font-bold text-white mt-1">${s.theme.icon} ${s.theme.name}</h3><p class="text-sm text-gray-300 mt-1">${s.theme.sub}</p><p class="text-xs text-red-200 mt-2 bg-red-950/40 border border-red-400/40 rounded-lg px-3 py-2">このシーズンのバトルパスアイテムは期間限定です。シーズン終了後は基本的に入手できません。</p><div class="mt-3 flex flex-wrap gap-2"><span class="nsv-star-chip">⭐ ${Math.floor(p.battleStars)} BATTLE STAR</span><span class="nsv-star-chip">🎟️ ${Math.floor(userData.passTickets || 0)} チケット</span><span class="nsv-star-chip">🎁 ${baseCount}/12 入手</span><span class="nsv-star-chip">⚔️ ${Math.floor(p.seasonKills || 0)}体討伐</span></div></div><button id="buyPassTopBtnV2" class="btn-gold px-5 py-3 rounded font-bold ${(userData.passTickets > 0 && !p.premium) ? '' : 'opacity-40 cursor-not-allowed'}" ${(userData.passTickets > 0 && !p.premium) ? '' : 'disabled'}>${p.premium ? '購入済み' : 'チケット1枚で購入'}</button></div><p class="text-xs text-gray-400 mt-3">スター入手：敵60体ごと+1 / ボス系+2 / リザルト成績で追加。進行状況はブラウザ保存＆EXPORTコードに含まれます。</p></div>`;
+        document.getElementById('buyPassTopBtnV2')?.addEventListener('click', buyNeonPassV2);
+        if (tab === 'locker') return renderLockerV2(box);
+        const special = tab === 'special';
+        const unlockedSpecial = p.specialUnlocked || allBaseClaimedV2();
+        const list = special ? s.theme.special : s.theme.rewards;
+        if (special && !unlockedSpecial) {
+            box.innerHTML = `<div class="nsv-v2-card nsv-v2-special"><div class="nsv-v2-icon">🔒</div><h3 class="text-2xl font-bold text-purple-300 mt-2">スペシャルパス未解放</h3><p class="text-gray-300 mt-2">基本パス12個をすべて入手すると、無料で使えるようになります。</p></div>`;
+            return;
+        }
+        box.innerHTML = `<div class="nsv-v2-grid">${list.map(r => {
+            const claimed = !!(special ? p.specialClaimed[r.id] : p.claimed[r.id]);
+            const canBuy = (special ? unlockedSpecial : p.premium) && !claimed && p.battleStars >= r.cost;
+            const lockedText = !special && !p.premium ? 'PASS必要' : p.battleStars < r.cost && !claimed ? 'STAR不足' : 'CLAIM';
+            return `<div class="nsv-v2-card ${special ? 'nsv-v2-special' : ''} ${claimed ? 'claimed' : canBuy ? 'ready' : 'locked'}"><div class="nsv-v2-cost nsv-star-chip">⭐ ${r.cost}</div><div class="flex items-center gap-2 flex-wrap"><span class="nsv-v2-type">${cosmeticTypeLabel(r.type)}</span><span class="nsv-v2-rarity nsv-rarity-${r.rarity || 'RARE'}">${r.rarity || 'RARE'}</span></div><div class="nsv-v2-icon mt-2">${r.icon || '🎁'}</div><h3 class="text-xl font-bold text-white mt-2">${r.name}</h3><p class="text-sm text-gray-300 mt-1">${r.desc || ''}</p><button class="claim-pass-v2 ${special ? 'btn-purple' : 'btn-gold'} px-3 py-2 rounded text-xs font-bold mt-3" data-id="${r.id}" data-special="${special ? '1':'0'}" ${canBuy ? '' : 'disabled'}>${claimed ? '入手済み' : lockedText}</button></div>`;
+        }).join('')}</div>`;
+        box.querySelectorAll('.claim-pass-v2').forEach(btn => btn.addEventListener('click', () => claimV2Reward(btn.dataset.id, btn.dataset.special === '1')));
+    }
+    function renderLockerV2(box) {
+        ensurePassV2Data();
+        const unlocked = Object.values(userData.cosmetics.unlocked || {});
+        const groups = ['skin','aura','backpack','trail','pet','emote','intro','elimination','bossFinish','nameplate','badge'];
+        box.innerHTML = groups.map(type => {
+            const items = unlocked.filter(x => x.type === type);
+            if (!items.length) return '';
+            return `<div class="nsv-shop-card"><h3 class="text-xl font-bold text-cyan-300">${cosmeticTypeLabel(type)}</h3>${items.map(it => `<div class="nsv-cosmetic-row"><div><b>${it.icon || '🎁'} ${it.name}</b><div class="text-xs text-gray-400">${it.theme || ''}</div></div><button class="equip-cos-v2 btn-neon px-3 py-1 rounded text-xs" data-type="${type}" data-id="${it.id}">${userData.cosmetics.equipped[type] === it.id || (type==='skin' && userData.equippedSkin===it.id) || (type==='aura' && userData.equippedAura===it.id) ? '装備中' : '装備'}</button></div>`).join('')}</div>`;
+        }).join('') || '<div class="nsv-v2-card"><h3 class="text-xl font-bold text-cyan-300">まだ報酬がありません</h3><p class="text-gray-300 mt-2">NEON PASSで報酬を交換するとここに表示されます。</p></div>';
+        box.querySelectorAll('.equip-cos-v2').forEach(btn => btn.addEventListener('click', () => {
+            const type = btn.dataset.type, id = btn.dataset.id;
+            if (type === 'skin') userData.equippedSkin = id;
+            else if (type === 'aura') userData.equippedAura = id;
+            else userData.cosmetics.equipped[type] = id;
+            saveData?.(); renderBattlePassV2('locker');
+        }));
+    }
+
+    function ensureShopV2() {
+        let div = document.getElementById('shopScreen');
+        if (!div) { div = document.createElement('div'); div.id = 'shopScreen'; div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3'; document.body.appendChild(div); }
+        div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #facc15;">GAME SHOP</h2><p class="text-gray-300 text-sm mt-2">銀コイン🪙をチケットに交換し、NEON PASSを購入できます。</p></div><button id="closeShopBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="shopListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>`;
+        document.getElementById('closeShopBtn')?.addEventListener('click', () => showScreen('startScreen'));
+    }
+    function renderShopV2() {
+        ensurePassV2Data(); ensureShopV2();
+        const cost = userData.shop.firstPassTicketBought ? PASS_REPEAT_TICKET_COST : PASS_FIRST_TICKET_COST;
+        const canBuy = Number(userData.coins || 0) >= cost;
+        const s = fridaySeasonInfoV2();
+        document.getElementById('shopListContainer').innerHTML = `<div class="nsv-shop-card premium"><div class="text-5xl mb-2">🎟️</div><h3 class="text-2xl font-bold text-yellow-300">バトルパスチケット交換</h3><p class="text-sm text-gray-300 mt-2">初回だけ1500コイン。その後は15000コインで交換。</p><div class="mt-4 bg-black/40 rounded-xl p-3 border border-yellow-400/40"><p class="text-sm text-gray-300">所持銀コイン：<b class="text-yellow-300">${Math.floor(userData.coins || 0)}</b></p><p class="text-sm text-gray-300">所持チケット：<b class="text-cyan-300">${Math.floor(userData.passTickets || 0)}</b></p><p class="text-xl font-black text-yellow-200 mt-2">必要：${cost} コイン</p></div><button id="buyPassTicketBtnV2" class="btn-gold px-5 py-3 rounded font-bold mt-4 w-full ${canBuy ? '' : 'opacity-40 cursor-not-allowed'}" ${canBuy ? '' : 'disabled'}>🎟️ チケットを1枚交換</button></div><div class="nsv-shop-card"><div class="text-5xl mb-2">⭐</div><h3 class="text-2xl font-bold text-cyan-300">${s.theme.icon} ${s.theme.name}</h3><p class="text-sm text-gray-300 mt-2">金曜日更新の2週間シーズン。チケット1枚で購入できます。</p><div class="mt-4 bg-black/40 rounded-xl p-3 border border-cyan-400/40"><p class="text-sm text-gray-300">シーズン：<b class="text-cyan-300">${s.id}</b></p><p class="text-sm text-gray-300">残り：約<b class="text-yellow-300">${s.remain}</b>日</p><p class="text-sm text-gray-300">状態：<b class="${userData.battlePassV2.premium ? 'text-green-300':'text-gray-300'}">${userData.battlePassV2.premium ? '購入済み':'未購入'}</b></p></div><button id="buyNeonPassBtnV2" class="btn-neon px-5 py-3 rounded font-bold mt-4 w-full ${(userData.passTickets > 0 && !userData.battlePassV2.premium) ? '' : 'opacity-40 cursor-not-allowed'}" ${(userData.passTickets > 0 && !userData.battlePassV2.premium) ? '' : 'disabled'}>NEON PASSを購入</button><button id="openPassFromShopBtnV2" class="btn-purple px-5 py-3 rounded font-bold mt-3 w-full">NEON PASSを見る</button></div>`;
+        document.getElementById('buyPassTicketBtnV2')?.addEventListener('click', () => { ensurePassV2Data(); const price = userData.shop.firstPassTicketBought ? PASS_REPEAT_TICKET_COST : PASS_FIRST_TICKET_COST; if (Number(userData.coins || 0) < price) return; userData.coins -= price; userData.passTickets = Number(userData.passTickets || 0) + 1; userData.shop.firstPassTicketBought = true; saveData?.(); showMissionToast?.('TICKET GET!', 'バトルパスチケット +1'); renderShopV2(); });
+        document.getElementById('buyNeonPassBtnV2')?.addEventListener('click', buyNeonPassV2);
+        document.getElementById('openPassFromShopBtnV2')?.addEventListener('click', () => { renderBattlePassV2('base'); showScreen('battlePassScreen'); });
+    }
+
+    function replaceMenuButtonsV2() {
+        injectNeonSeason1Banner();
+        const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+        let pass = document.getElementById('openBattlePassBtn');
+        if (pass) { const clone = pass.cloneNode(true); pass.replaceWith(clone); pass = clone; }
+        if (!pass && grid) { pass = document.createElement('button'); pass.id='openBattlePassBtn'; pass.className='btn-purple menu-secondary px-6 py-3 font-bold rounded cursor-pointer'; grid.appendChild(pass); }
+        if (pass) { pass.innerHTML='NEON PASS<br><span class="text-xs text-purple-100 font-bold">バトルスター交換</span>'; pass.addEventListener('click', () => { renderBattlePassV2('base'); showScreen('battlePassScreen'); }); }
+        let shop = document.getElementById('openShopBtn');
+        if (shop) { const clone = shop.cloneNode(true); shop.replaceWith(clone); shop = clone; }
+        if (!shop && grid) { shop = document.createElement('button'); shop.id='openShopBtn'; shop.className='btn-gold menu-secondary px-6 py-3 font-bold rounded cursor-pointer'; grid.appendChild(shop); }
+        if (shop) { shop.innerHTML='SHOP<br><span class="text-xs text-yellow-100 font-bold">チケット交換</span>'; shop.addEventListener('click', () => { renderShopV2(); showScreen('shopScreen'); }); }
+    }
+
+    function patchBattleStarEarningV2() {
+        try {
+            if (recordEnemyDefeat.__passV2Patched) return;
+            const old = recordEnemyDefeat;
+            recordEnemyDefeat = function(enemy) {
+                const bossLike = !!(enemy && (enemy.isBoss || enemy.isMidBoss || enemy.isMonkey));
+                const ret = old.apply(this, arguments);
+                try {
+                    ensurePassV2Data();
+                    const p = userData.battlePassV2;
+                    p.seasonKills++;
+                    if (bossLike) addBattleStarsV2(2, 'ボス撃破');
+                    const nextMilestone = Math.floor(p.seasonKills / 60);
+                    const prevMilestone = Math.floor(Number(p.lastKillStarAt || 0) / 60);
+                    if (nextMilestone > prevMilestone) { p.lastKillStarAt = p.seasonKills; addBattleStarsV2(nextMilestone - prevMilestone, '60体討伐'); }
+                    if (p.seasonKills % 10 === 0) saveData?.();
+                } catch(e) {}
+                return ret;
+            };
+            recordEnemyDefeat.__passV2Patched = true;
+        } catch(e) {}
+        try {
+            if (gameOver.__passV2Patched) return;
+            const oldGameOver = gameOver;
+            gameOver = function() {
+                const scoreBefore = Math.floor(score || 0), timeBefore = Math.floor(gameTime || 0), bosses = Math.floor((runStats && runStats.bossKills) || 0), kills = Math.floor((runStats && runStats.kills) || 0);
+                const ret = oldGameOver.apply(this, arguments);
+                try {
+                    ensurePassV2Data();
+                    const runKey = `${Date.now()}-${scoreBefore}-${kills}`;
+                    if (!userData.battlePassV2.performanceRuns[runKey]) {
+                        const stars = Math.min(5, Math.floor(scoreBefore / 5000)) + Math.min(3, Math.floor(timeBefore / 180)) + Math.min(6, bosses * 2);
+                        if (stars > 0) addBattleStarsV2(stars, 'リザルト成績');
+                        userData.battlePassV2.performanceRuns[runKey] = stars;
+                        saveData?.();
+                    }
+                } catch(e) {}
+                return ret;
+            };
+            gameOver.__passV2Patched = true;
+        } catch(e) {}
+    }
+
+    function patchCosmeticDrawingV2() {
+        try {
+            if (!Player || Player.prototype.draw.__passV2Patched) return;
+            const oldDraw = Player.prototype.draw;
+            Player.prototype.draw = function(ctx) {
+                try { drawBackpackAndPetV2(ctx, this); } catch(e) {}
+                const ret = oldDraw.apply(this, arguments);
+                try { drawExtraCosmeticsV2(ctx, this); } catch(e) {}
+                return ret;
+            };
+            Player.prototype.draw.__passV2Patched = true;
+        } catch(e) {}
+    }
+    function eqCos(type) { return userData?.cosmetics?.equipped?.[type] || ''; }
+    function drawBackpackAndPetV2(ctx, pl) {
+        ensurePassV2Data();
+        const back = eqCos('backpack'), pet = eqCos('pet');
+        const t = Date.now()/300, px=safe(pl.x), py=safe(pl.y), a=(pl.faceAngle||0)+Math.PI;
+        if (back) {
+            ctx.save(); ctx.globalCompositeOperation='screen'; ctx.translate(px + Math.cos(a)*24, py + Math.sin(a)*24);
+            if (back.includes('blackhole')) { ctx.beginPath(); ctx.arc(0,0,16+Math.sin(t)*2,0,Math.PI*2); ctx.fillStyle=back.includes('galaxy')?'#7c3aed':'#111827'; ctx.shadowBlur=22; ctx.shadowColor=back.includes('galaxy')?'#c084fc':'#a855f7'; ctx.fill(); ctx.strokeStyle='#e9d5ff'; ctx.lineWidth=2; ctx.stroke(); }
+            else if (back.includes('neon_core')) { ctx.rotate(t/2); ctx.beginPath(); ctx.rect(-12,-12,24,24); ctx.fillStyle=back.includes('galaxy')?'#a78bfa':'#22d3ee'; ctx.shadowBlur=24; ctx.shadowColor=back.includes('galaxy')?'#c084fc':'#22d3ee'; ctx.fill(); ctx.strokeStyle='#ecfeff'; ctx.lineWidth=2; ctx.stroke(); }
+            else { ctx.font='28px sans-serif'; ctx.textAlign='center'; ctx.fillText(back.includes('phoenix')?'🪽':back.includes('sword')?'⚔️':'🎒',0,8); }
+            ctx.restore();
+        }
+        if (pet) {
+            ctx.save(); ctx.globalCompositeOperation='screen'; const ox=Math.cos(t)*46, oy=Math.sin(t*1.3)*18-28; ctx.font='24px sans-serif'; ctx.textAlign='center'; ctx.shadowBlur=12; ctx.shadowColor='#facc15'; ctx.fillText(pet.includes('phoenix')?'🐦‍🔥':pet.includes('robot')?'🤖':pet.includes('jelly')?'🪼':pet.includes('neon_slime')?'🟦':'✨', px+ox, py+oy); ctx.restore();
+        }
+    }
+    function drawExtraCosmeticsV2(ctx, pl) {
+        const trail = eqCos('trail'), badge = eqCos('badge'), plate = eqCos('nameplate');
+        const px=safe(pl.x), py=safe(pl.y);
+        if (trail && pl.trail && pl.trail.length > 2) {
+            ctx.save(); ctx.globalCompositeOperation='screen';
+            const color = trail.includes('galaxy') ? '#c084fc' : trail.includes('rainbow') ? '#f0abfc' : trail.includes('stardust') ? '#fde68a' : trail.includes('fire') ? '#fb923c' : '#22d3ee';
+            for (let i=0;i<pl.trail.length;i+=3) { const p=pl.trail[i]; ctx.globalAlpha=(i+1)/pl.trail.length*0.45; ctx.beginPath(); ctx.arc(safe(p.x),safe(p.y), trail.includes('galaxy')?5:3,0,Math.PI*2); ctx.fillStyle=color; ctx.shadowBlur=10; ctx.shadowColor=color; ctx.fill(); }
+            ctx.restore();
+        }
+        if (badge || plate) {
+            ctx.save(); ctx.font='bold 12px Orbitron, sans-serif'; ctx.textAlign='center'; ctx.shadowBlur=8; ctx.shadowColor='#000';
+            if (plate) { ctx.fillStyle='rgba(15,23,42,.75)'; ctx.strokeStyle=plate.includes('neon')?'#22d3ee':plate.includes('thunder')?'#67e8f9':'#facc15'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.roundRect(px-48,py-58,96,20,8); ctx.fill(); ctx.stroke(); }
+            if (badge) { ctx.fillStyle='#fde68a'; ctx.fillText(badge.includes('neon')?'💠':badge.includes('thunder')?'⚡':'★', px-38, py-44); }
+            ctx.restore();
+        }
+    }
+
+    try {
+        injectPassV2Style(); injectNeonSeason1Banner(); ensurePassV2Data(); ensurePassScreenV2(); ensureShopV2(); replaceMenuButtonsV2(); patchBattleStarEarningV2(); patchCosmeticDrawingV2(); saveData?.();
+    } catch(e) { console.warn('pass v2 init skipped', e); }
+})();
+
+
+
+// ===== 2026-05-04 Add-on: Keep high score only reset + Collection split =====
+(() => {
+    const KEEP_BEST_ONLY_RESET_VERSION = '2026-05-04-keep-highscore-only-v1';
+
+    function applyKeepHighScoreOnlyReset20260504() {
+        try {
+            if (!userData || userData.keepBestOnlyResetVersion === KEEP_BEST_ONLY_RESET_VERSION) return;
+            const best = Math.max(0, Number(userData.score || 0));
+            const nick = normalizeNickname?.(userData.nickname || localStorage.getItem('neon_survivor_nickname') || '') || '';
+            const fresh = createFreshUserData(nick);
+            fresh.score = best;
+            fresh.coins = 0;
+            fresh.passTickets = 0;
+            fresh.shop = { firstPassTicketBought:false };
+            fresh.battlePass = null;
+            fresh.battlePassV2 = null;
+            fresh.cosmetics = { unlocked:{}, equipped:{} };
+            fresh.leaderboards = {};
+            fresh.keepBestOnlyResetVersion = KEEP_BEST_ONLY_RESET_VERSION;
+            fresh.resetVersion = SAVE_RESET_VERSION;
+            userData = fresh;
+            localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
+            const bestEl = document.getElementById('currentBestDisplay');
+            if (bestEl) bestEl.innerText = String(best);
+            saveData?.();
+        } catch(e) { console.warn('keep highscore reset skipped', e); }
+    }
+
+    function passSeasonLabel20260504(item) {
+        const id = String(item?.id || '');
+        return item?.seasonLabel || item?.seasonName || (id.includes('_s1') ? 'Season 1 / NEON GENESIS' : 'バトルパス報酬');
+    }
+
+    function typeLabelCollection20260504(t) {
+        const map = { skin:'スキン', aura:'オーラ', backpack:'背中アクセサリー', trail:'トレイル', pet:'ペット', emote:'エモート', intro:'登場演出', elimination:'撃破演出', bossFinish:'ボス撃破演出', nameplate:'ネームプレート', badge:'称号バッジ', box:'BOX' };
+        return map[t] || 'アイテム';
+    }
+
+    function equipBattlePassCosmetic20260504(type, id) {
+        userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+        userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+        if (type === 'skin') userData.equippedSkin = id;
+        else if (type === 'aura') userData.equippedAura = id;
+        else userData.cosmetics.equipped[type] = id;
+        saveData?.();
+        renderCollectionScreen();
+    }
+
+    function missionCollectionCard20260504(kind, item, on, eq) {
+        const color = item.color || '#22d3ee';
+        const equipClass = on ? 'btn-neon' : 'bg-gray-700 text-gray-500 cursor-not-allowed';
+        const dataKind = kind === 'skin' ? 'mission-skin' : kind === 'aura' ? 'mission-aura' : 'mission-cape';
+        return `<div class="collection-card ${on?'unlocked':''}">
+            <div class="text-3xl">${item.icon || '🎁'}</div>
+            <h3 class="font-bold text-white mt-1" style="color:${on ? color : '#9ca3af'}">${item.name}</h3>
+            <p class="text-xs text-cyan-200 mt-1">入手元：ミッション / 通常解放</p>
+            <p class="text-sm text-gray-300 mt-1">${item.desc || ''}</p>
+            ${kind === 'skin' ? `<p class="text-xs text-cyan-200 mt-2">能力: ${getSkinAbilityText(item.id)}</p>` : ''}
+            <button class="equip-mission-cos mt-2 px-3 py-1 rounded text-sm font-bold ${equipClass}" data-kind="${dataKind}" data-id="${item.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button>
+        </div>`;
+    }
+
+    function battlePassCollectionCard20260504(item) {
+        const type = item.type || 'item';
+        const eq = (type === 'skin' && userData.equippedSkin === item.id) || (type === 'aura' && userData.equippedAura === item.id) || (userData.cosmetics?.equipped?.[type] === item.id);
+        return `<div class="collection-card unlocked" style="border-color:rgba(34,211,238,.8);box-shadow:0 0 16px rgba(34,211,238,.18)">
+            <div class="text-3xl">${item.icon || '🎁'}</div>
+            <div class="text-[11px] inline-block px-2 py-1 rounded bg-cyan-950/70 border border-cyan-400/50 text-cyan-200 font-bold mt-1">${typeLabelCollection20260504(type)}</div>
+            <h3 class="font-bold text-white mt-2">${item.name || item.id}</h3>
+            <p class="text-xs text-yellow-200 mt-1">入手元：${passSeasonLabel20260504(item)} のバトルパス</p>
+            <p class="text-xs text-red-200 mt-1">このアイテムは期間限定報酬です。</p>
+            ${['skin','aura','backpack','trail','pet','emote','intro','elimination','bossFinish','nameplate','badge'].includes(type) ? `<button class="equip-bp-cos btn-purple mt-2 px-3 py-1 rounded text-sm font-bold" data-type="${type}" data-id="${item.id}">${eq?'装備中':'装備'}</button>` : ''}
+        </div>`;
+    }
+
+    function installCollectionSplitPatch20260504() {
+        try {
+            const collectionDesc = document.querySelector('#collectionScreen h2 + p');
+            if (collectionDesc) collectionDesc.textContent = 'ミッションで入手したものと、バトルパスで入手したものを分けて確認できます。';
+            renderCollectionScreen = function() {
+                ensureProgressionData();
+                userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+                userData.cosmetics.unlocked = userData.cosmetics.unlocked || {};
+                userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+                const container = document.getElementById('collectionListContainer');
+                if (!container) return;
+
+                const missionSkins = SKIN_DEFS.filter(sk => !!userData.unlocks?.skins?.[sk.id]).map(sk => missionCollectionCard20260504('skin', sk, true, userData.equippedSkin === sk.id)).join('');
+                const missionAuras = AURA_DEFS.filter(a => !!userData.unlocks?.auras?.[a.id]).map(a => missionCollectionCard20260504('aura', a, true, userData.equippedAura === a.id)).join('');
+                const missionCapes = (typeof CAPE_DEFS !== 'undefined' ? CAPE_DEFS : []).filter(c => !!userData.unlocks?.capes?.[c.id] && c.id !== 'none').map(c => missionCollectionCard20260504('cape', c, true, userData.equippedCape === c.id)).join('');
+                const missionHtml = missionSkins + missionAuras + missionCapes;
+
+                const battlePassItems = Object.values(userData.cosmetics.unlocked || {}).filter(Boolean);
+                const battlePassHtml = battlePassItems.map(battlePassCollectionCard20260504).join('');
+
+                container.innerHTML = `
+                    <section>
+                        <h3 class="text-2xl font-bold text-green-300 mb-2">MISSION / NORMAL REWARDS</h3>
+                        <p class="text-xs text-gray-300 mb-2">ミッション・通常解放で入手したものです。</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${missionHtml || '<div class="collection-card"><h3 class="font-bold text-gray-300">まだミッション報酬はありません</h3><p class="text-sm text-gray-400 mt-1">ミッション達成でここに増えます。</p></div>'}</div>
+                    </section>
+                    <section>
+                        <h3 class="text-2xl font-bold text-cyan-300 mb-2">BATTLE PASS REWARDS</h3>
+                        <p class="text-xs text-red-200 mb-2">バトルパス報酬はシーズン限定です。各アイテムに入手シーズンを表示しています。</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${battlePassHtml || '<div class="collection-card"><h3 class="font-bold text-gray-300">まだバトルパス報酬はありません</h3><p class="text-sm text-gray-400 mt-1">NEON PASSで交換するとここに表示されます。</p></div>'}</div>
+                    </section>
+                    <section>
+                        <div class="collection-card border-cyan-400/60">
+                            <h3 class="text-xl font-bold text-cyan-200">武器は WEAPON CODEX に移動しました</h3>
+                            <p class="text-sm text-gray-300 mt-1">武器の解放状況・性能・ON/OFF設定は、タイトル画面の WEAPON CODEX から確認できます。</p>
+                        </div>
+                    </section>`;
+
+                container.querySelectorAll('.equip-mission-cos').forEach(btn => btn.addEventListener('click', () => {
+                    const k = btn.dataset.kind, id = btn.dataset.id;
+                    if (k === 'mission-skin') userData.equippedSkin = id;
+                    else if (k === 'mission-aura') userData.equippedAura = id;
+                    else if (k === 'mission-cape') userData.equippedCape = id;
+                    saveData?.(); renderCollectionScreen();
+                }));
+                container.querySelectorAll('.equip-bp-cos').forEach(btn => btn.addEventListener('click', () => equipBattlePassCosmetic20260504(btn.dataset.type, btn.dataset.id)));
+            };
+        } catch(e) { console.warn('collection split patch skipped', e); }
+    }
+
+    function injectBattlePassDateNote20260504() {
+        try {
+            const styleId = 'nsvKeepBestCollectionPatchStyle';
+            if (!document.getElementById(styleId)) {
+                const style = document.createElement('style');
+                style.id = styleId;
+                style.textContent = `.nsv-season-title{letter-spacing:.09em}.nsv-limited-note{border:1px solid rgba(248,113,113,.45);background:rgba(127,29,29,.35);color:#fecaca;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:800}`;
+                document.head.appendChild(style);
+            }
+        } catch(e) {}
+    }
+
+    try {
+        applyKeepHighScoreOnlyReset20260504();
+        installCollectionSplitPatch20260504();
+        injectBattlePassDateNote20260504();
+        const currentBestDisplay = document.getElementById('currentBestDisplay');
+        if (currentBestDisplay) currentBestDisplay.innerText = String(Math.floor(userData.score || 0));
+    } catch(e) { console.warn('keep best / collection patch init skipped', e); }
 })();
 
 </script>
+
+
+<script>
+(function(){
+    'use strict';
+    const SEASON_INTRO_KEY = 'neon_survivor_seen_intro_s1_neon_genesis_v1';
+    function closeSeasonIntro(){
+        const intro = document.getElementById('seasonLaunchIntro');
+        if (!intro || !intro.classList.contains('active')) return;
+        intro.classList.add('closing');
+        try { localStorage.setItem(SEASON_INTRO_KEY, '1'); } catch(e) {}
+        setTimeout(function(){
+            intro.classList.remove('active');
+            intro.classList.remove('closing');
+            intro.style.display = 'none';
+        }, 560);
+    }
+    function showSeasonIntroOnce(){
+        const intro = document.getElementById('seasonLaunchIntro');
+        if (!intro) return;
+        let seen = false;
+        try { seen = localStorage.getItem(SEASON_INTRO_KEY) === '1'; } catch(e) { seen = false; }
+        if (seen) return;
+        intro.style.display = 'flex';
+        requestAnimationFrame(function(){ intro.classList.add('active'); });
+        intro.addEventListener('click', closeSeasonIntro, { once: true });
+        intro.addEventListener('touchstart', closeSeasonIntro, { once: true, passive: true });
+        window.addEventListener('keydown', closeSeasonIntro, { once: true });
+        setTimeout(closeSeasonIntro, 4200);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', showSeasonIntroOnce);
+    } else {
+        showSeasonIntroOnce();
+    }
+})();
+</script>
+
 </body>
 </html>
