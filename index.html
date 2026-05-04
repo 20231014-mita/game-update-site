@@ -11864,6 +11864,375 @@
     setTimeout(bootHotfix20260504, 1500);
 })();
 
+
+
+/* =========================================================
+   2026-05-04 Hotfix v5:
+   - Shop shows current silver coin count
+   - Start screen buttons are rebound and forced clickable
+   - Ranking button opens reliably; all ranking tabs are friend-vs-friend
+   - Online mode uses one fixed public room when Firebase is connected
+   - Online spawn area is shared so friends appear on the same map area
+   - Joystick / Light mode toggles stay on the same row
+========================================================= */
+(() => {
+    'use strict';
+    const PATCH_VERSION = '2026-05-04-online-buttons-shop-v5';
+    if (window.NSV_ONLINE_BUTTON_SHOP_PATCH === PATCH_VERSION) return;
+    window.NSV_ONLINE_BUTTON_SHOP_PATCH = PATCH_VERSION;
+
+    const ONLINE_ROOM_ID = 'neon_survivor_public_room_season1_v5';
+    const SHARED_ONLINE_SPAWN = { x: Math.floor(mapSize / 2), y: Math.floor(mapSize / 2) };
+
+    function nsvSafeText(v) {
+        return String(v ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    }
+
+    function nsvCoinCount() {
+        try { ensureProgressionData?.(); } catch(e) {}
+        return Math.max(0, Math.floor(Number(userData?.coins || 0)));
+    }
+
+    function injectButtonShopOnlineStyleV5() {
+        if (document.getElementById('nsvButtonShopOnlineStyleV5')) return;
+        const st = document.createElement('style');
+        st.id = 'nsvButtonShopOnlineStyleV5';
+        st.textContent = `
+            #startScreen button, #startScreen label, #startScreen input{pointer-events:auto!important;}
+            #startScreen .nsv-clean-settings{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:stretch!important;}
+            #startScreen .nsv-clean-settings > *{min-width:0!important;height:100%!important;}
+            #startScreen .nsv-clean-settings .bg-gray-900\/80{padding:12px!important;}
+            @media(max-width:480px){#startScreen .nsv-clean-settings{grid-template-columns:repeat(2,minmax(0,1fr))!important;}#startScreen .nsv-clean-settings span{font-size:.76rem!important;}#startScreen .nsv-clean-settings .w-14{width:3rem!important;}}
+            .nsv-shop-coin-banner{border:1px solid rgba(250,204,21,.75);background:linear-gradient(90deg,rgba(250,204,21,.18),rgba(34,211,238,.10));border-radius:18px;padding:14px 16px;box-shadow:0 0 18px rgba(250,204,21,.20);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+            .nsv-shop-coin-value{font-family:Orbitron,sans-serif;font-size:clamp(1.4rem,4vw,2.2rem);font-weight:1000;color:#facc15;text-shadow:0 0 12px rgba(250,204,21,.85);}
+            .nsv-online-server-note{font-size:11px;color:#fef08a;margin-top:2px;max-width:250px;line-height:1.25;}
+            .nsv-btn-disabled-note{opacity:.75;font-size:11px;color:#fca5a5;margin-top:4px;}
+        `;
+        document.head.appendChild(st);
+    }
+
+    function ensureShopCoinDisplayV5() {
+        try {
+            const screen = document.getElementById('shopScreen');
+            if (!screen) return;
+            const panel = screen.querySelector('.menu-panel') || screen.firstElementChild;
+            if (!panel) return;
+            let banner = document.getElementById('nsvShopCoinBannerV5');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'nsvShopCoinBannerV5';
+                banner.className = 'nsv-shop-coin-banner';
+                const list = document.getElementById('shopListContainer');
+                if (list && list.parentElement) list.parentElement.insertBefore(banner, list);
+                else panel.appendChild(banner);
+            }
+            banner.innerHTML = `<div><div class="text-yellow-200 font-bold text-sm tracking-widest">CURRENT SILVER COINS</div><div class="text-gray-300 text-xs">SHOPで使える現在の所持コインです</div></div><div class="nsv-shop-coin-value">🪙 ${nsvCoinCount().toLocaleString()}</div>`;
+        } catch(e) {}
+    }
+
+    function wrapShopRenderV5() {
+        try {
+            if (typeof renderShopV2 === 'function' && !renderShopV2.__nsvCoinWrappedV5) {
+                const old = renderShopV2;
+                renderShopV2 = function(){ const ret = old.apply(this, arguments); ensureShopCoinDisplayV5(); return ret; };
+                renderShopV2.__nsvCoinWrappedV5 = true;
+            }
+        } catch(e) {}
+        try {
+            if (typeof renderShopScreen20260504 === 'function' && !renderShopScreen20260504.__nsvCoinWrappedV5) {
+                const old = renderShopScreen20260504;
+                renderShopScreen20260504 = function(){ const ret = old.apply(this, arguments); ensureShopCoinDisplayV5(); return ret; };
+                renderShopScreen20260504.__nsvCoinWrappedV5 = true;
+            }
+        } catch(e) {}
+    }
+
+    function showScreenForceV5(screenId) {
+        try {
+            if (typeof showScreen === 'function') return showScreen(screenId);
+        } catch(e) {}
+        try {
+            document.querySelectorAll('#startScreen,#upgradeScreen,#missionsScreen,#collectionScreen,#weaponCodexScreen,#bossCodexScreen,#onlineRoleScreen,#levelUpScreen,#gameOverScreen,#pauseScreen,#shopScreen,#battlePassScreen,#leaderboardScreen,#eventModeScreen').forEach(el => {
+                if (!el) return;
+                if (el.id === screenId) { el.classList.remove('hidden'); el.style.display = ''; }
+                else { el.classList.add('hidden'); }
+            });
+        } catch(e) {}
+    }
+
+    function ensureRankingButtonV5() {
+        try { ensureLeaderboardScreen20260504?.(); } catch(e) {}
+        let btn = document.getElementById('openLeaderboardBtn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'openLeaderboardBtn';
+            btn.type = 'button';
+            btn.className = 'btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'RANKING<br><span class="text-xs text-cyan-100 font-bold">友達と比べる</span>';
+        }
+        btn.style.pointerEvents = 'auto';
+        btn.classList.add('pointer-events-auto');
+        const cleanGrid = document.querySelector('#startScreen .nsv-clean-menu-grid');
+        const grid = cleanGrid || document.querySelector('#startScreen .menu-grid') || document.querySelector('.menu-grid');
+        if (grid && btn.parentElement !== grid) grid.appendChild(btn);
+        if (!btn.dataset.nsvOpenRankingV5) {
+            btn.dataset.nsvOpenRankingV5 = '1';
+            btn.addEventListener('click', ev => {
+                ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.();
+                try { renderLeaderboardFixed20260504?.(); }
+                catch(e) { try { renderLeaderboard20260504?.(); } catch(_) {} }
+                showScreenForceV5('leaderboardScreen');
+            }, true);
+        }
+    }
+
+    function ensureAllMainButtonsClickableV5() {
+        const bind = (id, fn) => {
+            const btn = document.getElementById(id);
+            if (!btn || btn.dataset.nsvMainClickV5) return;
+            btn.dataset.nsvMainClickV5 = '1';
+            btn.style.pointerEvents = 'auto';
+            btn.classList.add('pointer-events-auto');
+            btn.addEventListener('click', ev => {
+                try { fn(ev); } catch(e) { console.warn('button fallback failed', id, e); }
+            }, true);
+        };
+        bind('openUpgradeBtn', () => { renderUpgradeScreen?.(); showScreenForceV5('upgradeScreen'); });
+        bind('openMissionBtn', () => { renderMissionScreen?.(); showScreenForceV5('missionsScreen'); });
+        bind('openCollectionBtn', () => { renderCollectionScreen?.(); showScreenForceV5('collectionScreen'); });
+        bind('openWeaponCodexBtn', () => { renderWeaponCodexScreen?.(); showScreenForceV5('weaponCodexScreen'); });
+        bind('openShopHeroBtn', () => { try { renderShopV2?.(); } catch(e) { renderShopScreen20260504?.(); } ensureShopCoinDisplayV5(); showScreenForceV5('shopScreen'); });
+        bind('openBattlePassHeroBtn', () => { try { renderBattlePassV2?.(); } catch(e) { renderBattlePassScreen20260504?.(); } showScreenForceV5('battlePassScreen'); });
+        bind('startBtn', () => { if (gameState === 'start' || gameState === 'gameover') initGame?.('solo'); });
+        bind('onlineStartBtn', () => { if (gameState === 'start' || gameState === 'gameover') openOnlineRoleSelect?.(); });
+        bind('closeShopBtn', () => showScreenForceV5('startScreen'));
+        bind('closeBattlePassBtn', () => showScreenForceV5('startScreen'));
+        bind('closeLeaderboardBtn', () => showScreenForceV5('startScreen'));
+        bind('copyFriendCodeBtn', () => { try { copyFriendCodeFixed20260504?.(); } catch(e) { copyFriendCode20260504?.(); } });
+        bind('addFriendCodeBtn', () => { try { addFriendCodeFixed20260504?.(); } catch(e) { addFriendCode20260504?.(); } });
+        ensureRankingButtonV5();
+    }
+
+    function keepTogglesSameRowV5() {
+        try {
+            const joy = document.getElementById('joystickToggle')?.closest('.bg-gray-900\/80, .bg-gray-900\\/80') || document.getElementById('joystickToggle')?.closest('div');
+            const light = document.getElementById('lightModeToggle')?.closest('.bg-gray-900\/80, .bg-gray-900\\/80') || document.getElementById('lightModeToggle')?.closest('div');
+            if (!joy || !light) return;
+            let wrap = document.getElementById('nsvToggleSameRowV5');
+            if (!wrap) {
+                wrap = document.createElement('div');
+                wrap.id = 'nsvToggleSameRowV5';
+                wrap.className = 'nsv-clean-settings';
+            }
+            const settings = document.querySelector('#startScreen .nsv-clean-settings') || joy.parentElement;
+            if (settings && wrap.parentElement !== settings) settings.appendChild(wrap);
+            if (joy.parentElement !== wrap) wrap.appendChild(joy);
+            if (light.parentElement !== wrap) wrap.appendChild(light);
+        } catch(e) {}
+    }
+
+    function onlinePlayersCollectionV5() {
+        if (!db || !fbCollection) return null;
+        return fbCollection(db, 'artifacts', appId || 'default-app-id', 'public', 'data', 'neon_survivor_online_rooms', ONLINE_ROOM_ID, 'players');
+    }
+    function onlinePlayerDocV5(id) {
+        if (!db || !fbDoc) return null;
+        return fbDoc(db, 'artifacts', appId || 'default-app-id', 'public', 'data', 'neon_survivor_online_rooms', ONLINE_ROOM_ID, 'players', id || onlinePlayerId);
+    }
+
+    function showOnlineServerNoteV5(connected) {
+        try {
+            const hud = document.getElementById('onlineHud');
+            if (!hud) return;
+            let note = document.getElementById('nsvOnlineServerNoteV5');
+            if (!note) { note = document.createElement('div'); note.id = 'nsvOnlineServerNoteV5'; note.className = 'nsv-online-server-note'; hud.appendChild(note); }
+            note.textContent = connected ? 'SERVER: CONNECTED / 同じ公開ルームに接続中' : 'SERVER: 未接続。別端末オンラインにはFirebase設定が必要です。';
+        } catch(e) {}
+    }
+
+    function patchOnlineCoreV5() {
+        try {
+            if (typeof randomMapPosition === 'function' && !randomMapPosition.__nsvSharedSpawnV5) {
+                const oldRandomMapPosition = randomMapPosition;
+                randomMapPosition = function() {
+                    if (window.NSV_NEXT_ONLINE_SHARED_SPAWN_V5) {
+                        window.NSV_NEXT_ONLINE_SHARED_SPAWN_V5 = false;
+                        const n = String(onlinePlayerId || 'p');
+                        let seed = 0; for (let i=0;i<n.length;i++) seed = (seed * 31 + n.charCodeAt(i)) >>> 0;
+                        const angle = (seed % 6283) / 1000;
+                        const dist = 80 + (seed % 160);
+                        return { x: SHARED_ONLINE_SPAWN.x + Math.cos(angle) * dist, y: SHARED_ONLINE_SPAWN.y + Math.sin(angle) * dist };
+                    }
+                    return oldRandomMapPosition.apply(this, arguments);
+                };
+                randomMapPosition.__nsvSharedSpawnV5 = true;
+            }
+        } catch(e) {}
+
+        try {
+            if (typeof initGame === 'function' && !initGame.__nsvOnlineSpawnWrappedV5) {
+                const oldInitGame = initGame;
+                initGame = function(mode = 'solo') {
+                    if (mode === 'online') window.NSV_NEXT_ONLINE_SHARED_SPAWN_V5 = true;
+                    return oldInitGame.apply(this, arguments);
+                };
+                initGame.__nsvOnlineSpawnWrappedV5 = true;
+            }
+        } catch(e) {}
+
+        try {
+            startOnlinePresence = function() {
+                if (!db || !fbCollection || !fbOnSnapshot || !fbDoc || !fbSetDoc) { showOnlineServerNoteV5(false); return; }
+                try {
+                    onlineRoomCollection = onlinePlayersCollectionV5();
+                    if (!onlineRoomCollection) { showOnlineServerNoteV5(false); return; }
+                    if (onlineUnsubscribe) { try { onlineUnsubscribe(); } catch(e) {} onlineUnsubscribe = null; }
+                    onlineUnsubscribe = fbOnSnapshot(onlineRoomCollection, (snap) => {
+                        const now = Date.now();
+                        const next = new Map();
+                        snap.forEach(docSnap => {
+                            if (docSnap.id === onlinePlayerId) return;
+                            const d = docSnap.data() || {};
+                            if (now - Number(d.updatedAt || 0) > 18000) return;
+                            next.set(docSnap.id, {
+                                id: docSnap.id,
+                                nickname: nsvSafeText(d.nickname || 'PLAYER'),
+                                x: Number(d.x || SHARED_ONLINE_SPAWN.x),
+                                y: Number(d.y || SHARED_ONLINE_SPAWN.y),
+                                hp: Number(d.hp || 1),
+                                maxHp: Number(d.maxHp || 1),
+                                score: Number(d.score || 0),
+                                shieldLevel: Number(d.shieldLevel || 0),
+                                role: d.role || '', roleName: d.roleName || ''
+                            });
+                        });
+                        remotePlayers = next;
+                        updateOnlineHud?.();
+                        showOnlineServerNoteV5(true);
+                    }, () => showOnlineServerNoteV5(false));
+                } catch(e) { console.warn('online presence v5 unavailable', e); showOnlineServerNoteV5(false); }
+            };
+        } catch(e) {}
+
+        try {
+            syncOnlinePresence = function() {
+                if (!isOnlineMode || !player || !db || !fbDoc || !fbSetDoc) return;
+                if (frameCount - onlineLastSyncFrame < 8) return;
+                onlineLastSyncFrame = frameCount;
+                try {
+                    const ref = onlinePlayerDocV5(onlinePlayerId);
+                    if (!ref) return;
+                    fbSetDoc(ref, {
+                        nickname: getNickname() || 'PLAYER',
+                        x: player.x, y: player.y,
+                        hp: player.hp, maxHp: player.maxHp,
+                        level: player.level,
+                        shieldLevel: player.onlineShieldLevel || 0,
+                        score: Math.floor(score || 0),
+                        role: player.onlineRole || '', roleName: player.onlineRoleName || '',
+                        room: ONLINE_ROOM_ID,
+                        updatedAt: Date.now()
+                    }, { merge: true }).catch(() => {});
+                } catch(e) {}
+            };
+        } catch(e) {}
+
+        try {
+            sendOnlineHit = function(targetId, baseDamage) {
+                if (!isOnlineMode || !targetId || !db || !fbDoc || !fbSetDoc) return 0;
+                const damage = calcOnlinePvpDamage?.(baseDamage) || Math.max(1, Math.round(Number(baseDamage || 1) * 0.6));
+                const hitId = `${onlinePlayerId}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+                try {
+                    const ref = onlinePlayerDocV5(targetId);
+                    if (!ref) return 0;
+                    fbSetDoc(ref, { hits: { [hitId]: { from: onlinePlayerId, fromName: getNickname() || 'PLAYER', damage, at: Date.now() } } }, { merge: true }).catch(() => {});
+                    return damage;
+                } catch(e) { return 0; }
+            };
+        } catch(e) {}
+
+        try {
+            processOnlineIncomingDamage = async function() {
+                if (!isOnlineMode || !player || !db || !fbDoc || !fbGetDoc) return;
+                if (frameCount - onlineLastDamagePollFrame < 8) return;
+                onlineLastDamagePollFrame = frameCount;
+                try {
+                    const ref = onlinePlayerDocV5(onlinePlayerId);
+                    if (!ref) return;
+                    const snap = await fbGetDoc(ref);
+                    if (!snap.exists()) return;
+                    const data = snap.data() || {};
+                    const hits = data.hits || {};
+                    const clearFields = {};
+                    const now = Date.now();
+                    for (const [hitId, hit] of Object.entries(hits)) {
+                        if (!hit || onlineProcessedHitIds.has(hitId)) continue;
+                        onlineProcessedHitIds.add(hitId);
+                        if (now - Number(hit.at || 0) > 10000) { if (fbDeleteField) clearFields[`hits.${hitId}`] = fbDeleteField(); continue; }
+                        if (hit.from === onlinePlayerId) continue;
+                        const beforeHp = player.hp;
+                        player.takeDamage(Math.max(1, Number(hit.damage || 0)));
+                        if (player.hp < beforeHp) floatingTexts.push(new FloatingText(player.x, player.y - 68, `PVP -${Math.max(1, Number(hit.damage || 0))}`, '#f87171', 18));
+                        if (fbDeleteField) clearFields[`hits.${hitId}`] = fbDeleteField();
+                    }
+                    if (Object.keys(clearFields).length && fbSetDoc) fbSetDoc(ref, clearFields, { merge:true }).catch(() => {});
+                } catch(e) {}
+            };
+        } catch(e) {}
+
+        try {
+            if (typeof startOnlineMode === 'function' && !startOnlineMode.__nsvOnlineV5) {
+                const oldStartOnlineMode = startOnlineMode;
+                startOnlineMode = function() {
+                    const ret = oldStartOnlineMode.apply(this, arguments);
+                    try { startOnlinePresence(); syncOnlinePresence(); } catch(e) {}
+                    setTimeout(() => { try { if (isOnlineMode) { startOnlinePresence(); syncOnlinePresence(); } } catch(e) {} }, 800);
+                    setTimeout(() => { try { if (isOnlineMode) { startOnlinePresence(); syncOnlinePresence(); } } catch(e) {} }, 2000);
+                    return ret;
+                };
+                startOnlineMode.__nsvOnlineV5 = true;
+            }
+        } catch(e) {}
+
+        try {
+            if (typeof stopOnlineMode === 'function' && !stopOnlineMode.__nsvOnlineV5) {
+                const oldStopOnlineMode = stopOnlineMode;
+                stopOnlineMode = function() {
+                    try {
+                        if (db && fbDoc && fbDeleteDoc && onlinePlayerId) {
+                            const ref = onlinePlayerDocV5(onlinePlayerId);
+                            if (ref) fbDeleteDoc(ref).catch(() => {});
+                        }
+                    } catch(e) {}
+                    return oldStopOnlineMode.apply(this, arguments);
+                };
+                stopOnlineMode.__nsvOnlineV5 = true;
+            }
+        } catch(e) {}
+    }
+
+    function forceFriendOnlyRankingsV5() {
+        try { renderLeaderboard20260504 = renderLeaderboardFixed20260504; } catch(e) {}
+        ensureRankingButtonV5();
+    }
+
+    function bootV5() {
+        injectButtonShopOnlineStyleV5();
+        wrapShopRenderV5();
+        ensureShopCoinDisplayV5();
+        ensureAllMainButtonsClickableV5();
+        keepTogglesSameRowV5();
+        patchOnlineCoreV5();
+        forceFriendOnlyRankingsV5();
+        try { updateOnlineHud?.(); } catch(e) {}
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootV5);
+    else bootV5();
+    setTimeout(bootV5, 500);
+    setTimeout(bootV5, 1500);
+    setTimeout(bootV5, 3000);
+})();
 </script>
 
 
