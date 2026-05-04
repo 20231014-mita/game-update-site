@@ -1970,7 +1970,9 @@
 
         function createParticles(x, y, count = 8, color = '#0ff', size = 3) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-            const maxAdd = Math.min(Math.max(0, Math.floor(count)), Math.max(0, 450 - particles.length));
+            const perfParticleCap = nsvPerfStage && nsvPerfStage() >= 2 ? 120 : (isLightMode ? 160 : 260);
+            const perfCount = nsvPerfStage && nsvPerfStage() >= 2 ? Math.ceil(count * 0.45) : (isLightMode ? Math.ceil(count * 0.6) : count);
+            const maxAdd = Math.min(Math.max(0, Math.floor(perfCount)), Math.max(0, perfParticleCap - particles.length));
             for (let i = 0; i < maxAdd; i++) {
                 particles.push(new Particle(x, y, color, size));
             }
@@ -3279,7 +3281,7 @@
         }
 
         function spawnEnemy() {
-            if(enemies.length >= 800 || !player) return; // スポーン上限を800に解放！
+            if(enemies.length >= nsvGetEnemyCap() || !player) return; // 端末落ち防止：レベルに応じて上限を自動調整
             let angle = Math.random() * Math.PI * 2; let dist = Math.hypot(width, height) / 2 + 100; 
             let ex = player.x + Math.cos(angle) * dist; let ey = player.y + Math.sin(angle) * dist;
             let type = 0; let r = Math.random();
@@ -6409,7 +6411,7 @@
                         this.radius = 45; this.color = '#ff0044'; this.speed = 1.2 + (timeMultiplier * 0.05); 
                         this.hp = 1500 * Math.max(1, Math.floor(player.level / 3)) * 1.5; this.damage = 40 * 1.5; 
                         this.expValue = 25; this.isBoss = true;
-                        this.bossPattern = ['VOID BOSS','THUNDER BOSS','FIRE BOSS','MIRROR BOSS'][Math.floor(Math.random() * 4)];
+                        this.bossPattern = ['VOID BOSS','THUNDER BOSS','MIRROR BOSS'][Math.floor(Math.random() * 3)]; // FIRE BOSS removed for lightweight normal-only boss
                         this.patternTimer = 0;
                         break;
                     case 4: 
@@ -6503,14 +6505,14 @@
                             if (d < 520) { const pull = MathUtils.angle(player.x, player.y, this.x, this.y); player.x += Math.cos(pull) * 42; player.y += Math.sin(pull) * 42; }
                             floatingTexts.push(new FloatingText(this.x, this.y - 65, 'BLACK HOLE', '#a855f7', 18));
                         } else if (ptn.includes('THUNDER')) {
-                            for (let i = 0; i < 10 && enemyBullets.length < 300; i++) enemyBullets.push(new Bullet(this.x, this.y, (Math.PI * 2 / 10) * i, this.damage * 0.45, 4.2, 5, 1, '#67e8f9', '#06b6d4', true));
+                            for (let i = 0; i < 10 && enemyBullets.length < 140; i++) enemyBullets.push(new Bullet(this.x, this.y, (Math.PI * 2 / 10) * i, this.damage * 0.45, 4.2, 5, 1, '#67e8f9', '#06b6d4', true));
                             floatingTexts.push(new FloatingText(this.x, this.y - 65, 'THUNDER', '#67e8f9', 18));
                         } else if (ptn.includes('FIRE')) {
-                            if(effects.length < 50) effects.push(new Shockwave(this.x, this.y, '#fb923c', 12, 360));
-                            if (d < 260) player.takeDamage(12);
-                            floatingTexts.push(new FloatingText(this.x, this.y - 65, 'FIRE FLOOR', '#fb923c', 18));
+                            // 2026-05-04軽量化：オレンジ/炎ボスは特殊床攻撃を出さず、通常移動・接触だけにする。
+                            this.bossPattern = 'NORMAL BOSS';
+                            this.patternTimer = 0;
                         } else if (ptn.includes('MIRROR')) {
-                            for (let i = 0; i < 3 && enemies.length < 800; i++) enemies.push(new Enemy(this.x + MathUtils.random(-90,90), this.y + MathUtils.random(-90,90), 1));
+                            for (let i = 0; i < 2 && enemies.length < nsvGetEnemyCap(); i++) enemies.push(new Enemy(this.x + MathUtils.random(-90,90), this.y + MathUtils.random(-90,90), 1));
                             floatingTexts.push(new FloatingText(this.x, this.y - 65, 'MIRROR CLONES', '#e879f9', 18));
                         }
                     }
@@ -6531,7 +6533,7 @@
                         this.x += Math.cos(angle) * this.speed; this.y += Math.sin(angle) * this.speed;
                     }
                     this.summonTimer++;
-                    if (this.summonTimer >= 240 && enemies.length < 800) {
+                    if (this.summonTimer >= 240 && enemies.length < nsvGetEnemyCap()) {
                         this.summonTimer = 0;
                         for (let i = 0; i < 2; i++) enemies.push(new Enemy(this.x + MathUtils.random(-35,35), this.y + MathUtils.random(-35,35), 6));
                         floatingTexts.push(new FloatingText(this.x, this.y - 28, 'SUMMON', '#38bdf8', 14));
@@ -6782,7 +6784,7 @@
                     if (d > 420) { this.x += Math.cos(a) * this.speed; this.y += Math.sin(a) * this.speed; }
                     else if (d < 260) { this.x -= Math.cos(a) * this.speed * 0.75; this.y -= Math.sin(a) * this.speed * 0.75; }
                     this.fireTimer++;
-                    if (this.fireTimer >= 120 && enemyBullets.length < 520) {
+                    if (this.fireTimer >= 120 && enemyBullets.length < 180) {
                         this.fireTimer = 0;
                         enemyBullets.push(new Bullet(this.x, this.y, a, this.damage, 4.2, 6, 1, '#bbf7d0', '#22c55e', true));
                         floatingTexts.push(new FloatingText(this.x, this.y - 26, 'SHOT', '#86efac', 12));
@@ -6965,6 +6967,7 @@
 
         function triggerAdvancedBossPattern(boss) {
             if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
+            if (boss.type === 4 || boss.color === '#ff6600' || String(boss.bossPattern || '').includes('FIRE')) return; // orange/fire boss: normal attack only
             boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 90)) + 1;
             const interval = boss.isMonkey ? 150 : boss.isMidBoss ? 210 : 180;
             if (boss.nsvBossPatternTimer < interval) return;
@@ -6979,14 +6982,14 @@
                 floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'CONE BEAM', '#fb923c', 17));
             } else if (roll < 0.62) {
                 const count = boss.isMonkey ? 6 : 4;
-                for (let i = 0; i < count && enemyBullets.length < 520; i++) {
+                for (let i = 0; i < count && enemyBullets.length < 180; i++) {
                     const b = new BossHomingBullet(boss.x + MathUtils.random(-30,30), boss.y + MathUtils.random(-30,30), boss.isMonkey ? 22 : 16);
                     enemyBullets.push(b);
                 }
                 floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'HOMING BULLETS', '#f472b6', 17));
             } else if (roll < 0.82) {
                 const count = boss.isMidBoss ? 2 : 4;
-                for (let i = 0; i < count && enemies.length < 800; i++) {
+                for (let i = 0; i < count && enemies.length < nsvGetEnemyCap(); i++) {
                     const v = ['fast','shooter','bomber'][MathUtils.randomInt(0,2)];
                     enemies.push(new AdvancedEnemy(boss.x + MathUtils.random(-130,130), boss.y + MathUtils.random(-130,130), v));
                 }
@@ -7090,8 +7093,99 @@
         // ==========================================
         // 4. メインループ・描画・ロジック
         // ==========================================
+
+        // ===== 2026-05-04 Stability Add-on: Lv30+ crash prevention =====
+        // 目的：レベル30以降で敵・ジェム・弾・エフェクトが増えすぎてブラウザが落ちる問題を防ぐ。
+        let nsvPerfFramesOverBudget = 0;
+        let nsvLastPerfNoticeTime = 0;
+
+        function nsvPerfStage() {
+            const lv = player ? Number(player.level || 1) : 1;
+            const t = Number(gameTime || 0);
+            if (isLightMode || lv >= 35 || t >= 420) return 3;
+            if (lv >= 30 || t >= 330) return 2;
+            if (lv >= 24 || t >= 240) return 1;
+            return 0;
+        }
+
+        function nsvGetEnemyCap() {
+            if (isOnlineMode) return isLightMode ? 95 : 140;
+            const stage = nsvPerfStage();
+            if (stage >= 3) return 160;
+            if (stage === 2) return 220;
+            if (stage === 1) return 300;
+            return 380;
+        }
+
+        function nsvGetSpawnInterval() {
+            const base = Math.max(7, 44 - Math.floor(Number(gameTime || 0) * 0.33));
+            const stage = nsvPerfStage();
+            return base + stage * 7;
+        }
+
+        function nsvTrimArray(arr, max, preferNearPlayer = false, distanceLimit = 4200) {
+            if (!Array.isArray(arr) || arr.length <= max) return;
+            if (preferNearPlayer && player) {
+                const px = player.x, py = player.y;
+                arr.sort((a, b) => {
+                    const da = MathUtils.distance(a?.x || px, a?.y || py, px, py);
+                    const db = MathUtils.distance(b?.x || px, b?.y || py, px, py);
+                    return da - db;
+                });
+            }
+            arr.splice(0, Math.max(0, arr.length - max));
+            if (preferNearPlayer && player && arr.length > max * 0.9) {
+                const px = player.x, py = player.y;
+                for (let i = arr.length - 1; i >= 0; i--) {
+                    const o = arr[i];
+                    if (!o) { arr.splice(i, 1); continue; }
+                    if (MathUtils.distance(o.x || px, o.y || py, px, py) > distanceLimit) arr.splice(i, 1);
+                }
+            }
+        }
+
+        function nsvApplyPerformanceCaps() {
+            const stage = nsvPerfStage();
+            const enemyCap = nsvGetEnemyCap();
+            nsvTrimArray(enemies, enemyCap, true, 5200);
+            nsvTrimArray(gems, stage >= 2 ? 90 : stage === 1 ? 130 : 180, true, 3000);
+            nsvTrimArray(particles, stage >= 2 ? 55 : stage === 1 ? 95 : 150);
+            nsvTrimArray(floatingTexts, stage >= 2 ? 22 : stage === 1 ? 38 : 65);
+            nsvTrimArray(effects, stage >= 2 ? 10 : stage === 1 ? 18 : 32);
+            nsvTrimArray(bullets, stage >= 2 ? 95 : 160);
+            nsvTrimArray(enemyBullets, stage >= 2 ? 80 : 150);
+            nsvTrimArray(sniperBullets, stage >= 2 ? 28 : 52);
+            nsvTrimArray(infiniteBladeSwords, stage >= 2 ? 45 : 90);
+            nsvTrimArray(phantomDaggers, stage >= 2 ? 18 : 34);
+            nsvTrimArray(voidTempests, stage >= 2 ? 6 : 12);
+            nsvTrimArray(keraunosStorms, stage >= 2 ? 8 : 15);
+            nsvTrimArray(hollowMurasakis, stage >= 2 ? 8 : 14);
+            nsvTrimArray(orbitalStrikes, stage >= 2 ? 14 : 24);
+            nsvTrimArray(stormbreakers, stage >= 2 ? 16 : 28);
+            nsvTrimArray(disneyMagics, stage >= 2 ? 14 : 24);
+            nsvTrimArray(astralJudgements, stage >= 2 ? 4 : 8);
+            nsvTrimArray(harisenNovas, stage >= 2 ? 4 : 8);
+            nsvTrimArray(cosmicSushiStorms, stage >= 2 ? 3 : 6);
+            nsvTrimArray(overlordFlames, stage >= 2 ? 10 : 22);
+        }
+
+        function nsvEmergencyPerformanceGuard(deltaTime = 0) {
+            if (deltaTime > 55) nsvPerfFramesOverBudget++;
+            else nsvPerfFramesOverBudget = Math.max(0, nsvPerfFramesOverBudget - 1);
+            if (nsvPerfFramesOverBudget >= 6) {
+                nsvPerfFramesOverBudget = 0;
+                if (!isLightMode) applyLightMode(true);
+                nsvApplyPerformanceCaps();
+                if (player && Number(gameTime || 0) - nsvLastPerfNoticeTime > 20) {
+                    nsvLastPerfNoticeTime = Number(gameTime || 0);
+                    floatingTexts.push(new FloatingText(player.x, player.y - 90, 'AUTO LIGHT MODE', '#67e8f9', 18));
+                }
+            }
+        }
+
         function updateLogic() {
             if (!player) return; 
+            if ((frameCount || 0) % 20 === 0) nsvApplyPerformanceCaps();
             if (!isTimeStopped) {
                 gameTime += 1 / 60; frameCount++;
                 if (frameCount % 60 === 0) {
@@ -7100,8 +7194,8 @@
                 }
                 
                 // スポーン間隔の調整と最大数の解放
-                let spawnInterval = Math.max(5, 40 - Math.floor(gameTime * 0.5));
-                if (frameCount % spawnInterval === 0 && enemies.length < 800) spawnEnemy();
+                let spawnInterval = nsvGetSpawnInterval();
+                if (frameCount % spawnInterval === 0 && enemies.length < nsvGetEnemyCap()) spawnEnemy();
                 
                 if (isLavaDomainActive && !enemies.some(e => e && !e.markedForDeletion && e.isMonkey)) {
                     triggerDomainCollapse();
@@ -7127,8 +7221,13 @@
                     {a:phantomDaggers, l:70}, {a:gravityPulsars, l:20}, {a:mapBlackholes, l:1}, {a:bananaPeels, l:45}, {a:onlineLegendaryChests, l:2}, {a:astralJudgements, l:8}, {a:harisenNovas, l:8}, {a:overlordFlames, l:35}, {a:cosmicSushiStorms, l:6}
                 ];
                 
+                const perfStage = nsvPerfStage();
+                if (perfStage > 0) {
+                    const perfMult = perfStage === 1 ? 0.72 : perfStage === 2 ? 0.52 : 0.42;
+                    for (let g of groups) g.l = Math.max(6, Math.floor(g.l * perfMult));
+                }
                 if (isLightMode) {
-                    for (let g of groups) g.l = Math.max(8, Math.floor(g.l * 0.45));
+                    for (let g of groups) g.l = Math.max(6, Math.floor(g.l * 0.42));
                 }
                 for (let g of groups) {
                     if (g.a.length > g.l) g.a.splice(0, g.a.length - g.l);
@@ -7139,6 +7238,7 @@
                 }
                 
                 try { player.update(); } catch(e) {}
+                if ((frameCount || 0) % 30 === 0) nsvApplyPerformanceCaps();
                 try { updateOnlineOpponents(); } catch(e) {}
                 if (isOnlineMode && frameCount % 20 === 0 && Array.isArray(voidTempests)) {
                     for (const vt of voidTempests) {
@@ -7394,7 +7494,7 @@
             } catch(e) {}
 
             if (bgStars.length === 0) {
-                for (let i = 0; i < (isLightMode ? 80 : 200); i++) {
+                for (let i = 0; i < (nsvPerfStage && nsvPerfStage() >= 2 ? 55 : (isLightMode ? 70 : 140)); i++) {
                     let c = Math.random() > 0.5 ? `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.5})` : `rgba(6, 255, 255, ${Math.random() * 0.5 + 0.5})`;
                     bgStars.push({ 
                         x: Math.random() * w, y: Math.random() * h, z: Math.random() * 0.7 + 0.1, size: Math.random() * 2 + 1, color: c 
@@ -7619,6 +7719,7 @@
             if (gameState !== 'playing') return; 
             
             let deltaTime = currentTime - lastTime; lastTime = currentTime; if (deltaTime > 100) deltaTime = 100; 
+            try { nsvEmergencyPerformanceGuard(deltaTime); } catch(e) {}
             timeAccumulator += deltaTime * gameSpeedMultiplier;
             let steps = 0;
             
@@ -8112,6 +8213,8 @@
             try {
                 triggerAdvancedBossPattern = function(boss) {
                     if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
+                    if (boss.type === 4 || boss.color === '#ff6600' || String(boss.bossPattern || '').includes('FIRE')) return; // orange/fire boss: normal attack only
+            if (boss.type === 4 || boss.color === '#ff6600' || String(boss.bossPattern || '').includes('FIRE')) return; // orange/fire boss: normal attack only
                     boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 140)) + 1;
                     const interval = boss.isApeOverlordSecondPhase ? 240 : (boss.isMonkey ? 300 : boss.isMidBoss ? 420 : 360); // 第二形態だけ少し攻撃テンポを変える
                     if (boss.nsvBossPatternTimer < interval) return;
@@ -8151,7 +8254,7 @@
                         floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'BEAM', '#fb923c', 15));
                     } else if (roll < 0.62) {
                         const count = boss.isMonkey ? 3 : 2;
-                        for (let i = 0; i < count && enemyBullets.length < 520; i++) {
+                        for (let i = 0; i < count && enemyBullets.length < 180; i++) {
                             const b = new BossHomingBullet(boss.x + MathUtils.random(-30,30), boss.y + MathUtils.random(-30,30), boss.isMonkey ? 11 : 8);
                             b.speed *= 0.82;
                             enemyBullets.push(b);
@@ -8159,7 +8262,7 @@
                         floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'HOMING', '#f472b6', 15));
                     } else if (roll < 0.82) {
                         const count = boss.isMidBoss ? 1 : 2;
-                        for (let i = 0; i < count && enemies.length < 800; i++) {
+                        for (let i = 0; i < count && enemies.length < nsvGetEnemyCap(); i++) {
                             const v = ['fast','shooter','bomber'][MathUtils.randomInt(0,2)];
                             const add = new AdvancedEnemy(boss.x + MathUtils.random(-130,130), boss.y + MathUtils.random(-130,130), v);
                             add.hp *= 0.7; add.maxHp = add.hp;
@@ -8617,6 +8720,8 @@
             try {
                 triggerAdvancedBossPattern = function(boss) {
                     if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
+                    if (boss.type === 4 || boss.color === '#ff6600' || String(boss.bossPattern || '').includes('FIRE')) return; // orange/fire boss: normal attack only
+            if (boss.type === 4 || boss.color === '#ff6600' || String(boss.bossPattern || '').includes('FIRE')) return; // orange/fire boss: normal attack only
                     boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 120)) + 1;
                     const interval = boss.isApeOverlordSecondPhase ? 210 : (boss.isMonkey ? 320 : boss.isMidBoss ? 430 : 380);
                     if (boss.nsvBossPatternTimer < interval) return;
@@ -8648,7 +8753,7 @@
                             floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM SMASH', '#ef4444', 16));
                             return;
                         }
-                        for (let i = 0; i < 2 && enemies.length < 800; i++) {
+                        for (let i = 0; i < 2 && enemies.length < nsvGetEnemyCap(); i++) {
                             const v = ['fast','shooter','bomber','pusher'][MathUtils.randomInt(0,3)];
                             const add = new AdvancedEnemy(boss.x + MathUtils.random(-150,150), boss.y + MathUtils.random(-150,150), v);
                             add.hp *= 0.8; add.maxHp = add.hp;
@@ -8667,7 +8772,7 @@
                         floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'BEAM', '#fb923c', 15));
                     } else if (roll < 0.72) {
                         const count = boss.isMonkey ? 3 : 2;
-                        for (let i = 0; i < count && enemyBullets.length < 520; i++) {
+                        for (let i = 0; i < count && enemyBullets.length < 180; i++) {
                             const b = new BossHomingBullet(boss.x + MathUtils.random(-30,30), boss.y + MathUtils.random(-30,30), boss.isMonkey ? 11 : 8);
                             b.speed *= 0.82;
                             enemyBullets.push(b);
@@ -8675,7 +8780,7 @@
                         floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'HOMING', '#f472b6', 15));
                     } else {
                         const count = boss.isMidBoss ? 1 : 2;
-                        for (let i = 0; i < count && enemies.length < 800; i++) {
+                        for (let i = 0; i < count && enemies.length < nsvGetEnemyCap(); i++) {
                             const v = ['fast','shooter','bomber'][MathUtils.randomInt(0,2)];
                             const add = new AdvancedEnemy(boss.x + MathUtils.random(-130,130), boss.y + MathUtils.random(-130,130), v);
                             add.hp *= 0.7; add.maxHp = add.hp;
@@ -9241,7 +9346,7 @@
             floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 34, 'GRAVITY WELL', '#a855f7', 16));
         } else if (kind === 'mirror') {
             effects.push(new BossMirrorFlash(boss.x, boss.y));
-            for (let i = 0; i < 2 && enemies.length < 800; i++) {
+            for (let i = 0; i < 2 && enemies.length < nsvGetEnemyCap(); i++) {
                 const clone = new Enemy(boss.x + MathUtils.random(-150, 150), boss.y + MathUtils.random(-150, 150), 1);
                 clone.color = '#f0abfc';
                 clone.hp *= 1.7; clone.maxHp = clone.hp;
@@ -12331,6 +12436,366 @@
     setTimeout(bootV5, 1500);
     setTimeout(bootV5, 3000);
 })();
+
+
+        // ===== 2026-05-04 Add-on: orange boss normal-only + extra lightweight guard =====
+        // オレンジ系ボスは特殊攻撃を出さず、普通に追いかけるだけにする。
+        try {
+            const NSV_ORANGE_BOSS_NORMAL_ONLY = true;
+            const __nsvOrangeBossEnemyUpdate = Enemy.prototype.update;
+            Enemy.prototype.update = function() {
+                if (NSV_ORANGE_BOSS_NORMAL_ONLY && !this.isCharmed && (this.type === 4 || this.color === '#ff6600' || String(this.bossPattern || '').includes('FIRE'))) {
+                    this.bossPattern = 'NORMAL BOSS';
+                    this.nsvBossPatternTimer = 0;
+                    this.patternTimer = 0;
+                    if (this.invincibleTimer > 0) this.invincibleTimer--;
+                    if (player) {
+                        const a = MathUtils.angle(this.x, this.y, player.x, player.y);
+                        this.x += Math.cos(a) * this.speed;
+                        this.y += Math.sin(a) * this.speed;
+                        const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                        if (d < this.radius + player.radius && !this.nsvOrangeTouchCooldown) {
+                            player.takeDamage(Math.max(8, Math.floor((this.damage || 25) * 0.55)));
+                            this.nsvOrangeTouchCooldown = 35;
+                        }
+                        if (this.nsvOrangeTouchCooldown) this.nsvOrangeTouchCooldown--;
+                    }
+                    return;
+                }
+                return __nsvOrangeBossEnemyUpdate.call(this);
+            };
+        } catch(e) { console.warn('orange boss normal-only patch skipped', e); }
+
+
+        // ===== 2026-05-04 Final Complete Build: stronger crash-prevention guard =====
+        // 画面やゲーム内容は大きく変えず、Lv25以降のオブジェクト数だけ安全に抑える最終パッチ。
+        try {
+            const __nsvFinalOldGetEnemyCap = (typeof nsvGetEnemyCap === 'function') ? nsvGetEnemyCap : null;
+            nsvGetEnemyCap = function() {
+                try {
+                    const stage = (typeof nsvPerfStage === 'function') ? nsvPerfStage() : 0;
+                    if (isOnlineMode) return isLightMode ? 80 : 115;
+                    if (stage >= 3) return 115;
+                    if (stage === 2) return 165;
+                    if (stage === 1) return 235;
+                    return Math.min(330, __nsvFinalOldGetEnemyCap ? __nsvFinalOldGetEnemyCap() : 330);
+                } catch(e) {
+                    return __nsvFinalOldGetEnemyCap ? __nsvFinalOldGetEnemyCap() : 260;
+                }
+            };
+        } catch(e) { console.warn('final enemy cap patch skipped', e); }
+
+        try {
+            const __nsvFinalOldApplyCaps = (typeof nsvApplyPerformanceCaps === 'function') ? nsvApplyPerformanceCaps : null;
+            nsvApplyPerformanceCaps = function() {
+                try { if (__nsvFinalOldApplyCaps) __nsvFinalOldApplyCaps.apply(this, arguments); } catch(e) {}
+                try {
+                    const stage = (typeof nsvPerfStage === 'function') ? nsvPerfStage() : 0;
+                    const lv = player ? Number(player.level || 1) : 1;
+                    const late = stage >= 2 || lv >= 32 || isLightMode;
+                    const veryLate = stage >= 3 || lv >= 38;
+                    const cap = (arr, max, near=false, dist=3600) => { try { nsvTrimArray(arr, max, near, dist); } catch(e) {} };
+                    cap(enemies, nsvGetEnemyCap(), true, veryLate ? 4200 : 5200);
+                    cap(gems, veryLate ? 55 : late ? 75 : 120, true, 2600);
+                    cap(particles, veryLate ? 22 : late ? 35 : 75);
+                    cap(floatingTexts, veryLate ? 10 : late ? 16 : 32);
+                    cap(effects, veryLate ? 4 : late ? 7 : 14);
+                    cap(bullets, veryLate ? 50 : late ? 70 : 115);
+                    cap(enemyBullets, veryLate ? 32 : late ? 50 : 85);
+                    cap(sniperBullets, veryLate ? 12 : late ? 18 : 32);
+                    cap(phantomDaggers, veryLate ? 10 : late ? 14 : 24);
+                    cap(infiniteBladeSwords, veryLate ? 22 : late ? 35 : 60);
+                    cap(voidTempests, veryLate ? 2 : late ? 4 : 7);
+                    cap(keraunosStorms, veryLate ? 2 : late ? 3 : 5);
+                    cap(disneyMagics, veryLate ? 1 : late ? 2 : 3);
+                    cap(muryokushos, veryLate ? 1 : late ? 2 : 3);
+                    cap(kamehamehas, veryLate ? 1 : late ? 2 : 3);
+                    cap(hollowMurasakis, veryLate ? 1 : late ? 2 : 4);
+                    cap(infinitySnaps, veryLate ? 1 : late ? 2 : 3);
+                    cap(stormbreakers, veryLate ? 4 : late ? 6 : 10);
+                    cap(ironBlasters, veryLate ? 4 : late ? 7 : 12);
+                    cap(shields, veryLate ? 4 : late ? 7 : 12);
+                    cap(orbitalStrikes, veryLate ? 1 : late ? 2 : 3);
+                    cap(bounceBombs, veryLate ? 5 : late ? 8 : 14);
+                    cap(poisonClouds, veryLate ? 3 : late ? 5 : 9);
+                    cap(gravityPulsars, veryLate ? 2 : late ? 4 : 7);
+                    cap(onlineLegendaryChests, 2);
+                    cap(bananaPeels, veryLate ? 4 : late ? 7 : 12);
+                    cap(astralJudgements, veryLate ? 1 : late ? 2 : 4);
+                    cap(harisenNovas, veryLate ? 1 : late ? 2 : 4);
+                    cap(overlordFlames, veryLate ? 1 : late ? 2 : 4);
+                    cap(cosmicSushiStorms, veryLate ? 1 : late ? 2 : 4);
+                    // マップ自然発生ブラックホールは完全に無効化。ボス/武器のブラックホール表現とは別。
+                    try { if (Array.isArray(mapBlackholes) && mapBlackholes.length) mapBlackholes.length = 0; } catch(e) {}
+                    if (veryLate && !isLightMode) {
+                        isLightMode = true;
+                        try { document.body.classList.add('light-mode'); } catch(e) {}
+                        try { document.getElementById('lightModeToggle').checked = true; } catch(e) {}
+                        try { document.getElementById('pauseLightModeToggle').checked = true; } catch(e) {}
+                    }
+                } catch(e) {}
+            };
+        } catch(e) { console.warn('final performance cap patch skipped', e); }
+
+        try {
+            const __nsvFinalOldSpawnEnemy = (typeof spawnEnemy === 'function') ? spawnEnemy : null;
+            if (__nsvFinalOldSpawnEnemy && !__nsvFinalOldSpawnEnemy.__nsvFinalCap) {
+                spawnEnemy = function() {
+                    try { if (Array.isArray(enemies) && enemies.length >= nsvGetEnemyCap()) return; } catch(e) {}
+                    return __nsvFinalOldSpawnEnemy.apply(this, arguments);
+                };
+                spawnEnemy.__nsvFinalCap = true;
+            }
+        } catch(e) { console.warn('final spawn cap patch skipped', e); }
+
+
+        // ==========================================================
+        // 2026-05-04 Patch: final ranking button / battle pass equip toggle / extra crash guard / start order
+        // ==========================================================
+        (function applyFinalUxSafetyPatch20260504() {
+            try {
+                const FINAL_PATCH_VERSION = '2026-05-04-final-ux-safety-v1';
+                if (window.NSV_FINAL_UX_SAFETY_PATCH === FINAL_PATCH_VERSION) return;
+                window.NSV_FINAL_UX_SAFETY_PATCH = FINAL_PATCH_VERSION;
+
+                function nsvFinalShowScreen(screenId) {
+                    try { if (typeof showScreenForceV5 === 'function') return showScreenForceV5(screenId); } catch(e) {}
+                    try { if (typeof showScreen === 'function') return showScreen(screenId); } catch(e) {}
+                    try {
+                        document.querySelectorAll('#startScreen,#upgradeScreen,#missionsScreen,#collectionScreen,#weaponCodexScreen,#bossCodexScreen,#onlineRoleScreen,#levelUpScreen,#gameOverScreen,#pauseScreen,#shopScreen,#battlePassScreen,#leaderboardScreen,#eventModeScreen').forEach(el => {
+                            if (!el) return;
+                            if (el.id === screenId) { el.classList.remove('hidden'); el.style.display = ''; }
+                            else { el.classList.add('hidden'); }
+                        });
+                    } catch(e) {}
+                }
+
+                function nsvFinalEnsureRankingButton() {
+                    try { if (typeof ensureLeaderboardScreen20260504 === 'function') ensureLeaderboardScreen20260504(); } catch(e) {}
+                    let btn = document.getElementById('openLeaderboardBtn');
+                    if (!btn) {
+                        btn = document.createElement('button');
+                        btn.id = 'openLeaderboardBtn';
+                        btn.type = 'button';
+                        btn.className = 'btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+                        btn.innerHTML = 'RANKING<br><span class="text-xs text-cyan-100 font-bold">友達と比べる</span>';
+                    }
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.position = 'relative';
+                    btn.style.zIndex = '5';
+                    btn.classList.add('pointer-events-auto');
+                    btn.onclick = function(ev) {
+                        try { ev.preventDefault(); ev.stopPropagation(); } catch(e) {}
+                        try { if (typeof renderLeaderboardFixed20260504 === 'function') renderLeaderboardFixed20260504();
+                              else if (typeof renderLeaderboard20260504 === 'function') renderLeaderboard20260504(); } catch(e) {}
+                        nsvFinalShowScreen('leaderboardScreen');
+                    };
+                    const menuGrid = document.querySelector('#nsvCleanStartRoot20260504 .nsv-clean-menu-grid') || document.querySelector('#startScreen .nsv-clean-menu-grid') || document.querySelector('#startScreen .menu-grid');
+                    if (menuGrid && btn.parentElement !== menuGrid) menuGrid.appendChild(btn);
+                    return btn;
+                }
+
+                function nsvFinalSwapRankingAndJoystickOrder() {
+                    try {
+                        const root = document.getElementById('nsvCleanStartRoot20260504');
+                        if (!root) return;
+                        const sections = Array.from(root.querySelectorAll(':scope > section'));
+                        const settingsSec = sections.find(sec => /SETTINGS/i.test(sec.querySelector('.nsv-clean-section-title')?.textContent || ''));
+                        const menuSec = sections.find(sec => /MENU/i.test(sec.querySelector('.nsv-clean-section-title')?.textContent || ''));
+                        if (settingsSec && menuSec && root.contains(settingsSec) && root.contains(menuSec)) {
+                            // これで最初の画面ではジョイスティック/軽量モードの段がランキングより上に来る。
+                            root.insertBefore(settingsSec, menuSec);
+                        }
+                        const joy = document.getElementById('joystickToggle')?.closest('.bg-gray-900\\/80, .bg-gray-900\/80') || document.getElementById('joystickToggle')?.closest('div');
+                        const light = document.getElementById('lightModeToggle')?.closest('.bg-gray-900\\/80, .bg-gray-900\/80') || document.getElementById('lightModeToggle')?.closest('div');
+                        const settingsGrid = document.querySelector('#nsvCleanStartRoot20260504 .nsv-clean-settings') || document.getElementById('nsvToggleSameRowV5');
+                        if (joy && light && settingsGrid) {
+                            if (joy.parentElement !== settingsGrid) settingsGrid.appendChild(joy);
+                            if (light.parentElement !== settingsGrid) settingsGrid.appendChild(light);
+                        }
+                    } catch(e) {}
+                }
+
+                function nsvFinalInjectSafetyStyle() {
+                    if (document.getElementById('nsvFinalUxSafetyStyle')) return;
+                    const st = document.createElement('style');
+                    st.id = 'nsvFinalUxSafetyStyle';
+                    st.textContent = `
+                        #openLeaderboardBtn{pointer-events:auto!important;}
+                        .nsv-bp-equip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+                        .nsv-bp-unequip{border:1px solid rgba(248,113,113,.7);color:#fecaca;background:rgba(127,29,29,.32);box-shadow:0 0 10px rgba(248,113,113,.18);}
+                        .nsv-safety-note{position:fixed;left:50%;top:76px;transform:translateX(-50%);z-index:350;background:rgba(2,6,23,.88);border:1px solid rgba(34,211,238,.65);border-radius:999px;padding:8px 14px;color:#a5f3fc;font-size:12px;font-weight:900;box-shadow:0 0 18px rgba(34,211,238,.28);pointer-events:none;opacity:0;transition:opacity .25s;}
+                        .nsv-safety-note.show{opacity:1;}
+                    `;
+                    document.head.appendChild(st);
+                }
+
+                function nsvFinalCurrentEquipForType(type) {
+                    try {
+                        if (type === 'skin') return userData?.equippedSkin || 'classic';
+                        if (type === 'aura') return userData?.equippedAura || 'none';
+                        return userData?.cosmetics?.equipped?.[type] || '';
+                    } catch(e) { return ''; }
+                }
+
+                function nsvFinalUnequipCosmetic(type) {
+                    userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+                    userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+                    if (type === 'skin') userData.equippedSkin = 'classic';
+                    else if (type === 'aura') userData.equippedAura = 'none';
+                    else delete userData.cosmetics.equipped[type];
+                    try { saveData?.(); } catch(e) {}
+                    try { renderCollectionScreen?.(); } catch(e) {}
+                }
+
+                function nsvFinalEquipOrUnequipBattlePass(type, id) {
+                    userData.cosmetics = userData.cosmetics || { unlocked:{}, equipped:{} };
+                    userData.cosmetics.unlocked = userData.cosmetics.unlocked || {};
+                    userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+                    const current = nsvFinalCurrentEquipForType(type);
+                    if (String(current) === String(id)) {
+                        nsvFinalUnequipCosmetic(type);
+                        return;
+                    }
+                    if (type === 'skin') userData.equippedSkin = id;
+                    else if (type === 'aura') userData.equippedAura = id;
+                    else userData.cosmetics.equipped[type] = id;
+                    try { saveData?.(); } catch(e) {}
+                    try { renderCollectionScreen?.(); } catch(e) {}
+                }
+
+                function nsvFinalBattlePassCollectionCard(item) {
+                    const type = item.type || 'item';
+                    const equipped = String(nsvFinalCurrentEquipForType(type)) === String(item.id);
+                    const canEquip = ['skin','aura','backpack','trail','pet','emote','intro','elimination','bossFinish','nameplate','badge'].includes(type);
+                    return `<div class="collection-card unlocked" style="border-color:rgba(34,211,238,.8);box-shadow:0 0 16px rgba(34,211,238,.18)">
+                        <div class="text-3xl">${item.icon || '🎁'}</div>
+                        <div class="text-[11px] inline-block px-2 py-1 rounded bg-cyan-950/70 border border-cyan-400/50 text-cyan-200 font-bold mt-1">${typeLabelCollection20260504?.(type) || type}</div>
+                        <h3 class="font-bold text-white mt-2">${item.name || item.id}</h3>
+                        <p class="text-xs text-yellow-200 mt-1">入手元：${passSeasonLabel20260504?.(item) || 'Season 1 / NEON GENESIS'} のバトルパス</p>
+                        <p class="text-xs text-red-200 mt-1">このアイテムは期間限定報酬です。</p>
+                        ${canEquip ? `<div class="nsv-bp-equip-row"><button class="equip-bp-cos ${equipped ? 'nsv-bp-unequip' : 'btn-purple'} px-3 py-1 rounded text-sm font-bold" data-type="${type}" data-id="${item.id}">${equipped ? '装備を外す' : '装備する'}</button></div>` : ''}
+                    </div>`;
+                }
+
+                function nsvFinalPatchBattlePassCollectionEquipToggle() {
+                    try { equipBattlePassCosmetic20260504 = nsvFinalEquipOrUnequipBattlePass; } catch(e) {}
+                    try { battlePassCollectionCard20260504 = nsvFinalBattlePassCollectionCard; } catch(e) {}
+                    try {
+                        const oldInstall = installCollectionSplitPatch20260504;
+                        installCollectionSplitPatch20260504 = function() {
+                            const ret = oldInstall.apply(this, arguments);
+                            try { battlePassCollectionCard20260504 = nsvFinalBattlePassCollectionCard; } catch(e) {}
+                            try { equipBattlePassCosmetic20260504 = nsvFinalEquipOrUnequipBattlePass; } catch(e) {}
+                            return ret;
+                        };
+                    } catch(e) {}
+                    try { renderCollectionScreen?.(); } catch(e) {}
+                }
+
+                let nsvFinalUltraSafe = false;
+                let nsvFinalBadFrames = 0;
+                let nsvFinalLastNotice = 0;
+
+                function nsvFinalObjectLoad() {
+                    const arrs = [enemies,gems,particles,floatingTexts,effects,bullets,enemyBullets,sniperBullets,phantomDaggers,infiniteBladeSwords,voidTempests,keraunosStorms,hollowMurasakis,stormbreakers,ironBlasters,shields,bounceBombs,poisonClouds,gravityPulsars,bananaPeels];
+                    let sum = 0;
+                    for (const a of arrs) try { sum += Array.isArray(a) ? a.length : 0; } catch(e) {}
+                    return sum;
+                }
+
+                function nsvFinalShowSafetyNotice(text) {
+                    try {
+                        const now = Date.now();
+                        if (now - nsvFinalLastNotice < 12000) return;
+                        nsvFinalLastNotice = now;
+                        let el = document.getElementById('nsvFinalSafetyNotice');
+                        if (!el) {
+                            el = document.createElement('div');
+                            el.id = 'nsvFinalSafetyNotice';
+                            el.className = 'nsv-safety-note';
+                            document.body.appendChild(el);
+                        }
+                        el.textContent = text || 'AUTO SAFETY MODE';
+                        el.classList.add('show');
+                        setTimeout(() => el.classList.remove('show'), 2200);
+                    } catch(e) {}
+                }
+
+                function nsvFinalActivateUltraSafe(reason) {
+                    nsvFinalUltraSafe = true;
+                    try { if (!isLightMode && typeof applyLightMode === 'function') applyLightMode(true); } catch(e) { try { isLightMode = true; } catch(_) {} }
+                    try { document.body.classList.add('light-mode'); } catch(e) {}
+                    try { const lm = document.getElementById('lightModeToggle'); if (lm) lm.checked = true; } catch(e) {}
+                    try { const plm = document.getElementById('pauseLightModeToggle'); if (plm) plm.checked = true; } catch(e) {}
+                    nsvFinalShowSafetyNotice(reason || 'AUTO SAFETY MODE');
+                    try { nsvApplyPerformanceCaps?.(); } catch(e) {}
+                }
+
+                const nsvFinalOldCaps = (typeof nsvApplyPerformanceCaps === 'function') ? nsvApplyPerformanceCaps : null;
+                nsvApplyPerformanceCaps = function() {
+                    try { if (nsvFinalOldCaps) nsvFinalOldCaps.apply(this, arguments); } catch(e) {}
+                    try {
+                        const lv = player ? Number(player.level || 1) : 1;
+                        const load = nsvFinalObjectLoad();
+                        const ultra = nsvFinalUltraSafe || lv >= 38 || load > 780;
+                        const late = ultra || lv >= 30 || isLightMode;
+                        const cap = (arr, max, near=false, dist=3200) => { try { nsvTrimArray(arr, max, near, dist); } catch(e) {} };
+                        cap(enemies, ultra ? 85 : late ? 125 : 220, true, ultra ? 3500 : 4500);
+                        cap(gems, ultra ? 36 : late ? 58 : 105, true, 2300);
+                        cap(particles, ultra ? 12 : late ? 24 : 55);
+                        cap(floatingTexts, ultra ? 6 : late ? 12 : 24);
+                        cap(effects, ultra ? 2 : late ? 5 : 10);
+                        cap(bullets, ultra ? 34 : late ? 56 : 95);
+                        cap(enemyBullets, ultra ? 18 : late ? 32 : 60);
+                        cap(sniperBullets, ultra ? 8 : late ? 12 : 22);
+                        cap(phantomDaggers, ultra ? 7 : late ? 10 : 18);
+                        cap(infiniteBladeSwords, ultra ? 14 : late ? 24 : 42);
+                        cap(voidTempests, ultra ? 1 : late ? 2 : 4);
+                        cap(keraunosStorms, ultra ? 1 : late ? 2 : 4);
+                        cap(hollowMurasakis, ultra ? 1 : late ? 2 : 4);
+                        cap(stormbreakers, ultra ? 2 : late ? 4 : 8);
+                        cap(ironBlasters, ultra ? 2 : late ? 4 : 8);
+                        cap(shields, ultra ? 2 : late ? 4 : 8);
+                        cap(bounceBombs, ultra ? 3 : late ? 5 : 10);
+                        cap(poisonClouds, ultra ? 2 : late ? 3 : 6);
+                        cap(gravityPulsars, ultra ? 1 : late ? 2 : 5);
+                        cap(bananaPeels, ultra ? 2 : late ? 4 : 8);
+                        try { if (Array.isArray(mapBlackholes)) mapBlackholes.length = 0; } catch(e) {}
+                        if (load > 920) nsvFinalActivateUltraSafe('AUTO SAFETY MODE');
+                    } catch(e) {}
+                };
+
+                const nsvFinalOldGuard = (typeof nsvEmergencyPerformanceGuard === 'function') ? nsvEmergencyPerformanceGuard : null;
+                nsvEmergencyPerformanceGuard = function(deltaTime = 0) {
+                    try { if (nsvFinalOldGuard) nsvFinalOldGuard.apply(this, arguments); } catch(e) {}
+                    try {
+                        const load = nsvFinalObjectLoad();
+                        if (deltaTime > 62 || load > 820) nsvFinalBadFrames++;
+                        else nsvFinalBadFrames = Math.max(0, nsvFinalBadFrames - 1);
+                        if (nsvFinalBadFrames >= 4) {
+                            nsvFinalBadFrames = 0;
+                            nsvFinalActivateUltraSafe('AUTO SAFETY MODE');
+                        }
+                    } catch(e) {}
+                };
+
+                function nsvFinalBoot() {
+                    nsvFinalInjectSafetyStyle();
+                    nsvFinalEnsureRankingButton();
+                    nsvFinalSwapRankingAndJoystickOrder();
+                    nsvFinalPatchBattlePassCollectionEquipToggle();
+                    try { nsvApplyPerformanceCaps?.(); } catch(e) {}
+                }
+
+                if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', nsvFinalBoot);
+                else nsvFinalBoot();
+                setTimeout(nsvFinalBoot, 600);
+                setTimeout(nsvFinalBoot, 1800);
+                setInterval(() => { try { if (gameState === 'playing') nsvApplyPerformanceCaps?.(); } catch(e) {} }, 2500);
+            } catch(e) { console.warn('final ux/safety patch skipped', e); }
+        })();
+
 </script>
 
 
