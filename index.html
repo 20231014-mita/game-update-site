@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- reset-highscore-intro-v3-checked -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -11175,7 +11176,7 @@
 
 // ===== 2026-05-04 Add-on: Keep high score only reset + Collection split =====
 (() => {
-    const KEEP_BEST_ONLY_RESET_VERSION = '2026-05-04-keep-highscore-only-v2';
+    const KEEP_BEST_ONLY_RESET_VERSION = '2026-05-04-keep-highscore-only-v3';
 
     function applyKeepHighScoreOnlyReset20260504() {
         try {
@@ -11198,8 +11199,9 @@
                 // ハイスコア以外の進行状況をもう一度きれいに0へ戻す。
                 // ニックネームとSEASON ONE表示確認フラグは残す。
                 Object.keys(localStorage).forEach(function(k){
-                    if (/neon_survivor_(battle|pass|mission|collection|cosmetic|shop|ticket|upgrade|leaderboard|event)/i.test(k)) {
-                        localStorage.removeItem(k);
+                    if (/neon_survivor_(battle|pass|mission|collection|cosmetic|shop|ticket|upgrade|leaderboard|event|daily|season|codex|unlocks|stats)/i.test(k)) {
+                        // メインセーブは直後にハイスコアだけ残した内容で上書きする。
+                        if (k !== 'neon_survivor_save') localStorage.removeItem(k);
                     }
                 });
             } catch(e) {}
@@ -11334,7 +11336,7 @@
 <script>
 (function(){
     'use strict';
-    const SEASON_INTRO_KEY = 'neon_survivor_seen_intro_s1_neon_genesis_v2';
+    const SEASON_INTRO_KEY = 'neon_survivor_seen_intro_s1_neon_genesis_v3';
     function closeSeasonIntro(){
         const intro = document.getElementById('seasonLaunchIntro');
         if (!intro || !intro.classList.contains('active')) return;
@@ -11526,6 +11528,170 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+</script>
+
+
+
+<script>
+/* =========================================================
+   2026-05-04 Hotfix: Mission / Collection raw-code leak guard
+   Purpose: prevent accidentally rendered JavaScript patch text from
+   appearing when scrolling mission / collection screens.
+   This does not change gameplay. It only cleans broken UI nodes and
+   makes mission/collection text rendering safer after each render.
+========================================================= */
+(function(){
+  'use strict';
+  const HOTFIX_ID = 'nsvCodeLeakGuard20260504';
+  if (window[HOTFIX_ID]) return;
+  window[HOTFIX_ID] = true;
+
+  const CODE_PATTERNS = [
+    /\bfunction\s+[A-Za-z_$]/,
+    /\bconst\s+[A-Za-z_$]/,
+    /\blet\s+[A-Za-z_$]/,
+    /\bvar\s+[A-Za-z_$]/,
+    /=>\s*\{/,
+    /\bwindow\.[A-Za-z_$]/,
+    /\bdocument\.[A-Za-z_$]/,
+    /\bconsole\.warn\s*\(/,
+    /\btry\s*\{/,
+    /\bcatch\s*\(/,
+    /\bclass\s+[A-Za-z_$]/,
+    /container\.innerHTML\s*=/,
+    /querySelectorAll\s*\(/,
+    /addEventListener\s*\(/,
+    /getElementById\s*\(/,
+    /renderMissionScreen\s*=\s*function/,
+    /renderCollectionScreen\s*=\s*function/
+  ];
+
+  function looksLikeRawCode(text){
+    if (!text) return false;
+    const t = String(text).replace(/\s+/g, ' ').trim();
+    if (t.length < 70) return false;
+    let hits = 0;
+    for (const re of CODE_PATTERNS) if (re.test(t)) hits++;
+    return hits >= 2 || (t.length > 300 && hits >= 1);
+  }
+
+  function cleanCodeLeaksIn(root){
+    if (!root) return 0;
+    let removed = 0;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        const tag = parent.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT') return NodeFilter.FILTER_REJECT;
+        return looksLikeRawCode(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const badTextNodes = [];
+    while (walker.nextNode()) badTextNodes.push(walker.currentNode);
+    for (const node of badTextNodes) {
+      let el = node.parentElement;
+      while (el && el !== root && !/^(mission-card|collection-card|section-header|nsv-pass-card|nsv-rank-card)/.test(el.className || '')) {
+        el = el.parentElement;
+      }
+      if (el && el !== root) {
+        el.remove();
+      } else {
+        node.nodeValue = '';
+      }
+      removed++;
+    }
+    return removed;
+  }
+
+  function safeString(v, fallback){
+    const s = (v === undefined || v === null) ? (fallback || '') : String(v);
+    return s.replace(/[<>`]/g, ch => ({'<':'＜','>':'＞','`':'´'}[ch] || ch));
+  }
+
+  function hardenMissionCards(){
+    try {
+      document.querySelectorAll('#missionsListContainer .mission-card').forEach(card => {
+        // If a whole card became raw JS, remove it immediately.
+        if (looksLikeRawCode(card.innerText || '')) card.remove();
+      });
+    } catch(e) {}
+  }
+
+  function hardenCollectionCards(){
+    try {
+      document.querySelectorAll('#collectionListContainer .collection-card').forEach(card => {
+        if (looksLikeRawCode(card.innerText || '')) card.remove();
+      });
+    } catch(e) {}
+  }
+
+  function cleanAllImportantScreens(){
+    try {
+      cleanCodeLeaksIn(document.getElementById('missionsScreen'));
+      cleanCodeLeaksIn(document.getElementById('collectionScreen'));
+      cleanCodeLeaksIn(document.getElementById('battlePassScreen'));
+      hardenMissionCards();
+      hardenCollectionCards();
+    } catch(e) {}
+  }
+
+  function wrapRender(name){
+    try {
+      const old = window[name] || eval('typeof ' + name + ' !== "undefined" ? ' + name + ' : null');
+      if (typeof old !== 'function' || old.__nsvLeakGuardWrapped) return;
+      const wrapped = function(){
+        const ret = old.apply(this, arguments);
+        setTimeout(cleanAllImportantScreens, 0);
+        setTimeout(cleanAllImportantScreens, 80);
+        return ret;
+      };
+      wrapped.__nsvLeakGuardWrapped = true;
+      try { window[name] = wrapped; } catch(e) {}
+      try { eval(name + ' = wrapped'); } catch(e) {}
+    } catch(e) {}
+  }
+
+  function installObservers(){
+    const targets = ['missionsListContainer','collectionListContainer','battlePassScreen'];
+    for (const id of targets) {
+      const el = document.getElementById(id);
+      if (!el || el.__nsvLeakGuardObserver) continue;
+      el.__nsvLeakGuardObserver = true;
+      const mo = new MutationObserver(function(){ cleanAllImportantScreens(); });
+      mo.observe(el, { childList:true, subtree:true, characterData:true });
+    }
+  }
+
+  function addSafeFallbackButtons(){
+    // Re-clean whenever the user opens these screens.
+    const ids = ['openMissionBtn','openCollectionBtn','openBattlePassHeroBtn','openBattlePassBtn'];
+    ids.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn && !btn.__nsvLeakGuardClick) {
+        btn.__nsvLeakGuardClick = true;
+        btn.addEventListener('click', () => {
+          setTimeout(cleanAllImportantScreens, 0);
+          setTimeout(cleanAllImportantScreens, 150);
+          setTimeout(cleanAllImportantScreens, 450);
+        }, true);
+      }
+    });
+  }
+
+  function boot(){
+    wrapRender('renderMissionScreen');
+    wrapRender('renderCollectionScreen');
+    installObservers();
+    addSafeFallbackButtons();
+    cleanAllImportantScreens();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  setTimeout(boot, 700);
+  setTimeout(cleanAllImportantScreens, 1500);
 })();
 </script>
 
