@@ -7845,6 +7845,1797 @@
             } catch(e) { console.warn('boss clear result skipped', e); }
         }
 
-    </script>
+    
+
+        // ===== 2026-05-04 Add-on: COLLECTIONから武器表示だけを外す =====
+        // 目的：武器は WEAPON CODEX に任せ、COLLECTION はスキン・オーラ専用にする。
+        // 元のゲーム内容・戦闘処理・スタート画面は変えず、表示関数だけ上書きする。
+        (function patchCollectionWithoutWeapons() {
+            function installCollectionPatch() {
+                try {
+                    const collectionDesc = document.querySelector('#collectionScreen h2 + p');
+                    if (collectionDesc) {
+                        collectionDesc.textContent = '解放したスキン・オーラを確認できます。武器は WEAPON CODEX で確認できます。';
+                    }
+
+                    renderCollectionScreen = function() {
+                        ensureProgressionData();
+                        const container = document.getElementById('collectionListContainer');
+                        if (!container) return;
+
+                        const skinHtml = SKIN_DEFS.map(sk => {
+                            const on = !!userData.unlocks.skins[sk.id];
+                            const eq = userData.equippedSkin === sk.id;
+                            return `<div class="collection-card ${on?'unlocked':''}">
+                                <div class="text-3xl">${sk.icon}</div>
+                                <h3 class="font-bold text-white mt-1" style="color:${on?sk.color:'#9ca3af'}">${sk.name}</h3>
+                                <p class="text-sm text-gray-300">${sk.desc}</p>
+                                <p class="text-xs text-cyan-200 mt-2">能力: ${getSkinAbilityText(sk.id)}</p>
+                                <button class="equip-skin mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-neon':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${sk.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button>
+                            </div>`;
+                        }).join('');
+
+                        const auraHtml = AURA_DEFS.map(a => {
+                            const on = !!userData.unlocks.auras[a.id];
+                            const eq = userData.equippedAura === a.id;
+                            return `<div class="collection-card ${on?'unlocked':''}">
+                                <div class="text-3xl">${a.icon}</div>
+                                <h3 class="font-bold text-white mt-1" style="color:${on?a.color:'#9ca3af'}">${a.name}</h3>
+                                <p class="text-sm text-gray-300">${a.desc}</p>
+                                <p class="text-xs text-cyan-200 mt-2">近未来リング演出つき</p>
+                                <button class="equip-aura mt-2 px-3 py-1 rounded text-sm font-bold ${on?'btn-gold':'bg-gray-700 text-gray-500 cursor-not-allowed'}" data-id="${a.id}" ${on?'':'disabled'}>${eq?'EQUIPPED':'EQUIP'}</button>
+                            </div>`;
+                        }).join('');
+
+                        container.innerHTML = `
+                            <section>
+                                <h3 class="text-2xl font-bold text-cyan-300 mb-2">SKINS</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${skinHtml}</div>
+                            </section>
+                            <section>
+                                <h3 class="text-2xl font-bold text-green-300 mb-2">AURAS</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">${auraHtml}</div>
+                            </section>
+                            <section>
+                                <div class="collection-card border-cyan-400/60">
+                                    <h3 class="text-xl font-bold text-cyan-200">武器は WEAPON CODEX に移動しました</h3>
+                                    <p class="text-sm text-gray-300 mt-1">武器の解放状況・性能・ON/OFF設定は、タイトル画面の WEAPON CODEX から確認できます。</p>
+                                </div>
+                            </section>`;
+
+                        container.querySelectorAll('.equip-skin').forEach(btn => btn.addEventListener('click', () => {
+                            userData.equippedSkin = btn.dataset.id;
+                            saveData();
+                            renderCollectionScreen();
+                        }));
+
+                        container.querySelectorAll('.equip-aura').forEach(btn => btn.addEventListener('click', () => {
+                            userData.equippedAura = btn.dataset.id;
+                            saveData();
+                            renderCollectionScreen();
+                        }));
+                    };
+                } catch(e) {
+                    console.warn('COLLECTION weapon removal patch skipped', e);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', installCollectionPatch);
+            } else {
+                installCollectionPatch();
+            }
+        })();
+
+
+        // ===== 2026-05-04 Add-on: ブラックホール高難度ミッション + 第二形態専用ブラックホール =====
+        // 目的：
+        // 1) BLACKHOLEカテゴリの高難度ミッションを20個追加
+        // 2) 通常ボスのブラックホール攻撃を消し、最恐大猿王 第二形態だけがブラックホールを使うようにする
+        // 3) 元のゲーム内容・画面構成は変えず、上から書き足す形で上書きする
+        // 貼る場所：一番下の </script> の直前
+        (function neonSurvivorBlackHoleMissionPatch(){
+            const BH_STAT_DEFAULTS = {
+                totalBlackholeNearTime: 0,
+                totalBlackholeCoreTime: 0,
+                totalBlackholeCoreTouches: 0,
+                totalBlackholeEscapes: 0,
+                totalBlackholeEntries: 0,
+                totalBlackholeDamageTaken: 0,
+                totalBlackholeKills: 0,
+                totalBlackholeBossKills: 0,
+                totalSecondPhaseBlackholeAttacks: 0,
+                bestRunBlackholeNearTime: 0,
+                bestRunBlackholeCoreTime: 0,
+                bestRunBlackholeCoreTouches: 0,
+                bestRunBlackholeEscapes: 0,
+                bestRunBlackholeEntries: 0,
+                bestRunBlackholeDamageTaken: 0,
+                bestRunBlackholeKills: 0,
+                bestRunBlackholeBossKills: 0,
+                bestRunSecondPhaseBlackholeAttacks: 0
+            };
+        
+            const BH_RUN_DEFAULTS = {
+                blackholeNearTime: 0,
+                blackholeCoreTime: 0,
+                blackholeCoreTouches: 0,
+                blackholeEscapes: 0,
+                blackholeEntries: 0,
+                blackholeDamageTaken: 0,
+                blackholeKills: 0,
+                blackholeBossKills: 0,
+                secondPhaseBlackholeAttacks: 0
+            };
+        
+            function ensureBHStatsData() {
+                if (!userData || typeof userData !== 'object') return;
+                userData.stats = userData.stats || {};
+                for (const [key, val] of Object.entries(BH_STAT_DEFAULTS)) {
+                    userData.stats[key] = Number(userData.stats[key] || val);
+                }
+                if (runStats) {
+                    for (const [key, val] of Object.entries(BH_RUN_DEFAULTS)) {
+                        runStats[key] = Number(runStats[key] || val);
+                    }
+                }
+            }
+        
+            function addBHStat(totalKey, runKey, amount = 1) {
+                ensureBHStatsData();
+                if (!userData || !userData.stats) return;
+                const v = Number(amount || 0);
+                userData.stats[totalKey] = Number(userData.stats[totalKey] || 0) + v;
+                if (runStats && runKey) runStats[runKey] = Number(runStats[runKey] || 0) + v;
+            }
+        
+            function saveBHRunBests() {
+                ensureBHStatsData();
+                if (!runStats || !userData || !userData.stats) return;
+                const pairs = [
+                    ['bestRunBlackholeNearTime', 'blackholeNearTime'],
+                    ['bestRunBlackholeCoreTime', 'blackholeCoreTime'],
+                    ['bestRunBlackholeCoreTouches', 'blackholeCoreTouches'],
+                    ['bestRunBlackholeEscapes', 'blackholeEscapes'],
+                    ['bestRunBlackholeEntries', 'blackholeEntries'],
+                    ['bestRunBlackholeDamageTaken', 'blackholeDamageTaken'],
+                    ['bestRunBlackholeKills', 'blackholeKills'],
+                    ['bestRunBlackholeBossKills', 'blackholeBossKills'],
+                    ['bestRunSecondPhaseBlackholeAttacks', 'secondPhaseBlackholeAttacks']
+                ];
+                for (const [bestKey, runKey] of pairs) {
+                    userData.stats[bestKey] = Math.max(Number(userData.stats[bestKey] || 0), Number(runStats[runKey] || 0));
+                }
+            }
+        
+            function isNearAnyMapBlackhole(x, y, rangeMult = 0.9) {
+                if (!Array.isArray(mapBlackholes)) return false;
+                return mapBlackholes.some(bh => {
+                    if (!bh || bh.markedForDeletion) return false;
+                    const r = Math.max(1, Number(bh.radius || 0)) * rangeMult;
+                    return MathUtils.distance(x, y, bh.x, bh.y) < r;
+                });
+            }
+        
+            function trackBlackholePresence(holder, radius, coreRadius) {
+                if (!holder || !player || gameState !== 'playing') return;
+                ensureBHStatsData();
+                const d = MathUtils.distance(holder.x, holder.y, player.x, player.y);
+                const nearR = Math.max(1, Number(radius || holder.radius || 1));
+                const coreR = Math.max(1, Number(coreRadius || holder.eventRadius || holder.core || nearR * 0.18));
+                const frameKey = typeof frameCount === 'number' ? frameCount : Math.floor(performance.now() / 16);
+        
+                if (d < nearR) {
+                    if (holder.__nsvBHNearFrame !== frameKey) {
+                        holder.__nsvBHNearFrame = frameKey;
+                        addBHStat('totalBlackholeNearTime', 'blackholeNearTime', 1 / 60);
+                    }
+                    if (!holder.__nsvWasInBHZone) {
+                        holder.__nsvWasInBHZone = true;
+                        addBHStat('totalBlackholeEntries', 'blackholeEntries', 1);
+                    }
+                } else {
+                    holder.__nsvWasInBHZone = false;
+                }
+        
+                if (d < coreR + (player.radius || 0)) {
+                    if (holder.__nsvBHCoreFrame !== frameKey) {
+                        holder.__nsvBHCoreFrame = frameKey;
+                        addBHStat('totalBlackholeCoreTime', 'blackholeCoreTime', 1 / 60);
+                    }
+                    if (!holder.__nsvWasInBHCore) {
+                        holder.__nsvWasInBHCore = true;
+                        addBHStat('totalBlackholeCoreTouches', 'blackholeCoreTouches', 1);
+                        if (typeof floatingTexts !== 'undefined') floatingTexts.push(new FloatingText(player.x, player.y - 58, 'CORE TOUCH', '#a855f7', 14));
+                        checkMissionCompletions(false);
+                    }
+                } else if (holder.__nsvWasInBHCore && d > coreR * 1.9) {
+                    holder.__nsvWasInBHCore = false;
+                    addBHStat('totalBlackholeEscapes', 'blackholeEscapes', 1);
+                    if (typeof floatingTexts !== 'undefined') floatingTexts.push(new FloatingText(player.x, player.y - 58, 'ESCAPE!', '#67e8f9', 16));
+                    checkMissionCompletions(false);
+                }
+            }
+        
+            // ---- 既存の進行データにブラックホール用ステータスを追加 ----
+            try {
+                const __bhOriginalEnsureProgressionData = ensureProgressionData;
+                ensureProgressionData = function() {
+                    const ret = __bhOriginalEnsureProgressionData.apply(this, arguments);
+                    ensureBHStatsData();
+                    return ret;
+                };
+                ensureProgressionData();
+            } catch(e) { console.warn('Blackhole stat init skipped', e); }
+        
+            // ---- ラン開始時に、そのプレイ中のブラックホール記録を作る ----
+            try {
+                const __bhOriginalStartMissionRun = startMissionRun;
+                startMissionRun = function(mode) {
+                    const ret = __bhOriginalStartMissionRun.apply(this, arguments);
+                    ensureBHStatsData();
+                    return ret;
+                };
+            } catch(e) { console.warn('Blackhole run start patch skipped', e); }
+        
+            // ---- ラン終了時にベスト記録へ保存 ----
+            try {
+                const __bhOriginalFinishMissionRun = finishMissionRun;
+                finishMissionRun = function(earnedCoins = 0) {
+                    saveBHRunBests();
+                    return __bhOriginalFinishMissionRun.apply(this, arguments);
+                };
+            } catch(e) { console.warn('Blackhole run finish patch skipped', e); }
+        
+            // ---- ミッション進行度にブラックホール専用metricを追加 ----
+            try {
+                const __bhOriginalGetMissionProgress = getMissionProgress;
+                getMissionProgress = function(m) {
+                    ensureBHStatsData();
+                    const s = userData.stats || {};
+                    switch (m.metric) {
+                        case 'totalBlackholeNearTime': return Math.floor(s.totalBlackholeNearTime || 0);
+                        case 'totalBlackholeCoreTime': return Math.floor(s.totalBlackholeCoreTime || 0);
+                        case 'bestRunBlackholeNearTime': return Math.floor(Math.max(s.bestRunBlackholeNearTime || 0, runStats ? runStats.blackholeNearTime || 0 : 0));
+                        case 'bestRunBlackholeCoreTime': return Math.floor(Math.max(s.bestRunBlackholeCoreTime || 0, runStats ? runStats.blackholeCoreTime || 0 : 0));
+                        case 'totalBlackholeCoreTouches': return Math.floor(s.totalBlackholeCoreTouches || 0);
+                        case 'bestRunBlackholeCoreTouches': return Math.floor(Math.max(s.bestRunBlackholeCoreTouches || 0, runStats ? runStats.blackholeCoreTouches || 0 : 0));
+                        case 'totalBlackholeEscapes': return Math.floor(s.totalBlackholeEscapes || 0);
+                        case 'bestRunBlackholeEscapes': return Math.floor(Math.max(s.bestRunBlackholeEscapes || 0, runStats ? runStats.blackholeEscapes || 0 : 0));
+                        case 'totalBlackholeDamageTaken': return Math.floor(s.totalBlackholeDamageTaken || 0);
+                        case 'bestRunBlackholeDamageTaken': return Math.floor(Math.max(s.bestRunBlackholeDamageTaken || 0, runStats ? runStats.blackholeDamageTaken || 0 : 0));
+                        case 'totalBlackholeKills': return Math.floor(s.totalBlackholeKills || 0);
+                        case 'bestRunBlackholeKills': return Math.floor(Math.max(s.bestRunBlackholeKills || 0, runStats ? runStats.blackholeKills || 0 : 0));
+                        case 'totalBlackholeBossKills': return Math.floor(s.totalBlackholeBossKills || 0);
+                        case 'bestRunBlackholeBossKills': return Math.floor(Math.max(s.bestRunBlackholeBossKills || 0, runStats ? runStats.blackholeBossKills || 0 : 0));
+                        case 'totalSecondPhaseBlackholeAttacks': return Math.floor(s.totalSecondPhaseBlackholeAttacks || 0);
+                        case 'bestRunSecondPhaseBlackholeAttacks': return Math.floor(Math.max(s.bestRunSecondPhaseBlackholeAttacks || 0, runStats ? runStats.secondPhaseBlackholeAttacks || 0 : 0));
+                        default: return __bhOriginalGetMissionProgress.apply(this, arguments);
+                    }
+                };
+            } catch(e) { console.warn('Blackhole mission progress patch skipped', e); }
+        
+            // ---- マップブラックホールに入った時間・中心接触・脱出・被ダメを記録 ----
+            try {
+                const __bhOriginalMapBHUpdate = RealisticMapBlackHole.prototype.update;
+                RealisticMapBlackHole.prototype.update = function() {
+                    const beforeDamageTick = this.damageTick;
+                    const ret = __bhOriginalMapBHUpdate.apply(this, arguments);
+                    trackBlackholePresence(this, this.radius, this.eventRadius);
+                    if (beforeDamageTick !== this.damageTick) {
+                        const dmg = isOnlineMode ? 60 : 30;
+                        addBHStat('totalBlackholeDamageTaken', 'blackholeDamageTaken', dmg);
+                        checkMissionCompletions(false);
+                    }
+                    return ret;
+                };
+            } catch(e) { console.warn('Map blackhole stat patch skipped', e); }
+        
+            // ---- ブラックホール危険圏内で倒した敵・ボスを記録 ----
+            try {
+                const __bhOriginalRecordEnemyDefeat = recordEnemyDefeat;
+                recordEnemyDefeat = function(enemy) {
+                    if (enemy && isNearAnyMapBlackhole(enemy.x, enemy.y, 0.95)) {
+                        addBHStat('totalBlackholeKills', 'blackholeKills', 1);
+                        if (enemy.isBoss || enemy.isMidBoss || enemy.isMonkey) {
+                            addBHStat('totalBlackholeBossKills', 'blackholeBossKills', 1);
+                        }
+                    }
+                    const ret = __bhOriginalRecordEnemyDefeat.apply(this, arguments);
+                    checkMissionCompletions(false);
+                    return ret;
+                };
+            } catch(e) { console.warn('Blackhole kill stat patch skipped', e); }
+        
+            // ---- BLACKHOLE 高難度ミッション20個追加 ----
+            try {
+                const exists = new Set(MISSION_DEFS.map(m => m.id));
+                const newBH = [
+                    { id:'m212', cat:'BLACKHOLE', title:'重力圏の挑戦者', desc:'ブラックホールの吸引圏内に合計300秒入る', metric:'totalBlackholeNearTime', target:300, reward:{coins:22000} },
+                    { id:'m213', cat:'BLACKHOLE', title:'重力圏の住人', desc:'ブラックホールの吸引圏内に合計1200秒入る', metric:'totalBlackholeNearTime', target:1200, reward:{coins:52000, aura:'blackholeAura'} },
+                    { id:'m214', cat:'BLACKHOLE', title:'一戦ブラックホール耐久', desc:'1回のプレイでブラックホール吸引圏に120秒入る', metric:'bestRunBlackholeNearTime', target:120, reward:{coins:30000} },
+                    { id:'m215', cat:'BLACKHOLE', title:'重力の修行場', desc:'1回のプレイでブラックホール吸引圏に300秒入る', metric:'bestRunBlackholeNearTime', target:300, reward:{coins:65000, skin:'blackholeCore'} },
+                    { id:'m216', cat:'BLACKHOLE', title:'中心核に触れる者', desc:'ブラックホール中心部に合計90秒入る', metric:'totalBlackholeCoreTime', target:90, reward:{coins:42000} },
+                    { id:'m217', cat:'BLACKHOLE', title:'中心核の生還者', desc:'1回のプレイでブラックホール中心部に45秒入る', metric:'bestRunBlackholeCoreTime', target:45, reward:{coins:70000, aura:'blackholeAura'} },
+                    { id:'m218', cat:'BLACKHOLE', title:'コアタッチ20', desc:'ブラックホール中心部に合計20回触れる', metric:'totalBlackholeCoreTouches', target:20, reward:{coins:36000} },
+                    { id:'m219', cat:'BLACKHOLE', title:'コアタッチ60', desc:'ブラックホール中心部に合計60回触れる', metric:'totalBlackholeCoreTouches', target:60, reward:{coins:90000, weapon:'blackholeEmperor'} },
+                    { id:'m220', cat:'BLACKHOLE', title:'脱出訓練', desc:'ブラックホール中心部から合計10回脱出する', metric:'totalBlackholeEscapes', target:10, reward:{coins:40000} },
+                    { id:'m221', cat:'BLACKHOLE', title:'重力脱出王', desc:'ブラックホール中心部から合計30回脱出する', metric:'totalBlackholeEscapes', target:30, reward:{coins:85000, skin:'blackholeCore'} },
+                    { id:'m222', cat:'BLACKHOLE', title:'一戦5回脱出', desc:'1回のプレイでブラックホール中心部から5回脱出する', metric:'bestRunBlackholeEscapes', target:5, reward:{coins:78000} },
+                    { id:'m223', cat:'BLACKHOLE', title:'重力ダメージ耐性', desc:'ブラックホールから合計600ダメージ受ける', metric:'totalBlackholeDamageTaken', target:600, reward:{coins:48000} },
+                    { id:'m224', cat:'BLACKHOLE', title:'危険地帯サバイバー', desc:'1回のプレイでブラックホールから180ダメージ受けても生き残る', metric:'bestRunBlackholeDamageTaken', target:180, reward:{coins:72000, aura:'voidMist'} },
+                    { id:'m225', cat:'BLACKHOLE', title:'重力圏討伐者', desc:'ブラックホール吸引圏内で敵を合計250体倒す', metric:'totalBlackholeKills', target:250, reward:{coins:50000} },
+                    { id:'m226', cat:'BLACKHOLE', title:'事象の地平線スレイヤー', desc:'ブラックホール吸引圏内で敵を合計1000体倒す', metric:'totalBlackholeKills', target:1000, reward:{coins:110000, aura:'crownBurst'} },
+                    { id:'m227', cat:'BLACKHOLE', title:'一戦重力狩り', desc:'1回のプレイでブラックホール吸引圏内の敵を150体倒す', metric:'bestRunBlackholeKills', target:150, reward:{coins:82000} },
+                    { id:'m228', cat:'BLACKHOLE', title:'重力圏ボス討伐', desc:'ブラックホール吸引圏内でボス系を合計5体倒す', metric:'totalBlackholeBossKills', target:5, reward:{coins:90000} },
+                    { id:'m229', cat:'BLACKHOLE', title:'重力圏ボスブレイカー', desc:'ブラックホール吸引圏内でボス系を合計20体倒す', metric:'totalBlackholeBossKills', target:20, reward:{coins:150000, weapon:'chronoLotus'} },
+                    { id:'m230', cat:'BLACKHOLE', title:'第二形態の重力を見切れ', desc:'最恐大猿王 第二形態にブラックホールを合計10回使わせる', metric:'totalSecondPhaseBlackholeAttacks', target:10, reward:{coins:120000, skin:'monkeySlayer'} },
+                    { id:'m231', cat:'BLACKHOLE', title:'第二形態・重力完全攻略', desc:'1回のプレイで第二形態ブラックホールを5回しのぐ', metric:'bestRunSecondPhaseBlackholeAttacks', target:5, reward:{coins:180000, weapon:'blackholeEmperor', aura:'blackholeAura'} }
+                ];
+                for (const m of newBH) if (!exists.has(m.id)) MISSION_DEFS.push(m);
+            } catch(e) { console.warn('Blackhole mission add skipped', e); }
+        
+            // ---- 第二形態専用のブラックホール攻撃 ----
+            class SecondPhaseBossBlackHole {
+                constructor(x, y) {
+                    this.x = x; this.y = y;
+                    this.timer = 0; this.maxTime = 330;
+                    this.radius = 390; this.core = 70;
+                    this.damageTick = -999;
+                    this.markedForDeletion = false;
+                    this.seed = Math.random() * Math.PI * 2;
+                }
+                update() {
+                    this.timer++;
+                    if (player && gameState === 'playing') {
+                        const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                        if (d < this.radius) {
+                            const a = MathUtils.angle(player.x, player.y, this.x, this.y);
+                            const t = Math.max(0, 1 - d / this.radius);
+                            const wave = 0.85 + Math.sin(this.timer * 0.06 + this.seed) * 0.18;
+                            const pull = Math.min(3.2, (0.75 + t * 3.9) * wave) * (NSV_BALANCE_20260502.mapBlackHoleCenterPullMult || 1);
+                            player.x += Math.cos(a) * pull;
+                            player.y += Math.sin(a) * pull;
+                            if (d < this.core + player.radius && this.timer - this.damageTick > 34) {
+                                this.damageTick = this.timer;
+                                player.takeDamage(22);
+                                addBHStat('totalBlackholeDamageTaken', 'blackholeDamageTaken', 22);
+                                floatingTexts.push(new FloatingText(player.x, player.y - 54, 'SECOND GRAVITY -22', '#c084fc', 16));
+                                triggerShake(10);
+                                checkMissionCompletions(false);
+                            }
+                        }
+                        trackBlackholePresence(this, this.radius, this.core);
+                    }
+                    if (this.timer % (isLightMode ? 24 : 10) === 0) {
+                        const a = Math.random() * Math.PI * 2;
+                        const r = MathUtils.random(this.core, this.radius);
+                        createParticles(this.x + Math.cos(a) * r, this.y + Math.sin(a) * r * 0.42, 1, '#c084fc', 4);
+                    }
+                    if (this.timer > this.maxTime) this.markedForDeletion = true;
+                }
+                draw(ctx) {
+                    const t = this.timer;
+                    ctx.save();
+                    ctx.translate(safe(this.x), safe(this.y));
+                    ctx.rotate(t * 0.035);
+                    ctx.globalCompositeOperation = 'screen';
+                    for (let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, safeR(this.radius * (0.86 - i * 0.12)), safeR(this.radius * (0.22 + i * 0.03)), 0, 0, Math.PI * 2);
+                        ctx.strokeStyle = i === 0 ? 'rgba(192,132,252,.75)' : 'rgba(168,85,247,.45)';
+                        ctx.lineWidth = i === 0 ? 6 : 3;
+                        ctx.shadowBlur = isLightMode ? 12 : 30;
+                        ctx.shadowColor = '#a855f7';
+                        ctx.stroke();
+                    }
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, safeR(this.core), 0, Math.PI * 2);
+                    ctx.fillStyle = '#020617';
+                    ctx.fill();
+                    ctx.strokeStyle = '#c084fc';
+                    ctx.lineWidth = 5;
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = '#c084fc';
+                    ctx.stroke();
+                    ctx.font = 'bold 14px Orbitron, Noto Sans JP';
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#e9d5ff';
+                    ctx.shadowBlur = 14;
+                    ctx.fillText('SECOND PHASE GRAVITY', 0, -this.radius * 0.32);
+                    ctx.restore();
+                }
+            }
+        
+            // ---- 通常ボスのブラックホール攻撃を消し、第二形態だけブラックホールを使うように上書き ----
+            try {
+                triggerAdvancedBossPattern = function(boss) {
+                    if (!boss || !player || boss.markedForDeletion || !(boss.isBoss || boss.isMidBoss || boss.isMonkey)) return;
+                    boss.nsvBossPatternTimer = (boss.nsvBossPatternTimer || MathUtils.randomInt(0, 120)) + 1;
+                    const interval = boss.isApeOverlordSecondPhase ? 210 : (boss.isMonkey ? 320 : boss.isMidBoss ? 430 : 380);
+                    if (boss.nsvBossPatternTimer < interval) return;
+                    boss.nsvBossPatternTimer = 0;
+        
+                    const a = MathUtils.angle(boss.x, boss.y, player.x, player.y);
+                    const roll = Math.random();
+        
+                    if (boss.isApeOverlordSecondPhase) {
+                        if (roll < 0.42) {
+                            const bx = player.x - Math.cos(a) * MathUtils.random(80, 170) + MathUtils.random(-90, 90);
+                            const by = player.y - Math.sin(a) * MathUtils.random(80, 170) + MathUtils.random(-90, 90);
+                            effects.push(new SecondPhaseBossBlackHole(bx, by));
+                            addBHStat('totalSecondPhaseBlackholeAttacks', 'secondPhaseBlackholeAttacks', 1);
+                            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 46, 'SECOND FORM BLACK HOLE', '#c084fc', 17));
+                            checkMissionCompletions(false);
+                            return;
+                        }
+                        if (roll < 0.66) {
+                            for (let i = 0; i < 3; i++) {
+                                effects.push(new BossConeBeam(boss.x, boss.y, a + (i - 1) * 0.34, 20));
+                            }
+                            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM BEAM', '#fb923c', 16));
+                            return;
+                        }
+                        if (roll < 0.84) {
+                            effects.push(new BossWarningExplosion(player.x + MathUtils.random(-140,140), player.y + MathUtils.random(-140,140), 240, 25));
+                            effects.push(new BossWarningExplosion(player.x + MathUtils.random(-260,260), player.y + MathUtils.random(-260,260), 170, 18));
+                            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM SMASH', '#ef4444', 16));
+                            return;
+                        }
+                        for (let i = 0; i < 2 && enemies.length < 800; i++) {
+                            const v = ['fast','shooter','bomber','pusher'][MathUtils.randomInt(0,3)];
+                            const add = new AdvancedEnemy(boss.x + MathUtils.random(-150,150), boss.y + MathUtils.random(-150,150), v);
+                            add.hp *= 0.8; add.maxHp = add.hp;
+                            enemies.push(add);
+                        }
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 42, 'SECOND FORM SUMMON', '#38bdf8', 16));
+                        return;
+                    }
+        
+                    // 通常ボス・通常猿王はブラックホールを使わない。
+                    if (roll < 0.25) {
+                        effects.push(new BossWarningExplosion(player.x + MathUtils.random(-150,150), player.y + MathUtils.random(-150,150), boss.isMonkey ? 230 : 180, boss.isMonkey ? 23 : 17));
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'WARNING', '#ef4444', 15));
+                    } else if (roll < 0.48) {
+                        effects.push(new BossConeBeam(boss.x, boss.y, a, boss.isMonkey ? 21 : 15));
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'BEAM', '#fb923c', 15));
+                    } else if (roll < 0.72) {
+                        const count = boss.isMonkey ? 3 : 2;
+                        for (let i = 0; i < count && enemyBullets.length < 520; i++) {
+                            const b = new BossHomingBullet(boss.x + MathUtils.random(-30,30), boss.y + MathUtils.random(-30,30), boss.isMonkey ? 11 : 8);
+                            b.speed *= 0.82;
+                            enemyBullets.push(b);
+                        }
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'HOMING', '#f472b6', 15));
+                    } else {
+                        const count = boss.isMidBoss ? 1 : 2;
+                        for (let i = 0; i < count && enemies.length < 800; i++) {
+                            const v = ['fast','shooter','bomber'][MathUtils.randomInt(0,2)];
+                            const add = new AdvancedEnemy(boss.x + MathUtils.random(-130,130), boss.y + MathUtils.random(-130,130), v);
+                            add.hp *= 0.7; add.maxHp = add.hp;
+                            enemies.push(add);
+                        }
+                        floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 35, 'SUMMON', '#38bdf8', 15));
+                    }
+                };
+            } catch(e) { console.warn('Second phase blackhole boss patch skipped', e); }
+        
+            try {
+                checkMissionCompletions(false);
+                renderMissionMiniHud();
+            } catch(e) {}
+        })();
+        
+
+// ===== 2026-05-04 Add-on: レア宝箱・連鎖ミッション・ボス専用ギミック =====
+// 貼る場所：一番下の </script> の直前
+// 目的：既存のゲーム内容・画面を大きく変えず、上から書き足す形で追加する。
+(function patchRareChestChainBossGimmicks20260504() {
+    const PATCH_ID = 'rare-chest-chain-boss-gimmick-2026-05-04';
+    if (window[PATCH_ID]) return;
+    window[PATCH_ID] = true;
+
+    let rareTreasureChests = [];
+    let nextRareChestFrame = 60 * 55;
+
+    function ensureEventStatsOnly() {
+        if (!userData || typeof userData !== 'object') return;
+        userData.stats = userData.stats || {};
+        const defaults = {
+            totalRareChestsSpawned: 0,
+            totalRareChestsOpened: 0,
+            totalRareChestsMissed: 0,
+            bestRunRareChestsOpened: 0,
+            totalFireBossKills: 0,
+            totalThunderBossKills: 0,
+            totalGravityBossKills: 0,
+            totalMirrorBossKills: 0,
+            totalSecondPhaseKills: 0
+        };
+        for (const [k, v] of Object.entries(defaults)) {
+            if (!Number.isFinite(Number(userData.stats[k]))) userData.stats[k] = v;
+        }
+        if (runStats) {
+            const runDefaults = {
+                rareChestsOpened: 0,
+                fireBossKills: 0,
+                thunderBossKills: 0,
+                gravityBossKills: 0,
+                mirrorBossKills: 0,
+                secondPhaseKills: 0
+            };
+            for (const [k, v] of Object.entries(runDefaults)) {
+                if (!Number.isFinite(Number(runStats[k]))) runStats[k] = v;
+            }
+        }
+    }
+
+    try {
+        const __eventOriginalEnsureProgressionData = ensureProgressionData;
+        ensureProgressionData = function() {
+            const ret = __eventOriginalEnsureProgressionData.apply(this, arguments);
+            ensureEventStatsOnly();
+            return ret;
+        };
+    } catch(e) { console.warn('Event stats ensure patch skipped', e); }
+
+    function ensureEventStatsData() {
+        try { ensureProgressionData(); } catch(e) {}
+        ensureEventStatsOnly();
+    }
+
+    function addEventStat(totalKey, runKey, amount = 1) {
+        ensureEventStatsData();
+        const v = Math.max(0, Number(amount || 0));
+        if (totalKey) userData.stats[totalKey] = Number(userData.stats[totalKey] || 0) + v;
+        if (runStats && runKey) runStats[runKey] = Number(runStats[runKey] || 0) + v;
+    }
+
+    function getRunBest(totalKey, runKey) {
+        ensureEventStatsData();
+        return Math.max(Number(userData.stats[totalKey] || 0), runStats ? Number(runStats[runKey] || 0) : 0);
+    }
+
+    function saveEventRunBests() {
+        ensureEventStatsData();
+        if (!runStats) return;
+        userData.stats.bestRunRareChestsOpened = Math.max(Number(userData.stats.bestRunRareChestsOpened || 0), Number(runStats.rareChestsOpened || 0));
+    }
+
+    function resetRareChestEventTimer() {
+        rareTreasureChests = [];
+        const now = Number(frameCount || 0);
+        nextRareChestFrame = now + MathUtils.randomInt(60 * 45, 60 * 80);
+    }
+
+    function isChainMissionUnlocked(m) {
+        if (!m || !m.chainPrev) return true;
+        ensureEventStatsData();
+        return !!(userData.missions && userData.missions.completed && userData.missions.completed[m.chainPrev]);
+    }
+
+    function withLockedChainMissionsHidden(fn) {
+        const removed = [];
+        try {
+            for (let i = MISSION_DEFS.length - 1; i >= 0; i--) {
+                const m = MISSION_DEFS[i];
+                if (m && m.chainPrev && !isChainMissionUnlocked(m)) {
+                    removed.push({ index: i, mission: m });
+                    MISSION_DEFS.splice(i, 1);
+                }
+            }
+            return fn();
+        } finally {
+            removed.sort((a, b) => a.index - b.index).forEach(item => {
+                MISSION_DEFS.splice(item.index, 0, item.mission);
+            });
+        }
+    }
+
+    // ------------------------------------------
+    // 1. レア宝箱イベント：オフラインのみ
+    // ------------------------------------------
+    class OfflineRareTreasureChest {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 42;
+            this.timer = 0;
+            this.maxLife = 60 * 42;
+            this.markedForDeletion = false;
+            this.opened = false;
+            this.spin = Math.random() * Math.PI * 2;
+            this.rewardKind = ['coin', 'heal', 'gem', 'score'][MathUtils.randomInt(0, 3)];
+        }
+
+        update() {
+            if (this.markedForDeletion) return;
+            if (isOnlineMode) { this.markedForDeletion = true; return; }
+            if (gameState !== 'playing' || !player) return;
+            this.timer++;
+            this.spin += 0.025;
+
+            const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+            if (d < this.radius + player.radius + 10) {
+                this.collect();
+                return;
+            }
+
+            if (this.timer % (isLightMode ? 26 : 12) === 0) {
+                const a = Math.random() * Math.PI * 2;
+                createParticles(this.x + Math.cos(a) * 48, this.y + Math.sin(a) * 48, 1, '#facc15', 3);
+            }
+
+            if (this.timer >= this.maxLife) {
+                this.markedForDeletion = true;
+                addEventStat('totalRareChestsMissed', null, 1);
+                if (floatingTexts.length < 100) floatingTexts.push(new FloatingText(this.x, this.y - 45, 'CHEST LOST', '#94a3b8', 16));
+            }
+        }
+
+        collect() {
+            if (this.opened || this.markedForDeletion || !player) return;
+            this.opened = true;
+            this.markedForDeletion = true;
+            addEventStat('totalRareChestsOpened', 'rareChestsOpened', 1);
+
+            const level = Math.max(1, Number(player.level || 1));
+            const baseCoin = Math.floor((1400 + level * 220 + Math.min(18000, Number(gameTime || 0) * 18)) * getCoinBonusMultiplier());
+            let rewardTextValue = '';
+
+            if (this.rewardKind === 'coin') {
+                userData.coins += baseCoin;
+                userData.stats.totalCoinsEarned += baseCoin;
+                rewardTextValue = `+${baseCoin} COINS`;
+            } else if (this.rewardKind === 'heal') {
+                const heal = Math.floor(player.maxHp * 0.32);
+                player.hp = Math.min(player.maxHp, player.hp + heal);
+                updateUI();
+                rewardTextValue = `HP +${heal}`;
+            } else if (this.rewardKind === 'gem') {
+                const count = isLightMode ? 7 : 13;
+                for (let i = 0; i < count && gems.length < 300; i++) {
+                    gems.push(new Gem(this.x + MathUtils.random(-55, 55), this.y + MathUtils.random(-55, 55), 8 + level * 0.8));
+                }
+                rewardTextValue = 'GEM BURST';
+            } else {
+                const bonus = 2400 + level * 420;
+                score += bonus;
+                const scoreEl = document.getElementById('scoreDisplay');
+                if (scoreEl) scoreEl.innerText = Math.floor(score);
+                rewardTextValue = `SCORE +${bonus}`;
+            }
+
+            createParticles(this.x, this.y, isLightMode ? 26 : 70, '#facc15', 7);
+            effects.push(new Shockwave(this.x, this.y, '#facc15', 14, 520));
+            if (floatingTexts.length < 100) floatingTexts.push(new FloatingText(this.x, this.y - 60, `RARE CHEST ${rewardTextValue}`, '#facc15', 20));
+            showMissionToast('RARE CHEST OPENED!', rewardTextValue);
+            saveData();
+            checkMissionCompletions(false);
+        }
+
+        draw(ctx) {
+            const remain = Math.max(0, 1 - this.timer / this.maxLife);
+            ctx.save();
+            ctx.translate(safe(this.x), safe(this.y));
+            ctx.rotate(Math.sin(this.spin) * 0.08);
+            ctx.globalCompositeOperation = 'screen';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius + 18 + Math.sin(this.timer * 0.08) * 6, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(250,204,21,${0.35 + remain * 0.4})`;
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = isLightMode ? 12 : 30;
+            ctx.shadowColor = '#facc15';
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.font = 'bold 46px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = '#facc15';
+            ctx.fillText('🎁', 0, 0);
+            ctx.font = 'bold 13px Orbitron, Noto Sans JP';
+            ctx.fillStyle = '#fef08a';
+            ctx.fillText(`RARE ${Math.ceil((this.maxLife - this.timer) / 60)}s`, 0, -58);
+            ctx.restore();
+        }
+    }
+
+    function spawnOfflineRareChest() {
+        if (!player || gameState !== 'playing' || isOnlineMode) return;
+        if (rareTreasureChests.some(c => c && !c.markedForDeletion)) return;
+
+        let x = player.x, y = player.y;
+        for (let i = 0; i < 14; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const d = MathUtils.random(1300, 2800);
+            x = player.x + Math.cos(a) * d;
+            y = player.y + Math.sin(a) * d;
+            const nearBH = Array.isArray(mapBlackholes) && mapBlackholes.some(bh => bh && MathUtils.distance(x, y, bh.x, bh.y) < (bh.radius || 900) * 0.65);
+            if (!nearBH || i > 7) break;
+        }
+        rareTreasureChests.push(new OfflineRareTreasureChest(x, y));
+        addEventStat('totalRareChestsSpawned', null, 1);
+        showMissionToast('RARE CHEST APPEARED!', '一定時間だけ出現。取りに行くか、無理せず逃げるか選ぼう。');
+        if (floatingTexts.length < 100) floatingTexts.push(new FloatingText(x, y - 70, 'RARE CHEST!', '#facc15', 22));
+    }
+
+    function updateRareChestEvent() {
+        if (isOnlineMode || gameState !== 'playing' || !player) return;
+        if (Number(frameCount || 0) >= nextRareChestFrame) {
+            spawnOfflineRareChest();
+            nextRareChestFrame = Number(frameCount || 0) + MathUtils.randomInt(60 * 95, 60 * 150);
+        }
+        for (let i = rareTreasureChests.length - 1; i >= 0; i--) {
+            try { rareTreasureChests[i].update(); } catch(e) { rareTreasureChests[i].markedForDeletion = true; }
+            if (rareTreasureChests[i].markedForDeletion) rareTreasureChests.splice(i, 1);
+        }
+    }
+
+    function drawRareChestCompass() {
+        if (!player || !rareTreasureChests.length || isOnlineMode) return;
+        const chest = rareTreasureChests.find(c => c && !c.markedForDeletion);
+        if (!chest) return;
+        const sx = chest.x - camera.x;
+        const sy = chest.y - camera.y;
+        if (sx > 30 && sx < width - 30 && sy > 30 && sy < height - 30) return;
+
+        const cx = width / 2;
+        const cy = height / 2;
+        const a = Math.atan2(sy - cy, sx - cx);
+        const edgeX = Math.max(42, Math.min(width - 42, cx + Math.cos(a) * (width * 0.43)));
+        const edgeY = Math.max(42, Math.min(height - 42, cy + Math.sin(a) * (height * 0.43)));
+        const dist = Math.floor(MathUtils.distance(player.x, player.y, chest.x, chest.y));
+
+        ctx.save();
+        ctx.translate(edgeX, edgeY);
+        ctx.rotate(a);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.beginPath();
+        ctx.moveTo(24, 0); ctx.lineTo(-16, -14); ctx.lineTo(-10, 0); ctx.lineTo(-16, 14); ctx.closePath();
+        ctx.fillStyle = 'rgba(250,204,21,.92)';
+        ctx.shadowBlur = 18; ctx.shadowColor = '#facc15';
+        ctx.fill();
+        ctx.rotate(-a);
+        ctx.font = 'bold 12px Orbitron, Noto Sans JP';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#fff7ed';
+        ctx.fillText(`🎁 ${dist}m`, 0, 30);
+        ctx.restore();
+    }
+
+    // ------------------------------------------
+    // 2. ミッション連鎖システム
+    // ------------------------------------------
+    try {
+        if (!MISSION_TAB_DEFS.some(t => t.id === 'CHAIN')) {
+            MISSION_TAB_DEFS.splice(Math.max(0, MISSION_TAB_DEFS.length - 1), 0, { id:'CHAIN', label:'連鎖', cats:['CHAIN'] });
+        }
+
+        const exists = new Set(MISSION_DEFS.map(m => m.id));
+        const chainMissions = [
+            { id:'chain001', cat:'CHAIN', title:'連鎖1：レア宝箱を見つけろ', desc:'ソロでレア宝箱を合計1個開ける', metric:'totalRareChestsOpened', target:1, reward:{coins:16000} },
+            { id:'chain002', cat:'CHAIN', title:'連鎖2：宝箱ルート判断', desc:'ソロでレア宝箱を合計3個開ける', metric:'totalRareChestsOpened', target:3, chainPrev:'chain001', reward:{coins:26000} },
+            { id:'chain003', cat:'CHAIN', title:'連鎖3：一戦で宝箱2個', desc:'1回のプレイでレア宝箱を2個開ける', metric:'bestRunRareChestsOpened', target:2, chainPrev:'chain002', reward:{coins:42000, aura:'goldSpark'} },
+            { id:'chain004', cat:'CHAIN', title:'連鎖4：炎ボス討伐', desc:'火柱を使う炎ボスを合計1体倒す', metric:'totalFireBossKills', target:1, chainPrev:'chain003', reward:{coins:52000, skin:'infernoSkin'} },
+            { id:'chain005', cat:'CHAIN', title:'連鎖5：雷ボス討伐', desc:'落雷を使う雷ボスを合計1体倒す', metric:'totalThunderBossKills', target:1, chainPrev:'chain004', reward:{coins:56000, aura:'stormKing'} },
+            { id:'chain006', cat:'CHAIN', title:'連鎖6：重力ボス討伐', desc:'吸引ギミックを使う重力ボスを合計1体倒す', metric:'totalGravityBossKills', target:1, chainPrev:'chain005', reward:{coins:62000, aura:'blackholeAura'} },
+            { id:'chain007', cat:'CHAIN', title:'連鎖7：属性ボス研究者', desc:'専用ギミックを持つボスを合計8体倒す', metric:'totalBossTypeKills', target:8, chainPrev:'chain006', reward:{coins:80000} },
+            { id:'chain008', cat:'CHAIN', title:'連鎖8：宝箱マスター', desc:'ソロでレア宝箱を合計15個開ける', metric:'totalRareChestsOpened', target:15, chainPrev:'chain007', reward:{coins:120000, skin:'gold'} },
+            { id:'chain009', cat:'CHAIN', title:'連鎖9：第二形態を超えろ', desc:'最恐大猿王 第二形態を合計1体倒す', metric:'totalSecondPhaseKills', target:1, chainPrev:'chain008', reward:{coins:150000, skin:'monkeySlayer'} },
+            { id:'chain010', cat:'CHAIN', title:'連鎖10：重力任務の達人', desc:'BLACKHOLEカテゴリのミッションを8個達成する', metric:'completedBlackholeMissionCount', target:8, chainPrev:'chain009', reward:{coins:180000, weapon:'blackholeEmperor'} },
+            { id:'chain011', cat:'CHAIN', title:'連鎖11：危険地帯の収集王', desc:'ソロでレア宝箱を合計30個開ける', metric:'totalRareChestsOpened', target:30, chainPrev:'chain010', reward:{coins:220000, aura:'crownBurst'} },
+            { id:'chain012', cat:'CHAIN', title:'連鎖12：ネオン試練完全制覇', desc:'専用ギミックを持つボスを合計30体倒す', metric:'totalBossTypeKills', target:30, chainPrev:'chain011', reward:{coins:300000, weapon:'chronoLotus', skin:'galaxyKnight'} }
+        ];
+        for (const m of chainMissions) if (!exists.has(m.id)) MISSION_DEFS.push(m);
+    } catch(e) { console.warn('Chain mission add skipped', e); }
+
+    try {
+        const __eventOriginalGetMissionProgress = getMissionProgress;
+        getMissionProgress = function(m) {
+            ensureEventStatsData();
+            if (m && m.chainPrev && !isChainMissionUnlocked(m)) return 0;
+            const s = userData.stats || {};
+            switch (m.metric) {
+                case 'totalRareChestsSpawned': return Math.floor(s.totalRareChestsSpawned || 0);
+                case 'totalRareChestsOpened': return Math.floor(s.totalRareChestsOpened || 0);
+                case 'bestRunRareChestsOpened': return Math.floor(getRunBest('bestRunRareChestsOpened', 'rareChestsOpened'));
+                case 'totalFireBossKills': return Math.floor(s.totalFireBossKills || 0);
+                case 'totalThunderBossKills': return Math.floor(s.totalThunderBossKills || 0);
+                case 'totalGravityBossKills': return Math.floor(s.totalGravityBossKills || 0);
+                case 'totalMirrorBossKills': return Math.floor(s.totalMirrorBossKills || 0);
+                case 'totalSecondPhaseKills': return Math.floor(s.totalSecondPhaseKills || 0);
+                case 'totalBossTypeKills': return Math.floor((s.totalFireBossKills || 0) + (s.totalThunderBossKills || 0) + (s.totalGravityBossKills || 0) + (s.totalMirrorBossKills || 0));
+                case 'completedBlackholeMissionCount': return MISSION_DEFS.filter(x => x && x.cat === 'BLACKHOLE' && userData.missions.completed[x.id]).length;
+                default: return __eventOriginalGetMissionProgress.apply(this, arguments);
+            }
+        };
+    } catch(e) { console.warn('Chain progress patch skipped', e); }
+
+    try {
+        const __eventOriginalCheckMissionCompletions = checkMissionCompletions;
+        checkMissionCompletions = function(showToast = false) {
+            return withLockedChainMissionsHidden(() => __eventOriginalCheckMissionCompletions.apply(this, arguments));
+        };
+    } catch(e) { console.warn('Chain completion patch skipped', e); }
+
+    try {
+        const __eventOriginalRenderMissionScreen = renderMissionScreen;
+        renderMissionScreen = function() {
+            return withLockedChainMissionsHidden(() => __eventOriginalRenderMissionScreen.apply(this, arguments));
+        };
+    } catch(e) { console.warn('Chain render patch skipped', e); }
+
+    try {
+        const __eventOriginalRenderMissionMiniHud = renderMissionMiniHud;
+        renderMissionMiniHud = function() {
+            return withLockedChainMissionsHidden(() => __eventOriginalRenderMissionMiniHud.apply(this, arguments));
+        };
+    } catch(e) { console.warn('Chain mini HUD patch skipped', e); }
+
+    // ------------------------------------------
+    // 3. ボスごとの専用ギミック：炎・雷・重力・ミラー
+    // ------------------------------------------
+    function normalizeBossType(boss) {
+        if (!boss || boss.type !== 3) return;
+        let p = String(boss.bossPattern || 'FIRE BOSS').toUpperCase();
+        if (p.includes('VOID')) p = 'GRAVITY BOSS';
+        boss.bossPattern = p;
+        if (p.includes('FIRE')) boss.color = '#fb923c';
+        else if (p.includes('THUNDER')) boss.color = '#67e8f9';
+        else if (p.includes('GRAVITY')) boss.color = '#a855f7';
+        else if (p.includes('MIRROR')) boss.color = '#f0abfc';
+    }
+
+    function getBossKind(boss) {
+        if (!boss) return '';
+        const p = String(boss.bossPattern || '').toUpperCase();
+        if (boss.isApeOverlordSecondPhase) return 'second';
+        if (p.includes('FIRE')) return 'fire';
+        if (p.includes('THUNDER')) return 'thunder';
+        if (p.includes('GRAVITY') || p.includes('VOID')) return 'gravity';
+        if (p.includes('MIRROR')) return 'mirror';
+        return '';
+    }
+
+    class BossFirePillar {
+        constructor(x, y, damage = 24) {
+            this.x = x; this.y = y; this.damage = damage;
+            this.radius = 125;
+            this.timer = 0; this.maxTime = 112;
+            this.damageTick = -999;
+            this.markedForDeletion = false;
+        }
+        update() {
+            this.timer++;
+            if (player && gameState === 'playing') {
+                const active = this.timer > 42 && this.timer < 92;
+                const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                if (active && d < this.radius + player.radius && this.timer - this.damageTick > 28) {
+                    this.damageTick = this.timer;
+                    player.takeDamage(this.damage);
+                    floatingTexts.push(new FloatingText(player.x, player.y - 45, `FIRE -${this.damage}`, '#fb923c', 15));
+                }
+            }
+            if (this.timer === 42) {
+                effects.push(new Shockwave(this.x, this.y, '#fb923c', 12, this.radius * 2.1));
+                createParticles(this.x, this.y, isLightMode ? 12 : 36, '#fb923c', 6);
+            }
+            if (this.timer > this.maxTime) this.markedForDeletion = true;
+        }
+        draw(ctx) {
+            const warn = this.timer < 42;
+            const pulse = warn ? this.timer / 42 : 1;
+            const alpha = warn ? 0.35 + pulse * 0.45 : Math.max(0, 1 - (this.timer - 42) / 70);
+            ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+            ctx.globalCompositeOperation = 'screen';
+            ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * pulse), 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(251,146,60,${alpha})`; ctx.lineWidth = warn ? 4 : 9;
+            ctx.shadowBlur = isLightMode ? 10 : 26; ctx.shadowColor = '#fb923c'; ctx.stroke();
+            if (!warn) {
+                ctx.font = 'bold 54px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('🔥', 0, 0);
+            }
+            ctx.restore();
+        }
+    }
+
+    class BossThunderStrike {
+        constructor(x, y, damage = 28) {
+            this.x = x; this.y = y; this.damage = damage;
+            this.radius = 105;
+            this.timer = 0; this.maxTime = 88;
+            this.hit = false;
+            this.markedForDeletion = false;
+        }
+        update() {
+            this.timer++;
+            if (!this.hit && this.timer >= 36) {
+                this.hit = true;
+                effects.push(new Shockwave(this.x, this.y, '#67e8f9', 10, this.radius * 2.3));
+                createParticles(this.x, this.y, isLightMode ? 10 : 32, '#67e8f9', 5);
+                if (player && MathUtils.distance(this.x, this.y, player.x, player.y) < this.radius + player.radius) {
+                    player.takeDamage(this.damage);
+                    floatingTexts.push(new FloatingText(player.x, player.y - 45, `THUNDER -${this.damage}`, '#67e8f9', 15));
+                }
+            }
+            if (this.timer > this.maxTime) this.markedForDeletion = true;
+        }
+        draw(ctx) {
+            ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+            ctx.globalCompositeOperation = 'screen';
+            ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius), 0, Math.PI * 2);
+            ctx.strokeStyle = this.hit ? 'rgba(103,232,249,.55)' : 'rgba(250,204,21,.85)';
+            ctx.lineWidth = this.hit ? 6 : 3;
+            ctx.shadowBlur = isLightMode ? 12 : 30; ctx.shadowColor = '#67e8f9'; ctx.stroke();
+            if (this.hit) {
+                ctx.beginPath(); ctx.moveTo(-18, -220); ctx.lineTo(8, -30); ctx.lineTo(-14, -30); ctx.lineTo(18, 90);
+                ctx.strokeStyle = '#e0f2fe'; ctx.lineWidth = 7; ctx.stroke();
+            } else {
+                ctx.font = 'bold 18px Orbitron, Noto Sans JP'; ctx.textAlign = 'center'; ctx.fillStyle = '#fef08a'; ctx.fillText('LOCK', 0, -this.radius - 14);
+            }
+            ctx.restore();
+        }
+    }
+
+    class BossGravityField {
+        constructor(x, y, damage = 12) {
+            this.x = x; this.y = y; this.damage = damage;
+            this.radius = 420;
+            this.core = 68;
+            this.timer = 0; this.maxTime = 190;
+            this.damageTick = -999;
+            this.markedForDeletion = false;
+        }
+        update() {
+            this.timer++;
+            if (player && gameState === 'playing') {
+                const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+                if (d < this.radius) {
+                    const a = MathUtils.angle(player.x, player.y, this.x, this.y);
+                    const t = Math.max(0, 1 - d / this.radius);
+                    const pull = Math.min(2.7, 0.45 + t * 3.25);
+                    player.x += Math.cos(a) * pull;
+                    player.y += Math.sin(a) * pull;
+                    if (d < this.core + player.radius && this.timer - this.damageTick > 36) {
+                        this.damageTick = this.timer;
+                        player.takeDamage(this.damage);
+                        floatingTexts.push(new FloatingText(player.x, player.y - 45, `GRAVITY -${this.damage}`, '#a855f7', 15));
+                    }
+                }
+            }
+            if (this.timer % (isLightMode ? 20 : 9) === 0) {
+                const a = Math.random() * Math.PI * 2;
+                const r = MathUtils.random(this.core + 20, this.radius);
+                createParticles(this.x + Math.cos(a) * r, this.y + Math.sin(a) * r * 0.35, 1, '#a855f7', 3);
+            }
+            if (this.timer > this.maxTime) this.markedForDeletion = true;
+        }
+        draw(ctx) {
+            ctx.save(); ctx.translate(safe(this.x), safe(this.y)); ctx.rotate(this.timer * 0.035);
+            ctx.globalCompositeOperation = 'screen';
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, safeR(this.radius * (0.9 - i * 0.12)), safeR(this.radius * (0.20 + i * 0.025)), 0, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(168,85,247,${0.45 - i * 0.07})`;
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = isLightMode ? 10 : 24;
+                ctx.shadowColor = '#a855f7';
+                ctx.stroke();
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.beginPath(); ctx.arc(0, 0, safeR(this.core), 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(15,23,42,.92)'; ctx.fill();
+            ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    class BossMirrorFlash {
+        constructor(x, y) { this.x = x; this.y = y; this.timer = 0; this.maxTime = 70; this.markedForDeletion = false; }
+        update() { this.timer++; if (this.timer > this.maxTime) this.markedForDeletion = true; }
+        draw(ctx) {
+            ctx.save(); ctx.translate(safe(this.x), safe(this.y));
+            ctx.globalCompositeOperation = 'screen';
+            const a = Math.max(0, 1 - this.timer / this.maxTime);
+            for (let i = 0; i < 5; i++) {
+                ctx.save(); ctx.rotate((Math.PI * 2 / 5) * i + this.timer * 0.04);
+                ctx.strokeStyle = `rgba(240,171,252,${a * .65})`; ctx.lineWidth = 3; ctx.shadowBlur = 20; ctx.shadowColor = '#f0abfc';
+                ctx.strokeRect(-35, -35, 70, 70);
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+    }
+
+    function triggerBossTypeGimmick(boss) {
+        if (!boss || !player || boss.markedForDeletion || boss.type !== 3 || gameState !== 'playing' || isTimeStopped) return;
+        normalizeBossType(boss);
+        boss.nsvTypeGimmickTimer = (boss.nsvTypeGimmickTimer || MathUtils.randomInt(0, 90)) + 1;
+        if (boss.nsvTypeGimmickTimer < 250) return;
+        boss.nsvTypeGimmickTimer = 0;
+        const kind = getBossKind(boss);
+        const px = player.x, py = player.y;
+
+        if (kind === 'fire') {
+            for (let i = 0; i < 3; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const d = MathUtils.random(120, 360);
+                effects.push(new BossFirePillar(px + Math.cos(a) * d, py + Math.sin(a) * d, 24));
+            }
+            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 34, 'FIRE PILLARS', '#fb923c', 16));
+        } else if (kind === 'thunder') {
+            for (let i = 0; i < 3; i++) {
+                effects.push(new BossThunderStrike(px + MathUtils.random(-260, 260), py + MathUtils.random(-260, 260), 28));
+            }
+            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 34, 'LIGHTNING STRIKE', '#67e8f9', 16));
+        } else if (kind === 'gravity') {
+            const a = MathUtils.angle(boss.x, boss.y, px, py);
+            effects.push(new BossGravityField(px - Math.cos(a) * 110 + MathUtils.random(-90, 90), py - Math.sin(a) * 110 + MathUtils.random(-90, 90), 12));
+            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 34, 'GRAVITY WELL', '#a855f7', 16));
+        } else if (kind === 'mirror') {
+            effects.push(new BossMirrorFlash(boss.x, boss.y));
+            for (let i = 0; i < 2 && enemies.length < 800; i++) {
+                const clone = new Enemy(boss.x + MathUtils.random(-150, 150), boss.y + MathUtils.random(-150, 150), 1);
+                clone.color = '#f0abfc';
+                clone.hp *= 1.7; clone.maxHp = clone.hp;
+                enemies.push(clone);
+            }
+            floatingTexts.push(new FloatingText(boss.x, boss.y - boss.radius - 34, 'MIRROR TRICK', '#f0abfc', 16));
+        }
+    }
+
+    try {
+        const __eventOriginalEnemyUpdate = Enemy.prototype.update;
+        Enemy.prototype.update = function() {
+            normalizeBossType(this);
+            const ret = __eventOriginalEnemyUpdate.apply(this, arguments);
+            triggerBossTypeGimmick(this);
+            return ret;
+        };
+    } catch(e) { console.warn('Boss gimmick update patch skipped', e); }
+
+    try {
+        const __eventOriginalEnemyDraw = Enemy.prototype.draw;
+        Enemy.prototype.draw = function(ctx) {
+            const ret = __eventOriginalEnemyDraw.apply(this, arguments);
+            try {
+                if (this.type === 3 && !this.markedForDeletion) {
+                    normalizeBossType(this);
+                    const kind = getBossKind(this);
+                    const icon = kind === 'fire' ? '🔥' : kind === 'thunder' ? '⚡' : kind === 'gravity' ? '🟣' : kind === 'mirror' ? '🪞' : '★';
+                    const label = kind === 'fire' ? 'FIRE' : kind === 'thunder' ? 'THUNDER' : kind === 'gravity' ? 'GRAVITY' : kind === 'mirror' ? 'MIRROR' : 'BOSS';
+                    const color = kind === 'fire' ? '#fb923c' : kind === 'thunder' ? '#67e8f9' : kind === 'gravity' ? '#a855f7' : kind === 'mirror' ? '#f0abfc' : '#fff';
+                    ctx.save();
+                    ctx.translate(safe(this.x), safe(this.y));
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.beginPath(); ctx.arc(0, 0, safeR(this.radius * 1.55 + Math.sin(frameCount * 0.08) * 5), 0, Math.PI * 2);
+                    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.shadowBlur = isLightMode ? 10 : 24; ctx.shadowColor = color; ctx.stroke();
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.font = 'bold 28px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(icon, 0, -this.radius - 18);
+                    ctx.font = 'bold 12px Orbitron, Noto Sans JP'; ctx.fillStyle = color; ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fillText(label, 0, this.radius + 24);
+                    ctx.restore();
+                }
+            } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('Boss gimmick draw patch skipped', e); }
+
+    try {
+        const __eventOriginalRecordEnemyDefeat = recordEnemyDefeat;
+        recordEnemyDefeat = function(enemy) {
+            try {
+                ensureEventStatsData();
+                const kind = getBossKind(enemy);
+                if (enemy && enemy.type === 3) {
+                    if (kind === 'fire') addEventStat('totalFireBossKills', 'fireBossKills', 1);
+                    else if (kind === 'thunder') addEventStat('totalThunderBossKills', 'thunderBossKills', 1);
+                    else if (kind === 'gravity') addEventStat('totalGravityBossKills', 'gravityBossKills', 1);
+                    else if (kind === 'mirror') addEventStat('totalMirrorBossKills', 'mirrorBossKills', 1);
+                }
+                if (enemy && enemy.isApeOverlordSecondPhase) addEventStat('totalSecondPhaseKills', 'secondPhaseKills', 1);
+            } catch(e) {}
+            const ret = __eventOriginalRecordEnemyDefeat.apply(this, arguments);
+            try { checkMissionCompletions(false); } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('Boss kill stat patch skipped', e); }
+
+    // ------------------------------------------
+    // 4. 既存ループへ追加処理を接続
+    // ------------------------------------------
+    try {
+        const __eventOriginalStartMissionRun = startMissionRun;
+        startMissionRun = function(mode) {
+            const ret = __eventOriginalStartMissionRun.apply(this, arguments);
+            ensureEventStatsData();
+            if (runStats) {
+                runStats.rareChestsOpened = 0;
+                runStats.fireBossKills = 0;
+                runStats.thunderBossKills = 0;
+                runStats.gravityBossKills = 0;
+                runStats.mirrorBossKills = 0;
+                runStats.secondPhaseKills = 0;
+            }
+            resetRareChestEventTimer();
+            return ret;
+        };
+    } catch(e) { console.warn('Rare chest start patch skipped', e); }
+
+    try {
+        const __eventOriginalFinishMissionRun = finishMissionRun;
+        finishMissionRun = function(earnedCoins = 0) {
+            saveEventRunBests();
+            return __eventOriginalFinishMissionRun.apply(this, arguments);
+        };
+    } catch(e) { console.warn('Rare chest finish patch skipped', e); }
+
+    try {
+        const __eventOriginalUpdateLogic = updateLogic;
+        updateLogic = function() {
+            const ret = __eventOriginalUpdateLogic.apply(this, arguments);
+            try { updateRareChestEvent(); } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('Rare chest update patch skipped', e); }
+
+    try {
+        const __eventOriginalDrawAll = drawAll;
+        drawAll = function() {
+            const ret = __eventOriginalDrawAll.apply(this, arguments);
+            try {
+                if (rareTreasureChests.length) {
+                    ctx.save();
+                    ctx.translate(-camera.x, -camera.y);
+                    for (const chest of rareTreasureChests) if (chest && !chest.markedForDeletion) chest.draw(ctx);
+                    ctx.restore();
+                    drawRareChestCompass();
+                }
+            } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('Rare chest draw patch skipped', e); }
+
+    try {
+        ensureEventStatsData();
+        checkMissionCompletions(false);
+        renderMissionMiniHud();
+    } catch(e) {}
+})();
+
+
+    
+
+// ===== 2026-05-04 Add-on: 呪われた宝箱・マップイベント予告・ボス図鑑・宝箱スキン =====
+// 貼る場所：一番下の </script> の直前
+// 目的：既存のゲーム内容と画面を大きく変えず、上から書き足す形で追加する。
+(function patchCursedChestMapEventBossCodex20260504() {
+    const PATCH_ID = 'nsv-cursed-chest-map-event-boss-codex-2026-05-04';
+    if (window[PATCH_ID]) return;
+    window[PATCH_ID] = true;
+
+    // ==============================
+    // 1. 宝箱専用スキンを追加
+    // ==============================
+    function pushUniqueById(list, item) {
+        if (!Array.isArray(list) || !item || !item.id) return;
+        if (!list.some(x => x && x.id === item.id)) list.push(item);
+    }
+
+    pushUniqueById(SKIN_DEFS, { id:'treasureRookie', name:'宝箱ルーキー', icon:'🎒', color:'#fbbf24', desc:'レア宝箱を開け始めた証。小さな金色の光をまといます。' });
+    pushUniqueById(SKIN_DEFS, { id:'treasureHunter', name:'トレジャーハンター', icon:'🧭', color:'#facc15', desc:'宝箱探索に慣れたプレイヤー用スキン。少し豪華な金色装甲。' });
+    pushUniqueById(SKIN_DEFS, { id:'cursedChestKnight', name:'呪箱の騎士', icon:'💀', color:'#c084fc', desc:'呪われた宝箱を開けた者のスキン。紫の呪印が光る。' });
+    pushUniqueById(SKIN_DEFS, { id:'treasureRoyal', name:'ロイヤルトレジャー', icon:'👑', color:'#fde68a', desc:'大量の宝箱を集めた証。王冠のような金色エフェクトが出る。' });
+    pushUniqueById(SKIN_DEFS, { id:'treasureEmperor', name:'宝箱皇帝', icon:'🏆', color:'#f59e0b', desc:'宝箱ミッションの最上位スキン。かなり豪華な見た目。' });
+
+    SKIN_BONUS_DEFS.treasureRookie = { label:'コイン獲得 +6%', coinMult:1.06 };
+    SKIN_BONUS_DEFS.treasureHunter = { label:'コイン獲得 +10% / ジェム磁力 +40', coinMult:1.10, magnetAdd:40 };
+    SKIN_BONUS_DEFS.cursedChestKnight = { label:'攻撃力 +6% / コイン +8%', damageMult:1.06, coinMult:1.08 };
+    SKIN_BONUS_DEFS.treasureRoyal = { label:'コイン +14% / 経験値 +5%', coinMult:1.14, expMult:1.05 };
+    SKIN_BONUS_DEFS.treasureEmperor = { label:'コイン +18% / 攻撃力 +5% / HP +5%', coinMult:1.18, damageMult:1.05, hpMult:1.05 };
+
+    // ==============================
+    // 2. 追加データ
+    // ==============================
+    let cursedTreasureChests = [];
+    let nextCursedChestFrame = 60 * 95;
+    let nextMapEventFrame = 60 * 120;
+    let activeMapEvent = null;
+    let baseEnsureProgressionDataForExtra = null;
+    let isEnsuringExtraStats = false;
+
+    function ensureExtraEventStats(callBase = true) {
+        if (isEnsuringExtraStats) return;
+        isEnsuringExtraStats = true;
+        try {
+            if (callBase && baseEnsureProgressionDataForExtra) baseEnsureProgressionDataForExtra();
+            if (!userData || typeof userData !== 'object') return;
+            userData.stats = userData.stats || {};
+        const defaults = {
+            totalCursedChestsSpawned: 0,
+            totalCursedChestsOpened: 0,
+            totalCursedChestsMissed: 0,
+            bestRunCursedChestsOpened: 0,
+            totalMapEventsStarted: 0,
+            totalMapEventsCleared: 0,
+            totalGravityAnomalySeconds: 0
+        };
+        for (const [k, v] of Object.entries(defaults)) {
+            if (!Number.isFinite(Number(userData.stats[k]))) userData.stats[k] = v;
+        }
+        if (runStats) {
+                const runDefaults = { cursedChestsOpened: 0, mapEventsCleared: 0, gravityAnomalySeconds: 0 };
+                for (const [k, v] of Object.entries(runDefaults)) {
+                    if (!Number.isFinite(Number(runStats[k]))) runStats[k] = v;
+                }
+            }
+        } finally {
+            isEnsuringExtraStats = false;
+        }
+    }
+
+    try {
+        const __oldEnsureProgressionData = ensureProgressionData;
+        baseEnsureProgressionDataForExtra = __oldEnsureProgressionData;
+        ensureProgressionData = function() {
+            const ret = __oldEnsureProgressionData.apply(this, arguments);
+            ensureExtraEventStats(false);
+            return ret;
+        };
+    } catch(e) { console.warn('extra event stats patch skipped', e); }
+
+    function addExtraStat(totalKey, runKey, amount = 1) {
+        ensureExtraEventStats();
+        const v = Math.max(0, Number(amount || 0));
+        if (totalKey) userData.stats[totalKey] = Number(userData.stats[totalKey] || 0) + v;
+        if (runStats && runKey) runStats[runKey] = Number(runStats[runKey] || 0) + v;
+    }
+
+    function saveExtraRunBests() {
+        ensureExtraEventStats();
+        if (!runStats || !userData || !userData.stats) return;
+        userData.stats.bestRunCursedChestsOpened = Math.max(Number(userData.stats.bestRunCursedChestsOpened || 0), Number(runStats.cursedChestsOpened || 0));
+    }
+
+    // ==============================
+    // 3. 宝箱ミッションを追加
+    // ==============================
+    try {
+        if (!MISSION_TAB_DEFS.some(t => t.id === 'CHEST')) {
+            MISSION_TAB_DEFS.splice(Math.max(0, MISSION_TAB_DEFS.length - 1), 0, { id:'CHEST', label:'宝箱', cats:['CHEST'] });
+        }
+        const exists = new Set(MISSION_DEFS.map(m => m.id));
+        const chestMissions = [
+            { id:'chest_skin_01', cat:'CHEST', title:'宝箱スキン1：初めての探索者', desc:'レア宝箱を合計3個開ける', metric:'totalRareChestsOpened', target:3, reward:{coins:28000, skin:'treasureRookie'} },
+            { id:'chest_skin_02', cat:'CHEST', title:'宝箱スキン2：トレジャーハンター', desc:'レア宝箱を合計12個開ける', metric:'totalRareChestsOpened', target:12, reward:{coins:70000, skin:'treasureHunter'} },
+            { id:'chest_skin_03', cat:'CHEST', title:'宝箱スキン3：呪箱の騎士', desc:'呪われた宝箱を合計5個開ける', metric:'totalCursedChestsOpened', target:5, reward:{coins:90000, skin:'cursedChestKnight'} },
+            { id:'chest_skin_04', cat:'CHEST', title:'宝箱スキン4：ロイヤルトレジャー', desc:'レア宝箱を合計30個開ける', metric:'totalRareChestsOpened', target:30, reward:{coins:160000, skin:'treasureRoyal'} },
+            { id:'chest_skin_05', cat:'CHEST', title:'宝箱スキン5：宝箱皇帝', desc:'レア宝箱と呪われた宝箱を合計50個開ける', metric:'totalTreasureChestsOpened', target:50, reward:{coins:260000, skin:'treasureEmperor'} },
+            { id:'chest_hard_01', cat:'CHEST', title:'危険な判断', desc:'1回のプレイで呪われた宝箱を2個開ける', metric:'bestRunCursedChestsOpened', target:2, reward:{coins:120000} },
+            { id:'map_event_01', cat:'CHEST', title:'重力異常を越えて', desc:'マップイベントを合計3回しのぐ', metric:'totalMapEventsCleared', target:3, reward:{coins:90000, aura:'blackholeAura'} }
+        ];
+        for (const m of chestMissions) if (!exists.has(m.id)) MISSION_DEFS.push(m);
+    } catch(e) { console.warn('chest missions add skipped', e); }
+
+    try {
+        const __oldGetMissionProgress = getMissionProgress;
+        getMissionProgress = function(m) {
+            ensureExtraEventStats();
+            const s = userData.stats || {};
+            switch (m && m.metric) {
+                case 'totalCursedChestsSpawned': return Math.floor(s.totalCursedChestsSpawned || 0);
+                case 'totalCursedChestsOpened': return Math.floor(s.totalCursedChestsOpened || 0);
+                case 'bestRunCursedChestsOpened': return Math.max(Number(s.bestRunCursedChestsOpened || 0), runStats ? Number(runStats.cursedChestsOpened || 0) : 0);
+                case 'totalTreasureChestsOpened': return Math.floor(Number(s.totalRareChestsOpened || 0) + Number(s.totalCursedChestsOpened || 0));
+                case 'totalMapEventsCleared': return Math.floor(s.totalMapEventsCleared || 0);
+                case 'totalGravityAnomalySeconds': return Math.floor(s.totalGravityAnomalySeconds || 0);
+                default: return __oldGetMissionProgress.apply(this, arguments);
+            }
+        };
+    } catch(e) { console.warn('chest progress patch skipped', e); }
+
+    function isMissionVisibleByChain(m) {
+        if (!m || !m.chainPrev) return true;
+        return !!(userData && userData.missions && userData.missions.completed && userData.missions.completed[m.chainPrev]);
+    }
+
+    function renderExtraMissionTab(tabId) {
+        const container = document.getElementById('missionsListContainer');
+        if (!container) return false;
+        let list = [];
+        let title = '';
+        let sub = '';
+        if (tabId === 'CHEST') {
+            title = 'TREASURE MISSIONS';
+            sub = 'レア宝箱・呪われた宝箱・マップイベント系のミッションです。';
+            list = MISSION_DEFS.filter(m => m.cat === 'CHEST');
+        } else if (tabId === 'CHAIN') {
+            title = 'CHAIN MISSIONS';
+            sub = '前のミッションをクリアすると次が出る高難度ミッションです。';
+            list = MISSION_DEFS.filter(m => m.cat === 'CHAIN' && isMissionVisibleByChain(m));
+        } else {
+            return false;
+        }
+        container.innerHTML = '';
+        const header = document.createElement('div');
+        header.className = 'section-header';
+        header.innerHTML = `<div class="text-xl font-bold text-cyan-300" style="font-family:'Orbitron',sans-serif;">${title}</div><div class="text-xs text-gray-300 mt-1">${sub}</div>`;
+        container.appendChild(header);
+        if (!list.length) {
+            const empty = document.createElement('div');
+            empty.className = 'mission-card';
+            empty.innerHTML = '<div class="text-gray-300">まだ表示できるミッションがありません。</div>';
+            container.appendChild(empty);
+            return true;
+        }
+        for (const m of list) {
+            const progress = getMissionProgress(m);
+            const complete = !!userData.missions.completed[m.id] || progress >= m.target;
+            const claimed = !!userData.missions.claimed[m.id];
+            const pct = Math.min(100, Math.floor((progress / m.target) * 100));
+            const card = document.createElement('div');
+            card.className = `mission-card ${complete ? 'done' : ''} ${claimed ? 'claimed' : ''}`;
+            card.innerHTML = `
+                <div class="flex justify-between items-start gap-2">
+                    <div>
+                        <div class="text-xs text-yellow-300 font-bold">${m.cat}</div>
+                        <h3 class="text-lg font-bold text-white">${complete ? '✅ ' : ''}${m.title}</h3>
+                        <p class="text-sm text-gray-300 mt-1">${m.desc}</p>
+                    </div>
+                    <div class="text-right text-xs text-yellow-300 font-bold min-w-[80px]">${Math.floor(progress)}/${m.target}</div>
+                </div>
+                <div class="mini-progress mt-3"><div style="width:${pct}%"></div></div>
+                <div class="flex justify-between items-center gap-2 mt-3">
+                    <p class="text-xs text-yellow-200">報酬: ${rewardText(m.reward)}</p>
+                    <button class="claim-one px-3 py-1 rounded font-bold text-sm ${complete && !claimed ? 'btn-gold' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}" ${complete && !claimed ? '' : 'disabled'}>${claimed ? 'CLAIMED' : 'CLAIM'}</button>
+                </div>`;
+            const btn = card.querySelector('.claim-one');
+            if (btn) btn.addEventListener('click', () => claimMission(m.id));
+            container.appendChild(card);
+        }
+        return true;
+    }
+
+    try {
+        const __oldRenderMissionScreen = renderMissionScreen;
+        renderMissionScreen = function() {
+            const ret = __oldRenderMissionScreen.apply(this, arguments);
+            try { renderExtraMissionTab(currentMissionFilter); } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('extra mission tab render patch skipped', e); }
+
+    // ==============================
+    // 4. 呪われた宝箱イベント
+    // ==============================
+    class CursedTreasureChest {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 48;
+            this.timer = 0;
+            this.maxLife = 60 * 38;
+            this.markedForDeletion = false;
+            this.opened = false;
+            this.spin = Math.random() * Math.PI * 2;
+        }
+        update() {
+            if (this.markedForDeletion) return;
+            if (isOnlineMode) { this.markedForDeletion = true; return; }
+            if (gameState !== 'playing' || !player) return;
+            this.timer++;
+            this.spin += 0.04;
+            const d = MathUtils.distance(this.x, this.y, player.x, player.y);
+            if (d < this.radius + player.radius + 10) {
+                this.collect();
+                return;
+            }
+            if (this.timer % (isLightMode ? 24 : 10) === 0) {
+                const a = Math.random() * Math.PI * 2;
+                createParticles(this.x + Math.cos(a) * 55, this.y + Math.sin(a) * 55, 1, '#c084fc', 3);
+            }
+            if (this.timer >= this.maxLife) {
+                this.markedForDeletion = true;
+                addExtraStat('totalCursedChestsMissed', null, 1);
+                floatingTexts.push(new FloatingText(this.x, this.y - 45, 'CURSED CHEST LOST', '#a78bfa', 16));
+            }
+        }
+        collect() {
+            if (this.opened || this.markedForDeletion || !player) return;
+            this.opened = true;
+            this.markedForDeletion = true;
+            addExtraStat('totalCursedChestsOpened', 'cursedChestsOpened', 1);
+            const level = Math.max(1, Number(player.level || 1));
+            const coin = Math.floor((4200 + level * 520 + Math.min(30000, Number(gameTime || 0) * 35)) * getCoinBonusMultiplier());
+            userData.coins += coin;
+            userData.stats.totalCoinsEarned += coin;
+            score += 2800 + level * 650;
+            if (player.hp < player.maxHp * 0.55) player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.22);
+            updateUI();
+            document.getElementById('scoreDisplay').innerText = Math.floor(score);
+
+            const swarm = Math.min(46, 18 + Math.floor(level * 1.4));
+            for (let i = 0; i < swarm && enemies.length < 900; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const d = MathUtils.random(180, 520);
+                const typePool = [0,1,2,4,5,6,9,10];
+                const e = new Enemy(this.x + Math.cos(a) * d, this.y + Math.sin(a) * d, typePool[MathUtils.randomInt(0, typePool.length - 1)]);
+                e.hp *= 1.15;
+                e.maxHp = e.hp;
+                e.speed *= 1.08;
+                e.color = '#c084fc';
+                enemies.push(e);
+            }
+            for (let i = 0; i < (isLightMode ? 6 : 14) && gems.length < 300; i++) {
+                gems.push(new Gem(this.x + MathUtils.random(-75, 75), this.y + MathUtils.random(-75, 75), 12 + level));
+            }
+            redFlash = Math.max(redFlash || 0, 10);
+            createParticles(this.x, this.y, isLightMode ? 34 : 92, '#c084fc', 8);
+            effects.push(new Shockwave(this.x, this.y, '#c084fc', 16, 700));
+            floatingTexts.push(new FloatingText(this.x, this.y - 75, `CURSED REWARD +${coin} COINS`, '#fef08a', 22));
+            showMissionToast('CURSED CHEST OPENED!', `強い報酬 +${coin} COINS。ただし敵が大量出現！`);
+            saveData();
+            checkMissionCompletions(false);
+        }
+        draw(ctx) {
+            const remain = Math.max(0, 1 - this.timer / this.maxLife);
+            ctx.save();
+            ctx.translate(safe(this.x), safe(this.y));
+            ctx.rotate(Math.sin(this.spin) * 0.12);
+            ctx.globalCompositeOperation = 'screen';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.radius + 20 + Math.sin(this.timer * 0.1) * 7, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(192,132,252,${0.35 + remain * 0.5})`;
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = isLightMode ? 14 : 36;
+            ctx.shadowColor = '#c084fc';
+            ctx.stroke();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.font = 'bold 48px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#c084fc';
+            ctx.fillText('💀', 0, -2);
+            ctx.font = 'bold 13px Orbitron, Noto Sans JP';
+            ctx.fillStyle = '#f5d0fe';
+            ctx.fillText(`CURSED ${Math.ceil((this.maxLife - this.timer) / 60)}s`, 0, -62);
+            ctx.restore();
+        }
+    }
+
+    function resetCursedChestTimer() {
+        cursedTreasureChests = [];
+        nextCursedChestFrame = Number(frameCount || 0) + MathUtils.randomInt(60 * 75, 60 * 125);
+    }
+
+    function spawnCursedChest() {
+        if (!player || gameState !== 'playing' || isOnlineMode) return;
+        if (cursedTreasureChests.some(c => c && !c.markedForDeletion)) return;
+        let x = player.x, y = player.y;
+        for (let i = 0; i < 10; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const d = MathUtils.random(1100, 2600);
+            x = player.x + Math.cos(a) * d;
+            y = player.y + Math.sin(a) * d;
+            if (Math.abs(x) < mapSize * 0.48 && Math.abs(y) < mapSize * 0.48) break;
+        }
+        cursedTreasureChests.push(new CursedTreasureChest(x, y));
+        addExtraStat('totalCursedChestsSpawned', null, 1);
+        showMissionToast('CURSED CHEST APPEARED!', '強い報酬あり。ただし開けると敵が大量出現します。');
+    }
+
+    function updateCursedChests() {
+        if (isOnlineMode || gameState !== 'playing' || !player) return;
+        if (Number(frameCount || 0) >= nextCursedChestFrame) {
+            if (Math.random() < 0.58 || Number(gameTime || 0) > 180) spawnCursedChest();
+            nextCursedChestFrame = Number(frameCount || 0) + MathUtils.randomInt(60 * 120, 60 * 190);
+        }
+        for (let i = cursedTreasureChests.length - 1; i >= 0; i--) {
+            try { cursedTreasureChests[i].update(); } catch(e) { cursedTreasureChests[i].markedForDeletion = true; }
+            if (cursedTreasureChests[i].markedForDeletion) cursedTreasureChests.splice(i, 1);
+        }
+    }
+
+    function drawCursedChestCompass() {
+        if (!player || !cursedTreasureChests.length || isOnlineMode) return;
+        const chest = cursedTreasureChests.find(c => c && !c.markedForDeletion);
+        if (!chest) return;
+        const sx = chest.x - camera.x;
+        const sy = chest.y - camera.y;
+        if (sx > 30 && sx < width - 30 && sy > 30 && sy < height - 30) return;
+        const cx = width / 2, cy = height / 2;
+        const a = Math.atan2(sy - cy, sx - cx);
+        const edgeX = Math.max(42, Math.min(width - 42, cx + Math.cos(a) * (width * 0.39)));
+        const edgeY = Math.max(42, Math.min(height - 42, cy + Math.sin(a) * (height * 0.39)));
+        const dist = Math.floor(MathUtils.distance(player.x, player.y, chest.x, chest.y));
+        ctx.save();
+        ctx.translate(edgeX, edgeY);
+        ctx.rotate(a);
+        ctx.beginPath();
+        ctx.moveTo(24, 0); ctx.lineTo(-16, -14); ctx.lineTo(-10, 0); ctx.lineTo(-16, 14); ctx.closePath();
+        ctx.fillStyle = 'rgba(192,132,252,.95)';
+        ctx.shadowBlur = 18; ctx.shadowColor = '#c084fc';
+        ctx.fill();
+        ctx.rotate(-a);
+        ctx.font = 'bold 12px Orbitron, Noto Sans JP';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#f5d0fe';
+        ctx.fillText(`💀 ${dist}m`, 0, 30);
+        ctx.restore();
+    }
+
+    // ==============================
+    // 5. マップイベント予告
+    // ==============================
+    function ensureMapEventHud() {
+        let hud = document.getElementById('mapEventForecastHud');
+        if (hud) return hud;
+        hud = document.createElement('div');
+        hud.id = 'mapEventForecastHud';
+        hud.className = 'hidden fixed left-1/2 top-[86px] -translate-x-1/2 z-[65] pointer-events-none';
+        hud.innerHTML = '<div class="bg-black/75 border-2 border-purple-400 rounded-2xl px-5 py-3 text-center shadow-[0_0_24px_rgba(168,85,247,.5)]"><div id="mapEventForecastTitle" class="text-purple-200 font-bold text-lg">MAP EVENT</div><div id="mapEventForecastText" class="text-white text-sm mt-1"></div></div>';
+        document.body.appendChild(hud);
+        return hud;
+    }
+
+    function resetMapEventTimer() {
+        activeMapEvent = null;
+        const now = Number(frameCount || 0);
+        nextMapEventFrame = now + MathUtils.randomInt(60 * 110, 60 * 170);
+        const hud = document.getElementById('mapEventForecastHud');
+        if (hud) hud.classList.add('hidden');
+    }
+
+    function startMapEventWarning() {
+        if (!player || isOnlineMode || gameState !== 'playing') return;
+        const now = Number(frameCount || 0);
+        const a = Math.random() * Math.PI * 2;
+        const d = MathUtils.random(450, 900);
+        activeMapEvent = {
+            kind: 'gravity',
+            name: '重力異常',
+            state: 'warning',
+            startFrame: now + 60 * 30,
+            endFrame: now + 60 * 52,
+            coreX: player.x + Math.cos(a) * d,
+            coreY: player.y + Math.sin(a) * d,
+            radius: 820
+        };
+        addExtraStat('totalMapEventsStarted', null, 1);
+        showMissionToast('MAP EVENT WARNING', '30秒後に重力異常が発生します。');
+    }
+
+    function updateMapEventHud() {
+        const hud = ensureMapEventHud();
+        const title = document.getElementById('mapEventForecastTitle');
+        const text = document.getElementById('mapEventForecastText');
+        if (!activeMapEvent || gameState !== 'playing' || isOnlineMode) {
+            hud.classList.add('hidden');
+            return;
+        }
+        hud.classList.remove('hidden');
+        const now = Number(frameCount || 0);
+        if (activeMapEvent.state === 'warning') {
+            const sec = Math.max(0, Math.ceil((activeMapEvent.startFrame - now) / 60));
+            title.textContent = 'MAP EVENT WARNING';
+            text.textContent = `${sec}秒後に${activeMapEvent.name}。中心に近づきすぎると吸い寄せられます。`;
+        } else {
+            const sec = Math.max(0, Math.ceil((activeMapEvent.endFrame - now) / 60));
+            title.textContent = `${activeMapEvent.name} 発生中`;
+            text.textContent = `残り${sec}秒。紫の円から離れると安全です。`;
+        }
+    }
+
+    function updateMapEvent() {
+        if (isOnlineMode || gameState !== 'playing' || !player) return;
+        const now = Number(frameCount || 0);
+        if (!activeMapEvent && now >= nextMapEventFrame) startMapEventWarning();
+        if (!activeMapEvent) { updateMapEventHud(); return; }
+        if (activeMapEvent.state === 'warning' && now >= activeMapEvent.startFrame) {
+            activeMapEvent.state = 'active';
+            purpleFlash = Math.max(purpleFlash || 0, 12);
+            effects.push(new Shockwave(activeMapEvent.coreX, activeMapEvent.coreY, '#a855f7', 14, activeMapEvent.radius * 1.5));
+            showMissionToast('GRAVITY ANOMALY!', '重力異常発生。紫の中心から離れてください。');
+        }
+        if (activeMapEvent.state === 'active') {
+            const d = MathUtils.distance(player.x, player.y, activeMapEvent.coreX, activeMapEvent.coreY);
+            if (d < activeMapEvent.radius) {
+                const a = MathUtils.angle(player.x, player.y, activeMapEvent.coreX, activeMapEvent.coreY);
+                const t = Math.max(0, 1 - d / activeMapEvent.radius);
+                const pull = Math.min(2.1, 0.18 + t * 2.35);
+                player.x += Math.cos(a) * pull;
+                player.y += Math.sin(a) * pull;
+                if (now % 60 === 0) addExtraStat('totalGravityAnomalySeconds', 'gravityAnomalySeconds', 1);
+            }
+            if (Array.isArray(enemies)) {
+                for (const e of enemies) {
+                    if (!e || e.markedForDeletion || e.isCharmed) continue;
+                    const ed = MathUtils.distance(e.x, e.y, activeMapEvent.coreX, activeMapEvent.coreY);
+                    if (ed < activeMapEvent.radius * 0.8) {
+                        const ea = MathUtils.angle(e.x, e.y, activeMapEvent.coreX, activeMapEvent.coreY);
+                        const ep = Math.min(1.45, 0.08 + (1 - ed / (activeMapEvent.radius * 0.8)) * 1.2);
+                        e.x += Math.cos(ea) * ep;
+                        e.y += Math.sin(ea) * ep;
+                    }
+                }
+            }
+            if (now % (isLightMode ? 24 : 10) === 0) {
+                const pa = Math.random() * Math.PI * 2;
+                const pr = MathUtils.random(120, activeMapEvent.radius);
+                createParticles(activeMapEvent.coreX + Math.cos(pa) * pr, activeMapEvent.coreY + Math.sin(pa) * pr * 0.45, 1, '#a855f7', 4);
+            }
+            if (now >= activeMapEvent.endFrame) {
+                addExtraStat('totalMapEventsCleared', 'mapEventsCleared', 1);
+                showMissionToast('MAP EVENT CLEARED!', '重力異常をしのぎました。');
+                activeMapEvent = null;
+                nextMapEventFrame = now + MathUtils.randomInt(60 * 150, 60 * 240);
+                checkMissionCompletions(false);
+            }
+        }
+        updateMapEventHud();
+    }
+
+    function drawMapEvent() {
+        if (!activeMapEvent || activeMapEvent.state !== 'active' || isOnlineMode) return;
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+        ctx.translate(safe(activeMapEvent.coreX), safe(activeMapEvent.coreY));
+        ctx.rotate((frameCount || 0) * 0.015);
+        ctx.globalCompositeOperation = 'screen';
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            ctx.ellipse(0, 0, safeR(activeMapEvent.radius * (0.95 - i * 0.12)), safeR(activeMapEvent.radius * (0.23 + i * 0.02)), 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(168,85,247,${0.42 - i * 0.07})`;
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = isLightMode ? 12 : 30;
+            ctx.shadowColor = '#a855f7';
+            ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, 70 + Math.sin((frameCount || 0) * 0.08) * 9, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(15,23,42,.86)';
+        ctx.fill();
+        ctx.strokeStyle = '#c084fc';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // ==============================
+    // 6. ボス図鑑
+    // ==============================
+    const BOSS_CODEX_DEFS = [
+        { id:'fire', icon:'🔥', name:'FIRE BOSS', stat:'totalFireBossKills', attack:'火柱を複数出して、近づくとダメージ。', weak:'オレンジの円が見えたら横に逃げる。遠距離武器が有効。' },
+        { id:'thunder', icon:'⚡', name:'THUNDER BOSS', stat:'totalThunderBossKills', attack:'警告円のあとに落雷。止まっていると当たりやすい。', weak:'常に小さく動く。落雷の予告円からすぐ離れる。' },
+        { id:'gravity', icon:'🟣', name:'GRAVITY BOSS', stat:'totalGravityBossKills', attack:'紫の重力場で吸い寄せる。中心は危険。', weak:'中心に向かって逆らうより、斜めに逃げると抜けやすい。' },
+        { id:'mirror', icon:'🪞', name:'MIRROR BOSS', stat:'totalMirrorBossKills', attack:'分身やミラー演出で敵の数を増やす。', weak:'分身を増やされる前に範囲攻撃でまとめて削る。' },
+        { id:'monkey', icon:'🐵', name:'MONKEY KING', stat:'totalMonkeyKills', attack:'大きな棍棒攻撃。近距離で当たるとかなり危険。', weak:'ボスの正面に立ち続けない。円を描くように逃げる。' },
+        { id:'second', icon:'⚫', name:'DEMON APE OVERLORD 第二形態', stat:'totalSecondPhaseKills', attack:'第二形態だけブラックホール攻撃を使う。吸引と爆発に注意。', weak:'ブラックホールが出たら中心から離れ、攻撃より回避を優先する。' }
+    ];
+
+    function ensureBossCodexScreen() {
+        if (!document.getElementById('bossCodexScreen')) {
+            const div = document.createElement('div');
+            div.id = 'bossCodexScreen';
+            div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3';
+            div.innerHTML = `
+                <div class="menu-panel w-full flex flex-col gap-4">
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                        <div>
+                            <h2 class="text-4xl md:text-5xl font-bold text-red-300" style="font-family:'Orbitron',sans-serif; text-shadow:0 0 15px #ef4444;">BOSS CODEX</h2>
+                            <p class="text-gray-300 text-sm mt-2">倒したボスのタイプ・攻撃・弱点を確認できます。</p>
+                        </div>
+                        <button id="closeBossCodexBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+                    </div>
+                    <div id="bossCodexSummary" class="text-sm text-yellow-200 font-bold"></div>
+                    <div id="bossCodexListContainer" class="overflow-y-auto max-h-[72vh] pr-1 grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>`;
+            document.body.appendChild(div);
+            document.getElementById('closeBossCodexBtn')?.addEventListener('click', () => showScreen('startScreen'));
+        }
+        if (!document.getElementById('openBossCodexBtn')) {
+            const weaponBtn = document.getElementById('openWeaponCodexBtn');
+            const btn = document.createElement('button');
+            btn.id = 'openBossCodexBtn';
+            btn.className = 'btn-red menu-secondary px-6 py-3 font-bold rounded cursor-pointer';
+            btn.innerHTML = 'BOSS CODEX<br><span class="text-xs text-red-100 font-bold">ボス図鑑を見る</span>';
+            if (weaponBtn && weaponBtn.parentNode) weaponBtn.parentNode.insertBefore(btn, weaponBtn.nextSibling);
+            else document.querySelector('.menu-grid')?.appendChild(btn);
+            btn.addEventListener('click', () => { renderBossCodexScreen(); showScreen('bossCodexScreen'); });
+        }
+    }
+
+    function renderBossCodexScreen() {
+        ensureExtraEventStats();
+        const summary = document.getElementById('bossCodexSummary');
+        const container = document.getElementById('bossCodexListContainer');
+        if (!container) return;
+        const stats = userData.stats || {};
+        const unlockedCount = BOSS_CODEX_DEFS.filter(b => Number(stats[b.stat] || 0) > 0).length;
+        if (summary) summary.textContent = `確認済み：${unlockedCount} / ${BOSS_CODEX_DEFS.length}`;
+        container.innerHTML = BOSS_CODEX_DEFS.map(b => {
+            const kills = Number(stats[b.stat] || 0);
+            const unlocked = kills > 0;
+            return `<div class="collection-card ${unlocked ? 'unlocked' : ''}">
+                <div class="flex items-start gap-3">
+                    <div class="text-4xl">${b.icon}</div>
+                    <div>
+                        <h3 class="text-xl font-bold ${unlocked ? 'text-white' : 'text-gray-400'}">${unlocked ? '' : '??? / '}${b.name}</h3>
+                        <p class="text-xs ${unlocked ? 'text-green-300' : 'text-gray-500'} mt-1">討伐数: ${kills}</p>
+                    </div>
+                </div>
+                <div class="mt-3 text-sm text-gray-300 space-y-2">
+                    <p><span class="text-red-300 font-bold">攻撃:</span> ${unlocked ? b.attack : '一度倒すと確認できます。'}</p>
+                    <p><span class="text-cyan-300 font-bold">弱点:</span> ${unlocked ? b.weak : '一度倒すと確認できます。'}</p>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ==============================
+    // 7. 既存ループへ接続
+    // ==============================
+    try {
+        const __oldStartMissionRun = startMissionRun;
+        startMissionRun = function(mode) {
+            const ret = __oldStartMissionRun.apply(this, arguments);
+            ensureExtraEventStats();
+            if (runStats) {
+                runStats.cursedChestsOpened = 0;
+                runStats.mapEventsCleared = 0;
+                runStats.gravityAnomalySeconds = 0;
+            }
+            resetCursedChestTimer();
+            resetMapEventTimer();
+            return ret;
+        };
+    } catch(e) { console.warn('extra event start patch skipped', e); }
+
+    try {
+        const __oldFinishMissionRun = finishMissionRun;
+        finishMissionRun = function(earnedCoins = 0) {
+            saveExtraRunBests();
+            return __oldFinishMissionRun.apply(this, arguments);
+        };
+    } catch(e) { console.warn('extra event finish patch skipped', e); }
+
+    try {
+        const __oldUpdateLogic = updateLogic;
+        updateLogic = function() {
+            const ret = __oldUpdateLogic.apply(this, arguments);
+            try { updateCursedChests(); } catch(e) {}
+            try { updateMapEvent(); } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('extra event update patch skipped', e); }
+
+    try {
+        const __oldDrawAll = drawAll;
+        drawAll = function() {
+            const ret = __oldDrawAll.apply(this, arguments);
+            try { drawMapEvent(); } catch(e) {}
+            try {
+                if (cursedTreasureChests.length) {
+                    ctx.save();
+                    ctx.translate(-camera.x, -camera.y);
+                    for (const chest of cursedTreasureChests) if (chest && !chest.markedForDeletion) chest.draw(ctx);
+                    ctx.restore();
+                    drawCursedChestCompass();
+                }
+            } catch(e) {}
+            return ret;
+        };
+    } catch(e) { console.warn('extra event draw patch skipped', e); }
+
+    try {
+        ensureBossCodexScreen();
+        ensureExtraEventStats();
+        checkMissionCompletions(false);
+    } catch(e) {}
+})();
+
+</script>
 </body>
 </html>
