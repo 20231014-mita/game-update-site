@@ -170,9 +170,9 @@
     <div id="seasonLaunchIntro" aria-live="polite">
         <div class="season-intro-box">
             <div class="season-intro-kicker">NEW SEASON START</div>
-            <div class="season-intro-title">SEASON 1</div>
+            <div class="season-intro-title">SEASON ONE</div>
             <div class="season-intro-name">NEON GENESIS</div>
-            <div class="season-intro-msg">新しいシーズンが始まりました！</div>
+            <div class="season-intro-msg">Season 1 / NEON GENESIS がスタートしました！</div>
             <div class="season-intro-tap">TAP / CLICK TO START</div>
         </div>
     </div>
@@ -2143,7 +2143,7 @@
                 const payload = makeCompactSavePayload();
                 const code = await encodeShortSaveCode(payload);
                 navigator.clipboard?.writeText(code).catch(() => {});
-                alert('短縮セーブコードをコピーしました。\nハイスコア・進行状況・バトルパスも保存されています。\n\n' + code);
+                alert('短縮セーブコードをコピーしました。\n現在のハイスコアと新しい進行状況を保存しました。\n\n' + code);
             } catch (e) {
                 alert('セーブコードの発行に失敗しました。');
             }
@@ -2782,7 +2782,7 @@
         // 2. システム関数 (UI・セーブ・描画など)
         // ==========================================
         function showScreen(screenId) {
-            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'bossCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen'];
+            const screens = ['startScreen', 'upgradeScreen', 'missionsScreen', 'collectionScreen', 'weaponCodexScreen', 'bossCodexScreen', 'onlineRoleScreen', 'levelUpScreen', 'gameOverScreen', 'pauseScreen', 'shopScreen', 'battlePassScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -8200,7 +8200,7 @@
         // 1) BLACKHOLEカテゴリの高難度ミッションを20個追加
         // 2) 通常ボスのブラックホール攻撃を消し、最恐大猿王 第二形態だけがブラックホールを使うようにする
         // 3) 元のゲーム内容・画面構成は変えず、上から書き足す形で上書きする
-        // 貼る場所：一番下の </script> の直前
+        // 貼る場所：一番下の script終了タグの直前
         (function neonSurvivorBlackHoleMissionPatch(){
             const BH_STAT_DEFAULTS = {
                 totalBlackholeNearTime: 0,
@@ -8596,7 +8596,7 @@
         
 
 // ===== 2026-05-04 Add-on: レア宝箱・連鎖ミッション・ボス専用ギミック =====
-// 貼る場所：一番下の </script> の直前
+// 貼る場所：一番下の script終了タグの直前
 // 目的：既存のゲーム内容・画面を大きく変えず、上から書き足す形で追加する。
 (function patchRareChestChainBossGimmicks20260504() {
     const PATCH_ID = 'rare-chest-chain-boss-gimmick-2026-05-04';
@@ -9275,7 +9275,7 @@
     
 
 // ===== 2026-05-04 Add-on: 呪われた宝箱・マップイベント予告・ボス図鑑・宝箱スキン =====
-// 貼る場所：一番下の </script> の直前
+// 貼る場所：一番下の script終了タグの直前
 // 目的：既存のゲーム内容と画面を大きく変えず、上から書き足す形で追加する。
 (function patchCursedChestMapEventBossCodex20260504() {
     const PATCH_ID = 'nsv-cursed-chest-map-event-boss-codex-2026-05-04';
@@ -11030,6 +11030,53 @@
         if (shop) { shop.innerHTML='SHOP<br><span class="text-xs text-yellow-100 font-bold">チケット交換</span>'; shop.addEventListener('click', () => { renderShopV2(); showScreen('shopScreen'); }); }
     }
 
+
+    function ensureStartShopPassHeroButtonsFinal20260504() {
+        try {
+            injectNeonSeason1Banner();
+            if (!document.getElementById('nsvShopPassHeroStyle')) {
+                const st = document.createElement('style');
+                st.id = 'nsvShopPassHeroStyle';
+                st.textContent = `
+                    #nsvShopPassHero{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:-2px;margin-bottom:2px}
+                    .nsv-hero-menu-btn{position:relative;overflow:hidden;min-height:82px;border-radius:18px;font-weight:1000;letter-spacing:.06em;text-align:left;padding:14px 16px;isolation:isolate}
+                    .nsv-hero-menu-btn:before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 90deg,transparent,rgba(255,255,255,.28),transparent);animation:nsvHeroSpin 5.8s linear infinite;z-index:-2}
+                    .nsv-hero-menu-btn:after{content:"";position:absolute;inset:2px;border-radius:16px;background:linear-gradient(180deg,rgba(2,6,23,.92),rgba(0,0,0,.84));z-index:-1}
+                    .nsv-hero-menu-title{display:block;font-family:Orbitron,sans-serif;font-size:clamp(1.2rem,3vw,2rem);line-height:1;text-shadow:0 0 14px currentColor}
+                    .nsv-hero-menu-sub{display:block;margin-top:7px;font-size:.78rem;letter-spacing:0;color:#e0f2fe;font-weight:900}
+                    .nsv-hero-pass{color:#67e8f9;border:2px solid #22d3ee;box-shadow:0 0 18px rgba(34,211,238,.45), inset 0 0 12px rgba(34,211,238,.18)}
+                    .nsv-hero-shop{color:#fde047;border:2px solid #facc15;box-shadow:0 0 18px rgba(250,204,21,.42), inset 0 0 12px rgba(250,204,21,.16)}
+                    @keyframes nsvHeroSpin{to{transform:rotate(360deg)}}
+                    @media(max-width:720px){#nsvShopPassHero{grid-template-columns:1fr}.nsv-hero-menu-btn{min-height:72px;text-align:center}}
+                `;
+                document.head.appendChild(st);
+            }
+            let row = document.getElementById('nsvShopPassHero');
+            const banner = document.getElementById('nsvSeason1Hero');
+            const title = document.querySelector('#startScreen .menu-panel h1');
+            const anchor = banner || title;
+            if (!row && anchor && anchor.parentNode) {
+                row = document.createElement('div');
+                row.id = 'nsvShopPassHero';
+                row.innerHTML = `
+                    <button id="openBattlePassHeroBtn" class="nsv-hero-menu-btn nsv-hero-pass cursor-pointer"><span class="nsv-hero-menu-title">⭐ NEON PASS</span><span class="nsv-hero-menu-sub">バトルスターでシーズン報酬を交換</span></button>
+                    <button id="openShopHeroBtn" class="nsv-hero-menu-btn nsv-hero-shop cursor-pointer"><span class="nsv-hero-menu-title">🛒 SHOP</span><span class="nsv-hero-menu-sub">銀コイン🪙 → パスチケット交換</span></button>
+                `;
+                anchor.insertAdjacentElement('afterend', row);
+            }
+            const passHero = document.getElementById('openBattlePassHeroBtn');
+            const shopHero = document.getElementById('openShopHeroBtn');
+            if (passHero && !passHero.__nsvHeroWired) {
+                passHero.__nsvHeroWired = true;
+                passHero.addEventListener('click', () => { renderBattlePassV2('base'); showScreen('battlePassScreen'); });
+            }
+            if (shopHero && !shopHero.__nsvHeroWired) {
+                shopHero.__nsvHeroWired = true;
+                shopHero.addEventListener('click', () => { renderShopV2(); showScreen('shopScreen'); });
+            }
+        } catch(e) { console.warn('shop/pass hero button init skipped', e); }
+    }
+
     function patchBattleStarEarningV2() {
         try {
             if (recordEnemyDefeat.__passV2Patched) return;
@@ -11120,7 +11167,7 @@
     }
 
     try {
-        injectPassV2Style(); injectNeonSeason1Banner(); ensurePassV2Data(); ensurePassScreenV2(); ensureShopV2(); replaceMenuButtonsV2(); patchBattleStarEarningV2(); patchCosmeticDrawingV2(); saveData?.();
+        injectPassV2Style(); injectNeonSeason1Banner(); ensurePassV2Data(); ensurePassScreenV2(); ensureShopV2(); replaceMenuButtonsV2(); ensureStartShopPassHeroButtonsFinal20260504(); patchBattleStarEarningV2(); patchCosmeticDrawingV2(); saveData?.();
     } catch(e) { console.warn('pass v2 init skipped', e); }
 })();
 
@@ -11128,7 +11175,7 @@
 
 // ===== 2026-05-04 Add-on: Keep high score only reset + Collection split =====
 (() => {
-    const KEEP_BEST_ONLY_RESET_VERSION = '2026-05-04-keep-highscore-only-v1';
+    const KEEP_BEST_ONLY_RESET_VERSION = '2026-05-04-keep-highscore-only-v2';
 
     function applyKeepHighScoreOnlyReset20260504() {
         try {
@@ -11147,6 +11194,15 @@
             fresh.keepBestOnlyResetVersion = KEEP_BEST_ONLY_RESET_VERSION;
             fresh.resetVersion = SAVE_RESET_VERSION;
             userData = fresh;
+            try {
+                // ハイスコア以外の進行状況をもう一度きれいに0へ戻す。
+                // ニックネームとSEASON ONE表示確認フラグは残す。
+                Object.keys(localStorage).forEach(function(k){
+                    if (/neon_survivor_(battle|pass|mission|collection|cosmetic|shop|ticket|upgrade|leaderboard|event)/i.test(k)) {
+                        localStorage.removeItem(k);
+                    }
+                });
+            } catch(e) {}
             localStorage.setItem('neon_survivor_save', JSON.stringify(userData));
             const bestEl = document.getElementById('currentBestDisplay');
             if (bestEl) bestEl.innerText = String(best);
@@ -11278,7 +11334,7 @@
 <script>
 (function(){
     'use strict';
-    const SEASON_INTRO_KEY = 'neon_survivor_seen_intro_s1_neon_genesis_v1';
+    const SEASON_INTRO_KEY = 'neon_survivor_seen_intro_s1_neon_genesis_v2';
     function closeSeasonIntro(){
         const intro = document.getElementById('seasonLaunchIntro');
         if (!intro || !intro.classList.contains('active')) return;
@@ -11308,6 +11364,168 @@
     } else {
         showSeasonIntroOnce();
     }
+})();
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  const STYLE_ID = 'nsvCleanStartScreenStyle20260504';
+  const DONE_ID = 'nsvCleanStartRoot20260504';
+
+  function addCleanStartStyle(){
+    if (document.getElementById(STYLE_ID)) return;
+    const st = document.createElement('style');
+    st.id = STYLE_ID;
+    st.textContent = `
+      #startScreen .menu-panel.nsv-clean-panel{width:min(96vw,980px);gap:14px;padding:clamp(14px,2.6vw,26px);}
+      #${DONE_ID}{width:100%;display:flex;flex-direction:column;gap:14px;align-items:stretch;}
+      .nsv-clean-top{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;align-items:stretch;width:100%;}
+      .nsv-clean-title-card{position:relative;overflow:hidden;border:1px solid rgba(34,211,238,.35);border-radius:24px;padding:18px;background:linear-gradient(135deg,rgba(2,6,23,.92),rgba(8,47,73,.55),rgba(0,0,0,.72));box-shadow:0 0 30px rgba(34,211,238,.20);}
+      .nsv-clean-title-card:before{content:"";position:absolute;inset:-40%;background:radial-gradient(circle,rgba(34,211,238,.18),transparent 46%);animation:nsvCleanPulse 5s ease-in-out infinite;pointer-events:none;}
+      .nsv-clean-title-card h1{position:relative;margin:0!important;}
+      .nsv-clean-season-chip{position:relative;margin-top:12px;border:1px solid rgba(250,204,21,.55);border-radius:18px;padding:10px 12px;background:rgba(0,0,0,.42);box-shadow:inset 0 0 18px rgba(250,204,21,.12),0 0 18px rgba(250,204,21,.10);}
+      .nsv-clean-season-big{display:block;font-family:Orbitron,sans-serif;font-weight:1000;font-size:clamp(1.45rem,4.8vw,3.1rem);line-height:1;letter-spacing:.12em;color:#facc15;text-shadow:0 0 10px #facc15,0 0 24px rgba(250,204,21,.8);}
+      .nsv-clean-season-name{display:block;margin-top:4px;color:#67e8f9;font-weight:1000;letter-spacing:.14em;text-shadow:0 0 12px #22d3ee;}
+      .nsv-clean-profile{display:grid;grid-template-columns:1fr;gap:10px;}
+      .nsv-clean-profile > *{height:100%;}
+      .nsv-clean-section{width:100%;border:1px solid rgba(148,163,184,.24);border-radius:22px;background:linear-gradient(180deg,rgba(15,23,42,.72),rgba(0,0,0,.52));padding:14px;box-shadow:inset 0 0 18px rgba(255,255,255,.03);}
+      .nsv-clean-section-title{font-family:Orbitron,sans-serif;font-size:.78rem;letter-spacing:.16em;color:#a5f3fc;font-weight:1000;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+      .nsv-clean-play{display:grid;grid-template-columns:1.35fr .75fr;gap:12px;width:100%;}
+      .nsv-clean-play #startBtn{min-height:112px;font-size:clamp(2rem,5vw,3.4rem)!important;}
+      .nsv-clean-play #onlineStartBtn{min-height:112px;font-size:clamp(1.05rem,2.6vw,1.55rem)!important;}
+      .nsv-clean-pass-shop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;}
+      .nsv-clean-pass-shop #nsvShopPassHero{display:contents!important;}
+      .nsv-clean-pass-shop .nsv-hero-menu-btn{min-height:88px;text-align:left;}
+      .nsv-clean-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;width:100%;}
+      .nsv-clean-menu-grid .menu-secondary{min-height:68px;font-size:.95rem!important;line-height:1.1;}
+      .nsv-clean-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;}
+      .nsv-clean-save{width:100%;}
+      .nsv-clean-save .bg-gray-900\/80{border-color:rgba(96,165,250,.45)!important;}
+      .nsv-clean-hidden-grid{display:none!important;}
+      @keyframes nsvCleanPulse{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(1.12);opacity:1}}
+      @media(max-width:820px){
+        #startScreen .menu-panel.nsv-clean-panel{max-height:96vh;}
+        .nsv-clean-top,.nsv-clean-play,.nsv-clean-pass-shop,.nsv-clean-settings{grid-template-columns:1fr;}
+        .nsv-clean-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+        .nsv-clean-play #startBtn,.nsv-clean-play #onlineStartBtn{min-height:86px;}
+        .nsv-clean-title-card{text-align:center;padding:14px;}
+        .nsv-clean-section{padding:12px;}
+      }
+      @media(max-width:420px){.nsv-clean-menu-grid{grid-template-columns:1fr}.nsv-clean-play #startBtn{font-size:2rem!important}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function makeSection(title, extraClass){
+    const sec = document.createElement('section');
+    sec.className = 'nsv-clean-section ' + (extraClass || '');
+    const h = document.createElement('div');
+    h.className = 'nsv-clean-section-title';
+    h.textContent = title;
+    sec.appendChild(h);
+    return sec;
+  }
+
+  function cleanStartScreen(){
+    const panel = document.querySelector('#startScreen .menu-panel');
+    if (!panel || document.getElementById(DONE_ID)) return true;
+    const title = panel.querySelector('h1.neon-title');
+    const nick = document.getElementById('nicknameInput')?.closest('.bg-gray-900\/80');
+    const best = document.getElementById('currentBestDisplay')?.closest('.bg-gray-900\/80');
+    const startBtn = document.getElementById('startBtn');
+    const onlineBtn = document.getElementById('onlineStartBtn');
+    const upgradeBtn = document.getElementById('openUpgradeBtn');
+    const missionBtn = document.getElementById('openMissionBtn');
+    const collectionBtn = document.getElementById('openCollectionBtn');
+    const codexBtn = document.getElementById('openWeaponCodexBtn');
+    const joy = document.getElementById('joystickToggle')?.closest('.bg-gray-900\/80');
+    const light = document.getElementById('lightModeToggle')?.closest('.bg-gray-900\/80');
+    const saveBox = document.getElementById('exportBtn')?.closest('.bg-gray-900\/80');
+    const passShopHero = document.getElementById('nsvShopPassHero');
+    if (!title || !nick || !best || !startBtn || !onlineBtn || !upgradeBtn || !missionBtn || !collectionBtn || !codexBtn || !joy || !light || !saveBox) return false;
+
+    addCleanStartStyle();
+    panel.classList.add('nsv-clean-panel');
+
+    const root = document.createElement('div');
+    root.id = DONE_ID;
+
+    const top = document.createElement('div');
+    top.className = 'nsv-clean-top';
+    const titleCard = document.createElement('div');
+    titleCard.className = 'nsv-clean-title-card';
+    titleCard.appendChild(title);
+    const chip = document.createElement('div');
+    chip.className = 'nsv-clean-season-chip';
+    chip.innerHTML = '<span class="nsv-clean-season-big">SEASON 1</span><span class="nsv-clean-season-name">NEON GENESIS</span>';
+    titleCard.appendChild(chip);
+    const profileSec = makeSection('PLAYER DATA', 'nsv-clean-profile');
+    const profileGrid = document.createElement('div');
+    profileGrid.className = 'nsv-clean-profile';
+    profileGrid.appendChild(nick);
+    profileGrid.appendChild(best);
+    profileSec.appendChild(profileGrid);
+    top.appendChild(titleCard);
+    top.appendChild(profileSec);
+    root.appendChild(top);
+
+    const playSec = makeSection('PLAY', '');
+    const playGrid = document.createElement('div');
+    playGrid.className = 'nsv-clean-play';
+    playGrid.appendChild(startBtn);
+    playGrid.appendChild(onlineBtn);
+    playSec.appendChild(playGrid);
+    root.appendChild(playSec);
+
+    const seasonSec = makeSection('SEASON / SHOP', '');
+    const ps = document.createElement('div');
+    ps.className = 'nsv-clean-pass-shop';
+    if (passShopHero) {
+      ps.appendChild(passShopHero);
+    } else {
+      const passHero = document.getElementById('openBattlePassHeroBtn');
+      const shopHero = document.getElementById('openShopHeroBtn');
+      if (passHero) ps.appendChild(passHero);
+      if (shopHero) ps.appendChild(shopHero);
+    }
+    seasonSec.appendChild(ps);
+    root.appendChild(seasonSec);
+
+    const menuSec = makeSection('MENU', '');
+    const menuGrid = document.createElement('div');
+    menuGrid.className = 'nsv-clean-menu-grid';
+    [upgradeBtn, missionBtn, collectionBtn, codexBtn].forEach(el => menuGrid.appendChild(el));
+    menuSec.appendChild(menuGrid);
+    root.appendChild(menuSec);
+
+    const settingsSec = makeSection('SETTINGS', '');
+    const settingsGrid = document.createElement('div');
+    settingsGrid.className = 'nsv-clean-settings';
+    settingsGrid.appendChild(joy);
+    settingsGrid.appendChild(light);
+    settingsSec.appendChild(settingsGrid);
+    root.appendChild(settingsSec);
+
+    const saveSec = makeSection('SAVE CODE', 'nsv-clean-save');
+    saveSec.appendChild(saveBox);
+    root.appendChild(saveSec);
+
+    panel.innerHTML = '';
+    panel.appendChild(root);
+    return true;
+  }
+
+  function boot(){
+    let tries = 0;
+    const timer = setInterval(function(){
+      tries++;
+      if (cleanStartScreen() || tries > 40) clearInterval(timer);
+    }, 120);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
 
