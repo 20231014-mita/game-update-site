@@ -14107,5 +14107,386 @@
 })();
 
 </script>
+
+
+<!-- 2026-05-05 V3 HOTFIX: clickable ranking/pause + locked weapon toggles -->
+<script>
+(function(){
+  'use strict';
+  const PATCH_ID='nsv_v3_click_and_codex_hotfix_20260505';
+  if (window[PATCH_ID]) return;
+  window[PATCH_ID]=true;
+
+  const $ = (id)=>document.getElementById(id);
+  const safe = (fn,...args)=>{ try { if (typeof fn==='function') return fn(...args); } catch(e){ console.warn('[NSV V3]', e); } };
+
+  function injectV3Style(){
+    if ($('nsvV3HotfixStyle')) return;
+    const st=document.createElement('style');
+    st.id='nsvV3HotfixStyle';
+    st.textContent=`
+      #pauseBtn,#resumeBtn,#openLeaderboardBtn,#openWeaponCodexBtn,#openCollectionBtn,#openMissionBtn,#openUpgradeBtn,#openShopBtn,#openBattlePassBtn,#startBtn,#onlineStartBtn,#restartBtn,#titleFromPauseBtn{pointer-events:auto!important;touch-action:manipulation!important;position:relative!important;z-index:100000!important;cursor:pointer!important;}
+      #uiLayer{z-index:900!important;pointer-events:none!important;}
+      #uiLayer .pointer-events-auto{pointer-events:auto!important;}
+      #startScreen,#pauseScreen,#leaderboardScreen,#weaponCodexScreen{pointer-events:auto!important;}
+      #startScreen .menu-panel,#pauseScreen .menu-panel,#leaderboardScreen .menu-panel,#weaponCodexScreen .menu-panel{pointer-events:auto!important;position:relative!important;z-index:1000!important;}
+      .nsv-locked-toggle-note{font-size:11px;color:#fca5a5;margin-top:6px;line-height:1.45;}
+      .weapon-spawn-toggle:disabled{opacity:.35!important;cursor:not-allowed!important;filter:grayscale(1);}
+      .nsv-v3-badge{position:fixed;right:8px;bottom:34px;z-index:99999;background:rgba(20,83,45,.95);border:1px solid #86efac;color:#dcfce7;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;box-shadow:0 0 12px rgba(134,239,172,.45);pointer-events:none;}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function ensureV3Badge(){
+    if ($('nsvV3Badge')) return;
+    const b=document.createElement('div');
+    b.id='nsvV3Badge';
+    b.className='nsv-v3-badge';
+    b.textContent='PATCH V3 BUTTON FIX ON';
+    document.body.appendChild(b);
+  }
+
+  function showOnlyScreenV3(id){
+    const screens=['startScreen','upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','bossCodexScreen','onlineRoleScreen','leaderboardScreen','shopScreen','battlePassScreen','levelUpScreen','gameOverScreen','pauseScreen','eventModeScreen'];
+    screens.forEach(s=>{
+      const el=$(s); if(!el) return;
+      if (s===id){ el.classList.remove('hidden'); el.style.display='flex'; el.style.pointerEvents='auto'; }
+      else { el.classList.add('hidden'); el.style.display='none'; }
+    });
+  }
+
+  function openRankingV3(){
+    try { if (typeof renderFriendRanking==='function') renderFriendRanking(); }
+    catch(e){}
+    try { if (window.renderFriendOnlyRanking) window.renderFriendOnlyRanking(); }
+    catch(e){}
+    if (!$('leaderboardScreen')) {
+      const div=document.createElement('div');
+      div.id='leaderboardScreen';
+      div.className='absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[90] hidden p-3';
+      div.innerHTML='<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">RANKING</h2><p class="text-gray-300 text-sm mt-2">友達との勝負用ランキングです。</p></div><button id="closeLeaderboardBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="leaderboardListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[72vh] pr-1"></div></div>';
+      document.body.appendChild(div);
+    }
+    if (typeof renderFriendRanking==='function') safe(renderFriendRanking);
+    else {
+      const box=$('leaderboardListContainer');
+      let u={}; try{u=userData||JSON.parse(localStorage.getItem('neon_survivor_save')||'{}');}catch(e){}
+      const stats=u.stats||{};
+      if (box) box.innerHTML=`<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">自分の記録</h3><div class="mt-2 space-y-2"><p>スコア：<b>${Math.floor(u.score||0)}</b></p><p>討伐数：<b>${Math.floor(stats.totalKills||0)}</b></p><p>ボス討伐：<b>${Math.floor(stats.totalBossLikeKills||0)}</b></p></div></div>`;
+    }
+    const close=$('closeLeaderboardBtn');
+    if (close && !close.dataset.nsvV3Close){ close.dataset.nsvV3Close='1'; close.addEventListener('click',(e)=>{e.preventDefault(); e.stopPropagation(); showOnlyScreenV3('startScreen');},true); }
+    showOnlyScreenV3('leaderboardScreen');
+  }
+
+  function togglePauseV3(){
+    try {
+      if (typeof gameState!=='undefined') {
+        if (gameState==='playing') {
+          gameState='paused';
+          try { if (typeof syncJoystickVisibility==='function') syncJoystickVisibility(); } catch(e){}
+          try { if (typeof Sound!=='undefined' && Sound.stopBGM) Sound.stopBGM(); } catch(e){}
+          const speedContainer=$('speedSettingContainer');
+          try { if (speedContainer && typeof isOnlineMode!=='undefined' && isOnlineMode) speedContainer.classList.add('hidden'); else if (speedContainer) speedContainer.classList.remove('hidden'); } catch(e){}
+          showOnlyScreenV3('pauseScreen');
+          return;
+        }
+        if (gameState==='paused') {
+          gameState='playing';
+          const ps=$('pauseScreen'); if(ps){ps.classList.add('hidden'); ps.style.display='none';}
+          try { if (typeof showScreen==='function') showScreen(null); } catch(e){}
+          try { if (typeof syncJoystickVisibility==='function') syncJoystickVisibility(); } catch(e){}
+          try { if (typeof lastTime!=='undefined') lastTime=performance.now(); } catch(e){}
+          try { if (typeof Sound!=='undefined' && Sound.startBGM) Sound.startBGM(); } catch(e){}
+          try { if (typeof animationId!=='undefined' && animationId) cancelAnimationFrame(animationId); if (typeof gameLoop==='function') animationId=requestAnimationFrame(gameLoop); } catch(e){}
+          return;
+        }
+      }
+    } catch(e) { console.warn('[NSV V3 pause]', e); }
+    // fallback: とにかく一時停止画面を開く
+    showOnlyScreenV3('pauseScreen');
+  }
+
+  function installHardButtonHandlers(){
+    const bind=(id,handler)=>{
+      const el=$(id); if(!el) return;
+      el.disabled=false; el.style.pointerEvents='auto'; el.style.zIndex='100000'; el.classList.add('nsv-menu-btn-fix');
+      if (!el.dataset.nsvV3HardBind){
+        el.dataset.nsvV3HardBind='1';
+        ['click','pointerup','touchend'].forEach(type=>{
+          el.addEventListener(type,(e)=>{ e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation(); handler(e); },true);
+        });
+      }
+    };
+    bind('openLeaderboardBtn',openRankingV3);
+    bind('pauseBtn',togglePauseV3);
+    bind('resumeBtn',togglePauseV3);
+    bind('openWeaponCodexBtn',()=>{ try{ if(typeof renderWeaponCodexScreen==='function') renderWeaponCodexScreen(); }catch(e){} showOnlyScreenV3('weaponCodexScreen'); setTimeout(lockUnavailableWeaponToggles,0); });
+  }
+
+  function globalCaptureButtons(e){
+    const t=e.target && e.target.closest ? e.target.closest('#openLeaderboardBtn,#pauseBtn,#resumeBtn') : null;
+    if(!t) return;
+    e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    if(t.id==='openLeaderboardBtn') openRankingV3();
+    else togglePauseV3();
+  }
+
+  function isWeaponActuallyUnlockedV3(id, card){
+    try { if (typeof isWeaponCodexUsed==='function' && isWeaponCodexUsed(id)) return true; } catch(e){}
+    try { if (userData && userData.unlocks && userData.unlocks.legendaryWeapons && userData.unlocks.legendaryWeapons[id]) return true; } catch(e){}
+    try { if (userData && userData.codex && userData.codex.weapons && userData.codex.weapons[id]) return true; } catch(e){}
+    const sectionTitle = card?.closest('section')?.querySelector('h3')?.textContent || '';
+    if (/BASIC/i.test(sectionTitle)) return true;
+    return false;
+  }
+
+  function lockUnavailableWeaponToggles(){
+    const box=$('weaponCodexListContainer'); if(!box) return;
+    box.querySelectorAll('input.weapon-spawn-toggle[data-id]').forEach(input=>{
+      const id=input.dataset.id;
+      const card=input.closest('.collection-card');
+      const badge=card?.querySelector('span')?.textContent || '';
+      const unlocked=isWeaponActuallyUnlockedV3(id,card);
+      const shouldLock = /未解放/.test(badge) || !unlocked;
+      if (shouldLock) {
+        input.checked=false;
+        input.disabled=true;
+        input.style.pointerEvents='none';
+        const label=input.closest('label');
+        if(label){ label.style.opacity='.65'; label.style.cursor='not-allowed'; }
+        const state=label?.querySelector('span');
+        if(state){ state.textContent='出現：LOCKED'; state.className='text-xs font-bold text-red-300'; }
+        if(card && !card.querySelector('.nsv-locked-toggle-note')){
+          const note=document.createElement('p');
+          note.className='nsv-locked-toggle-note';
+          note.textContent='未解放のため、出現ON/OFFはまだ変更できません。ミッションや報酬で解放すると切り替えできます。';
+          (input.closest('.mt-3')||card).appendChild(note);
+        }
+        try {
+          if (typeof userData!=='undefined') {
+            userData.settings=userData.settings||{};
+            userData.settings.disabledWeapons=userData.settings.disabledWeapons||{};
+            userData.settings.disabledWeapons[id]=true;
+          }
+        } catch(e){}
+      }
+    });
+  }
+
+  function patchRenderWeaponCodex(){
+    try {
+      if (typeof renderWeaponCodexScreen==='function' && !renderWeaponCodexScreen.__nsvV3LockedTogglePatch){
+        const old=renderWeaponCodexScreen;
+        renderWeaponCodexScreen=function(){ const r=old.apply(this,arguments); setTimeout(lockUnavailableWeaponToggles,0); return r; };
+        renderWeaponCodexScreen.__nsvV3LockedTogglePatch=true;
+      }
+    } catch(e){}
+  }
+
+  function bootV3(){
+    injectV3Style(); ensureV3Badge(); patchRenderWeaponCodex(); installHardButtonHandlers(); lockUnavailableWeaponToggles();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bootV3); else bootV3();
+  setTimeout(bootV3,300); setTimeout(bootV3,1200); setInterval(bootV3,1500);
+  ['click','pointerup','touchend'].forEach(type=>document.addEventListener(type,globalCaptureButtons,true));
+})();
+</script>
+
+
+
+<script>
+// ==========================================================
+// 2026-05-05 Patch V4: Map Event Warning cleanup fix
+// マップイベント警告がタイトル画面・ゲームオーバー後も残るバグを修正
+// ==========================================================
+(function nsvPatchV4MapEventWarningCleanup(){
+  try {
+    const PATCH_ID = 'nsvPatchV4MapEventWarningCleanup20260505';
+    if (window[PATCH_ID]) return;
+    window[PATCH_ID] = true;
+
+    function nsvHideMapEventWarningV4(resetEvent = true) {
+      try {
+        const hud = document.getElementById('mapEventForecastHud');
+        if (hud) {
+          hud.classList.add('hidden');
+          hud.style.display = 'none';
+        }
+        const title = document.getElementById('mapEventForecastTitle');
+        if (title) title.textContent = '';
+        const text = document.getElementById('mapEventForecastText');
+        if (text) text.textContent = '';
+
+        // ボス警告や演出警告も、タイトルに戻った時に残らないようにする
+        const bossWarning = document.getElementById('bossWarning');
+        if (bossWarning) bossWarning.classList.add('hidden');
+        const generalCutin = document.getElementById('generalCutin');
+        if (generalCutin) generalCutin.classList.add('hidden');
+
+        if (resetEvent) {
+          try { activeMapEvent = null; } catch(e) {}
+          try {
+            if (typeof frameCount !== 'undefined' && typeof MathUtils !== 'undefined') {
+              nextMapEventFrame = Number(frameCount || 0) + MathUtils.randomInt(60 * 120, 60 * 180);
+            }
+          } catch(e) {}
+        }
+      } catch(e) {}
+    }
+
+    // updateMapEventHud自体を安全化：playing以外では必ず非表示
+    try {
+      if (typeof updateMapEventHud === 'function' && !updateMapEventHud.__nsvV4Safe) {
+        const oldUpdateMapEventHud = updateMapEventHud;
+        updateMapEventHud = function() {
+          try {
+            if (typeof gameState !== 'undefined' && gameState !== 'playing') {
+              nsvHideMapEventWarningV4(true);
+              return;
+            }
+          } catch(e) {}
+          const ret = oldUpdateMapEventHud.apply(this, arguments);
+          try {
+            const hud = document.getElementById('mapEventForecastHud');
+            if (hud && typeof gameState !== 'undefined' && gameState === 'playing') {
+              hud.style.display = '';
+            }
+          } catch(e) {}
+          return ret;
+        };
+        updateMapEventHud.__nsvV4Safe = true;
+      }
+    } catch(e) {}
+
+    // updateMapEventも安全化：playing以外なら警告を消して終了
+    try {
+      if (typeof updateMapEvent === 'function' && !updateMapEvent.__nsvV4Safe) {
+        const oldUpdateMapEvent = updateMapEvent;
+        updateMapEvent = function() {
+          try {
+            if (typeof gameState !== 'undefined' && gameState !== 'playing') {
+              nsvHideMapEventWarningV4(true);
+              return;
+            }
+          } catch(e) {}
+          return oldUpdateMapEvent.apply(this, arguments);
+        };
+        updateMapEvent.__nsvV4Safe = true;
+      }
+    } catch(e) {}
+
+    // showScreenでタイトル・ゲームオーバー・メニュー系へ行く時に必ず消す
+    function nsvShouldHideForScreenV4(id) {
+      return id && id !== 'levelUpScreen' && id !== 'pauseScreen';
+    }
+
+    try {
+      if (typeof showScreen === 'function' && !showScreen.__nsvV4MapCleanup) {
+        const oldShowScreen = showScreen;
+        showScreen = function(id) {
+          if (nsvShouldHideForScreenV4(id)) nsvHideMapEventWarningV4(true);
+          return oldShowScreen.apply(this, arguments);
+        };
+        showScreen.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof showScreenFinal === 'function' && !showScreenFinal.__nsvV4MapCleanup) {
+        const oldShowScreenFinal = showScreenFinal;
+        showScreenFinal = function(id) {
+          if (nsvShouldHideForScreenV4(id)) nsvHideMapEventWarningV4(true);
+          return oldShowScreenFinal.apply(this, arguments);
+        };
+        showScreenFinal.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof showScreenSafe === 'function' && !showScreenSafe.__nsvV4MapCleanup) {
+        const oldShowScreenSafe = showScreenSafe;
+        showScreenSafe = function(id) {
+          if (nsvShouldHideForScreenV4(id)) nsvHideMapEventWarningV4(true);
+          return oldShowScreenSafe.apply(this, arguments);
+        };
+        showScreenSafe.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof showOnlyScreenV3 === 'function' && !showOnlyScreenV3.__nsvV4MapCleanup) {
+        const oldShowOnlyScreenV3 = showOnlyScreenV3;
+        showOnlyScreenV3 = function(id) {
+          if (nsvShouldHideForScreenV4(id)) nsvHideMapEventWarningV4(true);
+          return oldShowOnlyScreenV3.apply(this, arguments);
+        };
+        showOnlyScreenV3.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    // gameOver / initGameでも明示的に消す
+    try {
+      if (typeof gameOver === 'function' && !gameOver.__nsvV4MapCleanup) {
+        const oldGameOver = gameOver;
+        gameOver = function() {
+          nsvHideMapEventWarningV4(true);
+          return oldGameOver.apply(this, arguments);
+        };
+        gameOver.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof initGame === 'function' && !initGame.__nsvV4MapCleanup) {
+        const oldInitGame = initGame;
+        initGame = function() {
+          nsvHideMapEventWarningV4(true);
+          const ret = oldInitGame.apply(this, arguments);
+          setTimeout(() => {
+            try {
+              const hud = document.getElementById('mapEventForecastHud');
+              if (hud && typeof gameState !== 'undefined' && gameState === 'playing') hud.style.display = '';
+            } catch(e) {}
+          }, 0);
+          return ret;
+        };
+        initGame.__nsvV4MapCleanup = true;
+      }
+    } catch(e) {}
+
+    // タイトル・ゲームオーバー・各メニューが表示された瞬間にも消す安全装置
+    setInterval(function(){
+      try {
+        const playing = (typeof gameState !== 'undefined' && gameState === 'playing');
+        const hud = document.getElementById('mapEventForecastHud');
+        if (!hud) return;
+        const startVisible = !document.getElementById('startScreen')?.classList.contains('hidden');
+        const gameOverVisible = !document.getElementById('gameOverScreen')?.classList.contains('hidden');
+        const menuVisible = ['upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','leaderboardScreen','shopScreen','battlePassScreen','eventModeScreen']
+          .some(id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); });
+        if (!playing || startVisible || gameOverVisible || menuVisible) nsvHideMapEventWarningV4(true);
+      } catch(e) {}
+    }, 350);
+
+    // 右下の確認表示
+    function nsvShowV4Badge(){
+      if (document.getElementById('nsvPatchV4Badge')) return;
+      const b = document.createElement('div');
+      b.id = 'nsvPatchV4Badge';
+      b.textContent = 'PATCH V4 WARNING FIX ON';
+      b.style.cssText = 'position:fixed;right:10px;bottom:54px;z-index:99999;background:rgba(0,0,0,.72);color:#f0abfc;border:1px solid #c084fc;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;pointer-events:none;box-shadow:0 0 12px rgba(192,132,252,.45);';
+      document.body.appendChild(b);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', nsvShowV4Badge);
+    else nsvShowV4Badge();
+
+    window.nsvHideMapEventWarningV4 = nsvHideMapEventWarningV4;
+  } catch(e) {
+    console.warn('Patch V4 map event cleanup skipped', e);
+  }
+})();
+</script>
+
 </body>
 </html>
