@@ -11515,7 +11515,7 @@
     }
 
     try {
-        applyKeepHighScoreOnlyReset20260504();
+        /* disabled: keep all player data */
         installCollectionSplitPatch20260504();
         injectBattlePassDateNote20260504();
         const currentBestDisplay = document.getElementById('currentBestDisplay');
@@ -13322,9 +13322,9 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(nsvApplyTrueHighScoreOnlyReset20260505, 250));
+    document.addEventListener('DOMContentLoaded', () => console.log('[Neon Survivor] destructive reset disabled; keeping all data.'));
   } else {
-    setTimeout(nsvApplyTrueHighScoreOnlyReset20260505, 250);
+    console.log('[Neon Survivor] destructive reset disabled; keeping all data.');
   }
 })();
 
@@ -13547,5 +13547,387 @@
             } catch(e) { console.warn('cheat terminal patch skipped', e); }
         })();
 </script>
+
+<!-- 2026-05-05 FINAL COMPLETE PATCH: save/import, buttons, ranking, online safety, performance -->
+<script>
+(function(){
+  'use strict';
+  const PATCH_ID = 'nsv_final_complete_20260505_v2';
+  if (window[PATCH_ID]) return;
+  window[PATCH_ID] = true;
+
+  const TRUE_RESET_VERSION = '2026-05-05-true-highscore-only-reset-v1';
+  const KEEP_RESET_VERSION = '2026-05-04-keep-highscore-only-v3';
+  const ONLINE_ROOM_ID = 'neon_survivor_public_room_all_friends_final_v2';
+  const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('neon_survivor_local_online_final_v2') : null;
+  const localRemotePlayers = new Map();
+  let lastLocalOnlinePost = 0;
+  let heavyFrameCount = 0;
+  let safetyMode = false;
+
+  function safeCall(fn, ...args){ try { if (typeof fn === 'function') return fn(...args); } catch(e){ console.warn('[NSV final]', e); } }
+  function getNick(){
+    try { return (typeof getNickname === 'function' ? getNickname() : '') || userData?.nickname || localStorage.getItem('neon_survivor_nickname') || 'PLAYER'; } catch(e){ return 'PLAYER'; }
+  }
+  function ensureData(){
+    safeCall(window.ensureProgressionData);
+    try {
+      if (!window.userData && typeof userData !== 'undefined') window.userData = userData;
+      if (!userData || typeof userData !== 'object') userData = (typeof createFreshUserData === 'function') ? createFreshUserData(getNick()) : {score:0,coins:0,upgrades:{}};
+      userData.upgrades = Object.assign({hp:0,damage:0,speed:0,exp:0,armor:0,magnet:0,rapid:0,pierce:0}, userData.upgrades || {});
+      userData.stats = userData.stats || {};
+      userData.missions = userData.missions || {completed:{},claimed:{}};
+      userData.unlocks = userData.unlocks || {legendaryWeapons:{},skins:{classic:true},auras:{none:true},capes:{none:true}};
+      userData.unlocks.legendaryWeapons = userData.unlocks.legendaryWeapons || {};
+      userData.cosmetics = userData.cosmetics || {unlocked:{},equipped:{}};
+      userData.cosmetics.unlocked = userData.cosmetics.unlocked || {};
+      userData.cosmetics.equipped = userData.cosmetics.equipped || {};
+      userData.keepBestOnlyResetVersion = userData.keepBestOnlyResetVersion || KEEP_RESET_VERSION;
+      userData.trueHighScoreOnlyResetVersion = userData.trueHighScoreOnlyResetVersion || TRUE_RESET_VERSION;
+      try { userData.resetVersion = SAVE_RESET_VERSION; } catch(e) {}
+    } catch(e) {}
+  }
+  function saveNow(){
+    try { ensureData(); } catch(e) {}
+    try { localStorage.setItem('neon_survivor_save', JSON.stringify(userData)); } catch(e) {}
+    safeCall(window.saveData);
+  }
+  function b64urlEncodeText(text){
+    const bytes = new TextEncoder().encode(String(text));
+    let bin = '';
+    for (let i=0; i<bytes.length; i+=0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i,i+0x8000));
+    return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function b64urlDecodeText(body){
+    const b64 = String(body||'').trim().replace(/-/g,'+').replace(/_/g,'/');
+    const bin = atob(b64 + '='.repeat((4 - b64.length % 4) % 4));
+    const bytes = new Uint8Array(bin.length);
+    for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+  function extractCode(input){
+    const t = String(input||'').trim();
+    const m = t.match(/NSV2\.[A-Za-z0-9_-]+|NS4\.[A-Za-z0-9_-]+|NS3\.[A-Za-z0-9_-]+|NS1\.[A-Za-z0-9_-]+/);
+    if (m) return m[0];
+    const old = t.match(/[A-Za-z0-9+/=_-]{60,}/);
+    return old ? old[0] : t;
+  }
+  async function decodeAnySave(input){
+    const code = extractCode(input);
+    if (!code) throw new Error('empty');
+    if (code.startsWith('NSV2.')) return JSON.parse(b64urlDecodeText(code.slice(5)));
+    if (code.startsWith('NS4.')) {
+      try { return JSON.parse(b64urlDecodeText(code.slice(4))); } catch(e) {
+        const txt = decodeURIComponent(escape(atob(code.slice(4).replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4-code.slice(4).length%4)%4))));
+        return JSON.parse(txt);
+      }
+    }
+    if (code.startsWith('NS3.') || code.startsWith('NS1.')) {
+      if (typeof decodeShortSaveCode === 'function') return await decodeShortSaveCode(code);
+      const body = code.slice(4).replace(/-/g,'+').replace(/_/g,'/');
+      return JSON.parse(decodeURIComponent(escape(atob(body + '='.repeat((4-body.length%4)%4)))));
+    }
+    return JSON.parse(decodeURIComponent(escape(atob(code))));
+  }
+  function buildSavePayload(){
+    try { saveNicknameFromInput?.(); } catch(e) {}
+    ensureData();
+    const copy = JSON.parse(JSON.stringify(userData || {}));
+    copy.keepBestOnlyResetVersion = KEEP_RESET_VERSION;
+    copy.trueHighScoreOnlyResetVersion = TRUE_RESET_VERSION;
+    try { copy.resetVersion = SAVE_RESET_VERSION; } catch(e) {}
+    return {v:2, game:'Neon Survivor', savedAt:Date.now(), nickname:getNick(), userData:copy};
+  }
+  window.exportSaveCode = async function(ev){
+    try { ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); } catch(e) {}
+    try {
+      const code = 'NSV2.' + b64urlEncodeText(JSON.stringify(buildSavePayload()));
+      try { await navigator.clipboard?.writeText(code); } catch(e) {}
+      alert('セーブコードをコピーしました。\nこのコードで、コイン・アップグレード・ミッション・解放武器・バトルパス・装備を保存できます。\n\n' + code);
+    } catch(e) { console.error(e); alert('セーブコードの作成に失敗しました。'); }
+  };
+  window.importSaveCode = async function(ev){
+    try { ev?.preventDefault?.(); ev?.stopPropagation?.(); ev?.stopImmediatePropagation?.(); } catch(e) {}
+    const code = prompt('セーブコードを貼り付けてください。\nNSV2 / NS4 / NS3 / NS1 / 古いBase64形式に対応しています。');
+    if (!code) return;
+    try {
+      const parsed = await decodeAnySave(code);
+      const raw = parsed.userData || parsed.u || parsed;
+      if (!raw || typeof raw !== 'object') throw new Error('invalid save object');
+      const nick = (typeof normalizeNickname === 'function') ? normalizeNickname(parsed.nickname || parsed.n || raw.nickname || '') : (parsed.nickname || parsed.n || raw.nickname || '');
+      const fresh = (typeof createFreshUserData === 'function') ? createFreshUserData(nick) : {score:0, coins:0, upgrades:{}};
+      userData = Object.assign({}, fresh, raw);
+      userData.nickname = nick || userData.nickname || '';
+      userData.score = Math.max(Number(raw.score || 0), Number(raw.bestScore || 0));
+      userData.coins = Math.max(0, Number(raw.coins || 0));
+      userData.upgrades = Object.assign({}, fresh.upgrades || {}, raw.upgrades || {});
+      userData.keepBestOnlyResetVersion = KEEP_RESET_VERSION;
+      userData.trueHighScoreOnlyResetVersion = TRUE_RESET_VERSION;
+      try { userData.resetVersion = SAVE_RESET_VERSION; } catch(e) {}
+      window.userData = userData;
+      if (nick) {
+        try { localStorage.setItem('neon_survivor_nickname', nick); } catch(e) {}
+        const input = document.getElementById('nicknameInput'); if (input) input.value = nick;
+      }
+      saveNow();
+      safeCall(window.renderUpgradeScreen); safeCall(window.renderMissionScreen); safeCall(window.renderCollectionScreen); safeCall(window.renderShopV2);
+      const bestEl = document.getElementById('currentBestDisplay'); if (bestEl) bestEl.textContent = String(userData.score || 0);
+      alert('セーブコードを読み込みました。\n途中からプレイできます。');
+    } catch(e) { console.error(e); alert('このセーブコードは正しく読み込めませんでした。\nコピーした文字が途中で切れていないか確認してください。'); }
+  };
+
+  function injectStyle(){
+    if (document.getElementById('nsvFinalCompleteStyle20260505')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvFinalCompleteStyle20260505';
+    st.textContent = `
+      #startScreen button,#startScreen input,#startScreen label,#pauseScreen button,.menu-panel button{pointer-events:auto!important;touch-action:manipulation!important;}
+      .nsv-final-toggle-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;align-items:stretch!important;}
+      .nsv-final-toggle-row>*{min-width:0!important;height:100%!important;}
+      @media(max-width:520px){.nsv-final-toggle-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}.nsv-final-toggle-row span{font-size:.72rem!important}.nsv-final-toggle-row .w-14{width:2.75rem!important}}
+      .nsv-shop-coin-banner-final{border:1px solid rgba(250,204,21,.8);background:rgba(250,204,21,.12);border-radius:16px;padding:12px 14px;margin:8px 0 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:0 0 16px rgba(250,204,21,.2)}
+      .nsv-shop-coin-banner-final b{color:#facc15;font-family:Orbitron,sans-serif;font-size:clamp(1.3rem,4vw,2.1rem);text-shadow:0 0 12px #facc15;}
+      .nsv-online-server-warning{border:1px solid rgba(250,204,21,.55);background:rgba(113,63,18,.45);color:#fef3c7;border-radius:14px;padding:10px 12px;margin-top:8px;font-size:12px;line-height:1.45;}
+      .nsv-safety-badge{position:fixed;right:12px;bottom:12px;z-index:500;background:rgba(0,0,0,.75);border:1px solid #facc15;color:#fde68a;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900;box-shadow:0 0 14px rgba(250,204,21,.35);pointer-events:none;}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function showScreenFinal(id){
+    try { if (typeof showScreen === 'function') return showScreen(id); } catch(e) {}
+    const ids = ['startScreen','upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','bossCodexScreen','onlineRoleScreen','levelUpScreen','gameOverScreen','pauseScreen','shopScreen','battlePassScreen','leaderboardScreen','eventModeScreen'];
+    ids.forEach(x => { const el=document.getElementById(x); if (!el) return; el.classList.toggle('hidden', x!==id); });
+  }
+  function bindButton(id, fn){
+    const b = document.getElementById(id); if (!b || b.dataset.nsvFinalBound) return;
+    b.dataset.nsvFinalBound = '1'; b.style.pointerEvents='auto'; b.type = b.type || 'button';
+    b.addEventListener('click', function(ev){
+      try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation?.(); } catch(e) {}
+      fn(ev);
+    }, true);
+  }
+  function ensureAllButtons(){
+    bindButton('exportBtn', window.exportSaveCode);
+    bindButton('importBtn', window.importSaveCode);
+    bindButton('openUpgradeBtn', () => { safeCall(window.renderUpgradeScreen); showScreenFinal('upgradeScreen'); });
+    bindButton('openMissionBtn', () => { safeCall(window.renderMissionScreen); showScreenFinal('missionsScreen'); });
+    bindButton('openCollectionBtn', () => { safeCall(window.renderCollectionScreen); showScreenFinal('collectionScreen'); });
+    bindButton('openWeaponCodexBtn', () => { safeCall(window.renderWeaponCodexScreen); showScreenFinal('weaponCodexScreen'); });
+    bindButton('openShopHeroBtn', () => { safeCall(window.renderShopV2); ensureShopCoins(); showScreenFinal('shopScreen'); });
+    bindButton('openBattlePassHeroBtn', () => { safeCall(window.renderBattlePassV2); showScreenFinal('battlePassScreen'); });
+    bindButton('openLeaderboardBtn', () => { renderFriendOnlyRanking(); showScreenFinal('leaderboardScreen'); });
+    bindButton('closeLeaderboardBtn', () => showScreenFinal('startScreen'));
+    bindButton('startBtn', () => { if (typeof initGame === 'function') initGame('solo'); });
+    bindButton('onlineStartBtn', () => { safeCall(window.openOnlineRoleSelect) || (typeof initGame === 'function' && initGame('online')); });
+    bindButton('resumeBtn', () => { safeCall(window.resumeGame); });
+    bindButton('pauseBtn', () => { safeCall(window.pauseGame); });
+  }
+  function ensureToggleRowAndOrder(){
+    const joy = document.getElementById('joystickToggle')?.closest('.bg-gray-900\/80, .bg-gray-900\\/80') || document.getElementById('joystickToggle')?.closest('div.bg-gray-900\/80') || document.getElementById('joystickToggle')?.closest('div');
+    const light = document.getElementById('lightModeToggle')?.closest('.bg-gray-900\/80, .bg-gray-900\\/80') || document.getElementById('lightModeToggle')?.closest('div.bg-gray-900\/80') || document.getElementById('lightModeToggle')?.closest('div');
+    const rank = document.getElementById('openLeaderboardBtn');
+    const grid = document.querySelector('#startScreen .nsv-clean-menu-grid') || document.querySelector('#startScreen .menu-grid');
+    if (rank && grid && rank.parentElement !== grid) grid.appendChild(rank);
+    if (rank && grid && grid.firstElementChild !== rank) grid.insertBefore(rank, grid.firstElementChild);
+    if (joy && light) {
+      let row = document.getElementById('nsvFinalToggleRow');
+      if (!row) { row = document.createElement('div'); row.id='nsvFinalToggleRow'; row.className='nsv-final-toggle-row'; }
+      const parent = grid?.parentElement || joy.parentElement;
+      if (parent && row.parentElement !== parent) parent.insertBefore(row, grid?.nextSibling || null);
+      if (joy.parentElement !== row) row.appendChild(joy);
+      if (light.parentElement !== row) row.appendChild(light);
+    }
+  }
+  function ensureShopCoins(){
+    const screen = document.getElementById('shopScreen'); if (!screen) return;
+    const panel = screen.querySelector('.menu-panel') || screen.firstElementChild || screen;
+    let banner = document.getElementById('nsvShopCoinBannerFinal');
+    if (!banner) { banner = document.createElement('div'); banner.id = 'nsvShopCoinBannerFinal'; banner.className = 'nsv-shop-coin-banner-final'; panel.insertBefore(banner, panel.children[1] || null); }
+    ensureData();
+    banner.innerHTML = `<span><b>🪙 ${Math.floor(Number(userData.coins||0)).toLocaleString()}</b></span><span class="text-yellow-100 font-bold text-sm">現在の所持コイン</span>`;
+  }
+  function patchShopRender(){
+    try { if (typeof renderShopV2 === 'function' && !renderShopV2.__nsvFinalCoins) { const old=renderShopV2; renderShopV2=function(){ const r=old.apply(this,arguments); ensureShopCoins(); return r; }; renderShopV2.__nsvFinalCoins=true; } } catch(e) {}
+  }
+
+  function makeMyRankRow(){
+    ensureData(); const s=userData.stats||{};
+    return {name:getNick()||'YOU', score:Number(userData.score||0), level:Number(s.bestRunLevel||1), boss:Number(s.totalBossLikeKills||0), kills:Number(s.totalKills||0), coins:Number(userData.coins||0), me:true};
+  }
+  function getFriends(){
+    try { return JSON.parse(localStorage.getItem('neon_survivor_friends_final')||'[]'); } catch(e){ return []; }
+  }
+  function saveFriends(a){ try { localStorage.setItem('neon_survivor_friends_final', JSON.stringify(a||[])); } catch(e){} }
+  function makeFriendCode(){ return 'NSF2.' + b64urlEncodeText(JSON.stringify(makeMyRankRow())); }
+  function addFriendCode(){
+    const code = prompt('友達からもらった接続コードを貼ってください'); if (!code) return;
+    try {
+      const raw = extractCode(code).replace(/^NSF2\./,'');
+      const row = JSON.parse(b64urlDecodeText(raw));
+      if (!row || !row.name) throw new Error('bad friend');
+      const friends = getFriends().filter(f => f.name !== row.name);
+      friends.push(row); saveFriends(friends); renderFriendOnlyRanking(); alert('友達をランキングに追加しました。');
+    } catch(e){ alert('友達コードを読み込めませんでした。'); }
+  }
+  function copyFriendCode(){
+    const code = makeFriendCode();
+    try { navigator.clipboard?.writeText(code); } catch(e) {}
+    alert('友達接続コードをコピーしました。\n友達に送るとランキングで比べられます。\n\n' + code);
+  }
+  function section(title, rows, key, suffix=''){
+    const sorted = rows.slice().sort((a,b)=>Number(b[key]||0)-Number(a[key]||0));
+    return `<div class="mission-card"><h3 class="text-xl font-bold text-cyan-300 mb-2">${title}</h3>${sorted.map((r,i)=>`<div class="flex justify-between border-b border-slate-700/60 py-1 ${r.me?'text-yellow-200 font-bold':''}"><span>${i+1}. ${String(r.name||'PLAYER').replace(/[&<>]/g,'')}</span><span>${Math.floor(Number(r[key]||0)).toLocaleString()}${suffix}</span></div>`).join('')}</div>`;
+  }
+  window.renderFriendOnlyRanking = function(){
+    let screen = document.getElementById('leaderboardScreen');
+    if (!screen) {
+      screen = document.createElement('div'); screen.id='leaderboardScreen'; screen.className='absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[58] hidden p-3'; document.body.appendChild(screen);
+    }
+    const rows = [makeMyRankRow(), ...getFriends()];
+    screen.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">FRIENDS RANKING</h2><p class="text-gray-300 text-sm mt-2">全ての部門を、接続した友達と比べるランキングにしました。</p></div><div class="flex gap-2 flex-wrap"><button id="copyFriendCodeBtn" class="btn-gold px-4 py-2 rounded font-bold">CONNECT CODE</button><button id="addFriendCodeBtn" class="btn-green px-4 py-2 rounded font-bold">ADD FRIEND</button><button id="closeLeaderboardBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div></div><div id="leaderboardListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[72vh] pr-1">${section('ハイスコア',rows,'score')}${section('最高到達レベル',rows,'level',' Lv')}${section('ボス討伐数',rows,'boss','体')}${section('総討伐数',rows,'kills','体')}${section('所持コイン',rows,'coins','枚')}</div></div>`;
+    document.getElementById('copyFriendCodeBtn')?.addEventListener('click', copyFriendCode, true);
+    document.getElementById('addFriendCodeBtn')?.addEventListener('click', addFriendCode, true);
+    document.getElementById('closeLeaderboardBtn')?.addEventListener('click', () => showScreenFinal('startScreen'), true);
+  };
+
+  function addOnlineNote(){
+    const btn = document.getElementById('onlineStartBtn'); if (!btn || document.getElementById('nsvOnlineServerWarning')) return;
+    const note = document.createElement('div'); note.id='nsvOnlineServerWarning'; note.className='nsv-online-server-warning';
+    note.textContent = 'オンライン同期は、Firebaseなどの同期サーバーが接続されている時だけ友達と同じマップに入れます。未接続時は同じ端末の別タブ確認用になります。';
+    btn.insertAdjacentElement('afterend', note);
+  }
+  function patchOnline(){
+    if (bc && !bc.__nsvBound) {
+      bc.__nsvBound = true;
+      bc.onmessage = (ev) => {
+        const d = ev.data || {}; if (d.id === (window.onlinePlayerId || 'me')) return;
+        if (Date.now() - Number(d.at||0) > 4000) return;
+        localRemotePlayers.set(d.id, d);
+      };
+    }
+    try {
+      if (typeof initGame === 'function' && !initGame.__nsvFinalOnline) {
+        const old = initGame;
+        initGame = function(mode){
+          const r = old.apply(this, arguments);
+          if (mode === 'online') {
+            try { if (player) { player.x = Math.floor((typeof mapSize !== 'undefined' ? mapSize : 20000)/2); player.y = Math.floor((typeof mapSize !== 'undefined' ? mapSize : 20000)/2); } } catch(e) {}
+            setTimeout(addOnlineNote, 300);
+          }
+          return r;
+        };
+        initGame.__nsvFinalOnline = true;
+      }
+    } catch(e) {}
+  }
+  function localOnlineTick(){
+    try {
+      if (!window.isOnlineMode && typeof isOnlineMode !== 'undefined' && !isOnlineMode) return;
+      if (!player || !bc) return;
+      const now = Date.now(); if (now - lastLocalOnlinePost < 250) return; lastLocalOnlinePost = now;
+      const id = window.onlinePlayerId || localStorage.getItem('neon_survivor_player_id') || 'local_' + Math.random().toString(36).slice(2);
+      bc.postMessage({id, name:getNick(), x:player.x, y:player.y, hp:player.hp, maxHp:player.maxHp, at:now});
+      const count = Math.max(1, 1 + Array.from(localRemotePlayers.values()).filter(p=>now-Number(p.at||0)<3500).length);
+      const el = document.getElementById('onlinePlayerCount'); if (el) el.textContent = String(count);
+      // Firebase未接続でも同端末テストではremotePlayersに見えるよう補助
+      if (typeof remotePlayers !== 'undefined' && remotePlayers instanceof Map) {
+        for (const p of localRemotePlayers.values()) if (now - Number(p.at||0) < 3500) remotePlayers.set(p.id, p);
+      }
+    } catch(e) {}
+  }
+
+  function patchBattlePassEquip(){
+    try {
+      if (typeof equipBattlePassCosmetic20260504 === 'function') window.equipBattlePassCosmetic20260504 = equipBattlePassCosmetic20260504;
+      if (typeof renderCollectionScreen === 'function' && !renderCollectionScreen.__nsvFinalBpEquip) {
+        const old = renderCollectionScreen;
+        renderCollectionScreen = function(){ const r=old.apply(this,arguments); setTimeout(addBattlePassEquipButtons,0); return r; };
+        renderCollectionScreen.__nsvFinalBpEquip=true;
+      }
+    } catch(e) {}
+  }
+  function addBattlePassEquipButtons(){
+    try {
+      ensureData(); const root=document.getElementById('collectionListContainer'); if (!root) return;
+      root.querySelectorAll('[data-cosmetic-type][data-cosmetic-id]').forEach(card=>{
+        if (card.querySelector('.nsv-final-equip-btn')) return;
+        const type=card.dataset.cosmeticType, id=card.dataset.cosmeticId;
+        const b=document.createElement('button'); b.className='nsv-final-equip-btn btn-neon px-3 py-2 rounded font-bold mt-2'; b.textContent='装備する / 外す';
+        b.onclick=()=>{ userData.cosmetics.equipped[type] = userData.cosmetics.equipped[type]===id ? '' : id; saveNow(); safeCall(renderCollectionScreen); };
+        card.appendChild(b);
+      });
+    } catch(e) {}
+  }
+
+  function objectLoad(){
+    let total=0; ['enemies','gems','particles','floatingTexts','effects','bullets','enemyBullets','sniperBullets','phantomDaggers','voidTempests','keraunosStorms','hollowMurasakis','stormbreakers','mapBlackholes','bananaPeels','cosmicSushiStorms'].forEach(n=>{ try{ if (Array.isArray(window[n])) total += window[n].length; } catch(e){} });
+    return total;
+  }
+  function trimArray(name, max){ try { const a=window[name]; if (Array.isArray(a) && a.length>max) a.splice(0, a.length-max); } catch(e){} }
+  window.nsvFinalSafetyCaps = function(){
+    try {
+      const lv = Number(player?.level || 1); const load = objectLoad();
+      const ultra = safetyMode || lv >= 35 || load > 700 || isLightMode;
+      trimArray('particles', ultra?10:35); trimArray('floatingTexts', ultra?6:18); trimArray('effects', ultra?3:8); trimArray('gems', ultra?38:90);
+      trimArray('bullets', ultra?42:90); trimArray('enemyBullets', ultra?16:45); trimArray('enemies', ultra?95:190);
+      trimArray('voidTempests', ultra?1:3); trimArray('keraunosStorms', ultra?1:3); trimArray('hollowMurasakis', ultra?1:3); trimArray('cosmicSushiStorms', ultra?1:4);
+      trimArray('mapBlackholes', 0);
+      if (ultra && !safetyMode) activateSafetyMode('AUTO SAFETY');
+    } catch(e) {}
+  };
+  function activateSafetyMode(reason){
+    safetyMode = true;
+    try { isLightMode = true; document.body.classList.add('light-mode'); } catch(e) {}
+    if (!document.getElementById('nsvSafetyBadge')) { const d=document.createElement('div'); d.id='nsvSafetyBadge'; d.className='nsv-safety-badge'; d.textContent='軽量安全モード ON'; document.body.appendChild(d); }
+  }
+  function patchAnimationSafety(){
+    try {
+      if (typeof animate === 'function' && !animate.__nsvFinalSafe) {
+        const old=animate;
+        animate=function(){
+          const t=performance.now(); const r=old.apply(this,arguments); const dt=performance.now()-t;
+          if (dt>45) heavyFrameCount++; else heavyFrameCount=Math.max(0,heavyFrameCount-1);
+          if (heavyFrameCount>=4) { heavyFrameCount=0; activateSafetyMode('HEAVY FRAME'); }
+          window.nsvFinalSafetyCaps(); localOnlineTick(); return r;
+        };
+        animate.__nsvFinalSafe=true;
+      }
+    } catch(e) {}
+  }
+  function repairProgressionIfBroken(){
+    try {
+      ensureData();
+      const upgTotal = Object.values(userData.upgrades||{}).reduce((a,b)=>a+Number(b||0),0);
+      const unlocked = Object.keys(userData.unlocks?.legendaryWeapons||{}).filter(k=>userData.unlocks.legendaryWeapons[k]).length;
+      if (!userData.nsvProgressRepair20260505 && unlocked >= 3 && upgTotal === 0 && Number(userData.coins||0) < 3000) {
+        userData.coins = Number(userData.coins||0) + 15000;
+        userData.nsvProgressRepair20260505 = true;
+        saveNow();
+        alert('進行データのズレを検出したため、アップグレード再開用に補填コインを追加しました。');
+      }
+    } catch(e) {}
+  }
+  function patchOrangeBossAndStarfall(){
+    // 既存コードに強化が入っている場合はそれを利用。ここでは重さだけさらに抑える。
+    try {
+      if (typeof triggerAdvancedBossPattern === 'function' && !triggerAdvancedBossPattern.__nsvFinalOrange) {
+        const old=triggerAdvancedBossPattern;
+        triggerAdvancedBossPattern=function(boss){
+          if (boss && (boss.type===4 || boss.color==='#ff6600' || boss.color==='#f97316' || String(boss.bossPattern||'').includes('FIRE'))) return;
+          return old.apply(this,arguments);
+        };
+        triggerAdvancedBossPattern.__nsvFinalOrange=true;
+      }
+    } catch(e) {}
+  }
+
+  function boot(){
+    injectStyle(); ensureData(); ensureAllButtons(); ensureToggleRowAndOrder(); patchShopRender(); ensureShopCoins(); patchOnline(); patchBattlePassEquip(); patchAnimationSafety(); patchOrangeBossAndStarfall(); repairProgressionIfBroken(); addOnlineNote();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  setTimeout(boot,600); setTimeout(boot,1800); setInterval(()=>{ try{ ensureAllButtons(); ensureToggleRowAndOrder(); window.nsvFinalSafetyCaps(); localOnlineTick(); }catch(e){} }, 1200);
+})();
+</script>
+
 </body>
 </html>
