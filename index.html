@@ -13356,7 +13356,13 @@
                     '8531269': { title:'ULTIMATE MASTER', desc:'全アルティメット系武器を解放', kind:'unlockWeapons', weapons:['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'] },
                     '7293846': { title:'POWER MODE', desc:'攻撃力 x2 / 移動速度 x1.25', kind:'powerMode', damageMult:2, speedMult:1.25 },
                     '4862759': { title:'RECOVERY CORE', desc:'自動回復を強化', kind:'regen', regenBonus:4 },
-                    '9176384': { title:'GOD RUN START', desc:'現在のプレイ中に体力回復＋強武器をすぐ装備', kind:'runGod' }
+                    '9176384': { title:'GOD RUN START', desc:'現在のプレイ中に体力回復＋強武器をすぐ装備', kind:'runGod' },
+                    // 2026-05-05 V5: 超強力チートコード追加
+                    '9285734': { title:'ULTRA COIN VAULT', desc:'コイン +9,999,999', kind:'coins', amount:9999999 },
+                    '5739281': { title:'TITAN OVERDRIVE', desc:'最大体力 x50 / 攻撃力 x12 / 移動速度 x2 / 自動回復 +25', kind:'megaBuff', hpMult:50, damageMult:12, speedMult:2, regenBonus:25 },
+                    '8463917': { title:'MAX NEON LAB', desc:'全アップグレード +50 / バトルスター +500 / チケット +10', kind:'megaUpgrade', amount:50, stars:500, tickets:10 },
+                    '3918462': { title:'COSMIC ARSENAL', desc:'全伝説武器を解放し、武器図鑑も使用済みにする', kind:'megaUnlock' },
+                    '7641928': { title:'TRUE GOD RUN', desc:'プレイ中に最強装備・全回復・高火力状態を付与', kind:'trueGodRun' }
                 };
 
                 function nsvEnsureCheatData() {
@@ -13380,6 +13386,71 @@
                     }
                 }
 
+                function nsvRememberOriginalPlayerStats20260505V5() {
+                    try {
+                        if (!player || player.__nsvOriginalStats20260505V5) return;
+                        player.__nsvOriginalStats20260505V5 = {
+                            maxHp: Number(player.maxHp || 100),
+                            hp: Number(player.hp || player.maxHp || 100),
+                            damage: Number(player.damage || 30),
+                            speed: Number(player.speed || 4),
+                            regenAmount: Number(player.regenAmount || 1)
+                        };
+                    } catch(e) {}
+                }
+
+                function nsvCancelAllCheats20260505V5() {
+                    try {
+                        const c = nsvEnsureCheatData();
+                        c.hpMult = 1;
+                        c.damageMult = 1;
+                        c.speedMult = 1;
+                        c.regenBonus = 0;
+                        c.usedCodes = {};
+                        c.cancelledAt = Date.now();
+                        if (player) {
+                            const o = player.__nsvOriginalStats20260505V5;
+                            if (o) {
+                                player.maxHp = Math.max(1, Number(o.maxHp || 100));
+                                player.hp = Math.min(Math.max(1, Number(player.hp || o.hp || 100)), player.maxHp);
+                                player.damage = Math.max(1, Number(o.damage || 30));
+                                player.speed = Math.max(1, Number(o.speed || 4));
+                                player.regenAmount = Math.max(0, Number(o.regenAmount || 1));
+                            }
+                            player.__nsvCheatApplied20260505 = false;
+                            try { floatingTexts.push(new FloatingText(player.x, player.y - 50, 'CHEATS OFF', '#93c5fd', 20)); } catch(_) {}
+                        }
+                        nsvSaveCheatData();
+                        try { renderUpgradeScreen?.(); } catch(e) {}
+                        try { renderShopV2?.(); } catch(e) {}
+                        nsvCheatNotify('CHEATS CANCELLED', '0000000 により、体力倍率・攻撃倍率・移動速度倍率・自動回復チートを解除しました。コインやミッション報酬など、すでに保存された通常データは残します。');
+                    } catch(e) { alert('チート解除中にエラーが出ました。'); }
+                }
+
+                function nsvAllLegendaryWeaponIds20260505V5() {
+                    const fallback = ['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'];
+                    try {
+                        const ids = [];
+                        try { (LEGENDARY_WEAPON_DEFS || []).forEach(w => w && w.id && ids.push(w.id)); } catch(_) {}
+                        try { (WEAPON_CODEX_DEFS || []).forEach(w => w && w.id && ids.push(w.id)); } catch(_) {}
+                        return Array.from(new Set(ids.length ? ids : fallback));
+                    } catch(e) { return fallback; }
+                }
+
+                function nsvGrantTrueGodRun20260505V5() {
+                    try {
+                        if (!player) return false;
+                        nsvRememberOriginalPlayerStats20260505V5();
+                        nsvApplyCheatBuffsToPlayer(false);
+                        player.hp = player.maxHp;
+                        const weaponLevelProps = ['hollowMurasakiLevel','kamehamehaLevel','funnelLevel','keraunosLevel','shieldLevel','infiniteBladeLevel','vaderLevel','thorLevel','muryokuLevel','starfallCrownLevel','railCannonLevel','blackholeEmperorLevel','thunderAegisLevel','solarDrillLevel','chronoLotusLevel','phoenixCoreLevel','ironBlasterLevel','disneyMagicLevel','infinitySnapLevel','neonLanceLevel'];
+                        weaponLevelProps.forEach(k => { player[k] = Math.max(Number(player[k] || 0), 5); });
+                        player.invincibleTimer = Math.max(Number(player.invincibleTimer || 0), 60 * 15);
+                        try { floatingTexts.push(new FloatingText(player.x, player.y - 70, 'TRUE GOD RUN!', '#facc15', 26)); } catch(_) {}
+                        return true;
+                    } catch(e) { return false; }
+                }
+
                 function nsvCheatNotify(title, msg) {
                     try { showMissionToast?.(title, msg); } catch(e) {}
                     try { alert(title + '\n' + msg); } catch(e) {}
@@ -13401,6 +13472,7 @@
                 function nsvApplyCheatBuffsToPlayer(showText = false) {
                     try {
                         if (!player) return;
+                        nsvRememberOriginalPlayerStats20260505V5();
                         const c = nsvEnsureCheatData();
                         const hpMult = Math.max(1, Number(c.hpMult || 1));
                         const dmgMult = Math.max(1, Number(c.damageMult || 1));
@@ -13436,6 +13508,7 @@
                 function nsvExecuteCheatCode(raw) {
                     const code = String(raw || '').replace(/[^0-9]/g, '').slice(0, 7);
                     if (!/^\d{7}$/.test(code)) { alert('7桁の数字を入力してください。'); return; }
+                    if (code === '0000000') { nsvCancelAllCheats20260505V5(); return; }
                     const data = CHEAT_CODE_LIST_20260505[code];
                     if (!data) { alert('このチートコードは存在しません。'); return; }
                     const c = nsvEnsureCheatData();
@@ -13464,6 +13537,32 @@
                     } else if (data.kind === 'regen') {
                         c.regenBonus = Math.max(Number(c.regenBonus || 0), Number(data.regenBonus || 0));
                         if (player) { player.__nsvCheatApplied20260505 = false; nsvApplyCheatBuffsToPlayer(true); }
+                    } else if (data.kind === 'megaBuff') {
+                        c.hpMult = Math.max(Number(c.hpMult || 1), Number(data.hpMult || 1));
+                        c.damageMult = Math.max(Number(c.damageMult || 1), Number(data.damageMult || 1));
+                        c.speedMult = Math.max(Number(c.speedMult || 1), Number(data.speedMult || 1));
+                        c.regenBonus = Math.max(Number(c.regenBonus || 0), Number(data.regenBonus || 0));
+                        if (player) { player.__nsvCheatApplied20260505 = false; nsvApplyCheatBuffsToPlayer(true); }
+                    } else if (data.kind === 'megaUpgrade') {
+                        try { upgradeDef.forEach(u => { userData.upgrades[u.id] = Number(userData.upgrades[u.id] || 0) + Number(data.amount || 0); }); } catch(e) {}
+                        userData.passTickets = Number(userData.passTickets || 0) + Number(data.tickets || 0);
+                        userData.battlePassV2 = userData.battlePassV2 || {};
+                        userData.battlePassV2.battleStars = Number(userData.battlePassV2.battleStars || 0) + Number(data.stars || 0);
+                        userData.battlePassV2.earnedStars = Number(userData.battlePassV2.earnedStars || 0) + Number(data.stars || 0);
+                    } else if (data.kind === 'megaUnlock') {
+                        const ids = nsvAllLegendaryWeaponIds20260505V5();
+                        const names = nsvUnlockCheatWeapons(ids);
+                        userData.codex = userData.codex || {};
+                        userData.codex.weapons = userData.codex.weapons || {};
+                        ids.forEach(id => { userData.codex.weapons[id] = true; });
+                        message = '全伝説武器を解放: ' + names.slice(0, 8).join(' / ') + (names.length > 8 ? ' ほか' : '');
+                    } else if (data.kind === 'trueGodRun') {
+                        c.hpMult = Math.max(Number(c.hpMult || 1), 80);
+                        c.damageMult = Math.max(Number(c.damageMult || 1), 25);
+                        c.speedMult = Math.max(Number(c.speedMult || 1), 2.4);
+                        c.regenBonus = Math.max(Number(c.regenBonus || 0), 50);
+                        const ok = nsvGrantTrueGodRun20260505V5();
+                        if (!ok) message = 'プレイ中に使うと、最強装備・全回復・高火力状態が反映されます。';
                     } else if (data.kind === 'runGod') {
                         const ok = nsvGrantRunGodMode();
                         if (!ok) message = 'プレイ中に使うと、体力回復と強武器がすぐ反映されます。';
@@ -13495,7 +13594,7 @@
                         if (startPanel && !document.getElementById('cheatCodeStartBtn')) {
                             const wrap = document.createElement('div');
                             wrap.id = 'cheatCodeStartWrap';
-                            wrap.innerHTML = '<button id="cheatCodeStartBtn" class="nsv-cheat-btn" type="button">🔐 チートコード入力</button><div class="nsv-cheat-note">7桁の数字で特別効果を発動</div>';
+                            wrap.innerHTML = '<button id="cheatCodeStartBtn" class="nsv-cheat-btn" type="button">🔐 チートコード入力</button><div class="nsv-cheat-note">7桁の数字で発動 / 0000000で解除</div>';
                             startPanel.appendChild(wrap);
                             document.getElementById('cheatCodeStartBtn')?.addEventListener('click', nsvOpenCheatPrompt);
                         }
@@ -13504,7 +13603,7 @@
                             const wrap = document.createElement('div');
                             wrap.id = 'cheatCodePauseWrap';
                             wrap.style.width = 'min(92vw,420px)';
-                            wrap.innerHTML = '<button id="cheatCodePauseBtn" class="nsv-cheat-btn" type="button">🔐 チートコード入力</button><div class="nsv-cheat-note">プレイ中の強化コードはここから使えます</div>';
+                            wrap.innerHTML = '<button id="cheatCodePauseBtn" class="nsv-cheat-btn" type="button">🔐 チートコード入力</button><div class="nsv-cheat-note">プレイ中の強化コード / 0000000で解除</div>';
                             pause.appendChild(wrap);
                             document.getElementById('cheatCodePauseBtn')?.addEventListener('click', nsvOpenCheatPrompt);
                         }
@@ -14474,7 +14573,7 @@
       if (document.getElementById('nsvPatchV4Badge')) return;
       const b = document.createElement('div');
       b.id = 'nsvPatchV4Badge';
-      b.textContent = 'PATCH V4 WARNING FIX ON';
+      b.textContent = 'PATCH V5 CHEAT FIX ON';
       b.style.cssText = 'position:fixed;right:10px;bottom:54px;z-index:99999;background:rgba(0,0,0,.72);color:#f0abfc;border:1px solid #c084fc;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;pointer-events:none;box-shadow:0 0 12px rgba(192,132,252,.45);';
       document.body.appendChild(b);
     }
@@ -14485,6 +14584,286 @@
   } catch(e) {
     console.warn('Patch V4 map event cleanup skipped', e);
   }
+})();
+</script>
+
+
+<!-- 2026-05-05 V6 PATCH: pause weapon levels + level x5 cheat -->
+<script>
+(function(){
+  'use strict';
+  const PATCH_ID = 'nsv_v6_pause_weapon_and_level5_cheat_final';
+  if (window[PATCH_ID]) return;
+  window[PATCH_ID] = true;
+
+  const CHEAT_V6 = {
+    '7429136': { title:'COIN BOOST 10K', effect:'コイン +10,000', kind:'coins', amount:10000 },
+    '6814297': { title:'COIN BOOST 100K', effect:'コイン +100,000', kind:'coins', amount:100000 },
+    '3947162': { title:'HP BOOST x2', effect:'最大体力 2倍', kind:'hpMult', mult:2 },
+    '8274613': { title:'HP BOOST x3', effect:'最大体力 3倍', kind:'hpMult', mult:3 },
+    '5192847': { title:'HP BOOST x5', effect:'最大体力 5倍', kind:'hpMult', mult:5 },
+    '6381974': { title:'UPGRADE STARTER', effect:'全アップグレード +5', kind:'upgradePlus', amount:5 },
+    '2967481': { title:'NEON PASS BOOST', effect:'バトルスター +25 / チケット +1', kind:'passBoost', stars:25, tickets:1 },
+    '4719368': { title:'ULTIMATE STARTER', effect:'主要アルティメット武器を解放', kind:'unlockWeapons', weapons:['hollowMurasaki','kamehameha','funnel','thor','shieldThrow'] },
+    '8531269': { title:'ULTIMATE MASTER', effect:'全アルティメット系武器を解放', kind:'unlockWeapons', weapons:['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'] },
+    '7293846': { title:'POWER MODE', effect:'攻撃力 2倍 / 移動速度 1.25倍', kind:'powerMode', damageMult:2, speedMult:1.25 },
+    '4862759': { title:'RECOVERY CORE', effect:'自動回復を強化', kind:'regen', regenBonus:4 },
+    '9176384': { title:'GOD RUN START', effect:'プレイ中に体力回復＋強武器を装備', kind:'runGod' },
+    '9285734': { title:'ULTRA COIN VAULT', effect:'コイン +9,999,999', kind:'coins', amount:9999999 },
+    '5739281': { title:'TITAN OVERDRIVE', effect:'体力50倍 / 攻撃12倍 / 速度2倍 / 自動回復+25', kind:'megaBuff', hpMult:50, damageMult:12, speedMult:2, regenBonus:25 },
+    '8463917': { title:'MAX NEON LAB', effect:'全アップグレード +50 / バトルスター +500 / チケット +10', kind:'megaUpgrade', amount:50, stars:500, tickets:10 },
+    '3918462': { title:'COSMIC ARSENAL', effect:'全伝説武器解放＋武器図鑑使用済み', kind:'megaUnlock' },
+    '7641928': { title:'TRUE GOD RUN', effect:'プレイ中に最強装備・全回復・超強化', kind:'trueGodRun' },
+    '2847396': { title:'QUINT LEVEL BOOST', effect:'1回のレベルアップで5レベル分上がる', kind:'levelFive' },
+    '0000000': { title:'CHEATS CANCELLED', effect:'倍率系チートと5倍レベルアップを解除', kind:'cancel' }
+  };
+  window.neonSurvivorV6CheatList = CHEAT_V6;
+
+  function $(id){ return document.getElementById(id); }
+  function getUD(){
+    try {
+      if (typeof userData !== 'undefined' && userData) {
+        userData.cheats = userData.cheats || {};
+        userData.unlocks = userData.unlocks || {};
+        userData.unlocks.legendaryWeapons = userData.unlocks.legendaryWeapons || {};
+        userData.upgrades = userData.upgrades || {};
+        return userData;
+      }
+    } catch(e) {}
+    let d = {};
+    try { d = JSON.parse(localStorage.getItem('neon_survivor_save') || '{}') || {}; } catch(e) {}
+    d.cheats = d.cheats || {};
+    d.unlocks = d.unlocks || {legendaryWeapons:{}};
+    d.unlocks.legendaryWeapons = d.unlocks.legendaryWeapons || {};
+    d.upgrades = d.upgrades || {};
+    return d;
+  }
+  function saveUD(){
+    try { if (typeof saveData === 'function') { saveData(); return; } } catch(e) {}
+    try { localStorage.setItem('neon_survivor_save', JSON.stringify(getUD())); } catch(e) {}
+  }
+  function toast(t, m){
+    try { if (typeof showMissionToast === 'function') showMissionToast(t, m); } catch(e) {}
+    try { alert(t + '\n' + m); } catch(e) {}
+  }
+  function allLegendIds(){
+    const fallback = ['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'];
+    try {
+      const ids = [];
+      try { (LEGENDARY_WEAPON_DEFS || []).forEach(w => w && w.id && ids.push(w.id)); } catch(e) {}
+      try { (WEAPON_CODEX_DEFS || []).forEach(w => w && w.id && ids.push(w.id)); } catch(e) {}
+      return Array.from(new Set(ids.length ? ids : fallback));
+    } catch(e) { return fallback; }
+  }
+  function rememberOriginal(){
+    try {
+      if (!player || player.__nsvV6OriginalStats) return;
+      player.__nsvV6OriginalStats = { maxHp:Number(player.maxHp||100), hp:Number(player.hp||player.maxHp||100), damage:Number(player.damage||30), speed:Number(player.speed||4), regenAmount:Number(player.regenAmount||1) };
+    } catch(e) {}
+  }
+  function applyBuffs(){
+    try {
+      if (!player) return;
+      rememberOriginal();
+      const u = getUD(); const c = u.cheats || {};
+      const o = player.__nsvV6OriginalStats || { maxHp:Number(player.maxHp||100), damage:Number(player.damage||30), speed:Number(player.speed||4), regenAmount:Number(player.regenAmount||1) };
+      const hpMult = Math.max(1, Number(c.hpMult || 1));
+      const dmgMult = Math.max(1, Number(c.damageMult || 1));
+      const spdMult = Math.max(1, Number(c.speedMult || 1));
+      const regenBonus = Math.max(0, Number(c.regenBonus || 0));
+      player.maxHp = Math.max(1, Math.round(o.maxHp * hpMult));
+      player.hp = Math.min(player.maxHp, Math.max(1, Number(player.hp || o.hp || player.maxHp)));
+      if (hpMult > 1 && player.hp < player.maxHp) player.hp = player.maxHp;
+      player.damage = Math.max(1, o.damage * dmgMult);
+      player.speed = Math.max(1, o.speed * spdMult);
+      player.regenAmount = Math.max(0, o.regenAmount + regenBonus);
+      player.__nsvCheatApplied20260505 = true;
+      try { updateUI(); } catch(e) {}
+    } catch(e) { console.warn('V6 buff skipped', e); }
+  }
+  function cancelCheats(){
+    const u = getUD(); const c = u.cheats = u.cheats || {};
+    c.hpMult = 1; c.damageMult = 1; c.speedMult = 1; c.regenBonus = 0; c.levelFive = false; c.usedCodes = {};
+    try {
+      if (player && player.__nsvV6OriginalStats) {
+        const o = player.__nsvV6OriginalStats;
+        player.maxHp = Math.max(1, Number(o.maxHp || 100));
+        player.hp = Math.min(player.maxHp, Math.max(1, Number(player.hp || o.hp || 100)));
+        player.damage = Math.max(1, Number(o.damage || 30));
+        player.speed = Math.max(1, Number(o.speed || 4));
+        player.regenAmount = Math.max(0, Number(o.regenAmount || 1));
+        player.__nsvCheatApplied20260505 = false;
+      }
+      try { updateUI(); } catch(e) {}
+    } catch(e) {}
+    saveUD();
+  }
+  function grantRunGod(strong){
+    try {
+      if (!player) return false;
+      applyBuffs();
+      player.hp = player.maxHp;
+      ['hollowMurasakiLevel','kamehamehaLevel','funnelLevel','keraunosLevel','shieldLevel','infiniteBladeLevel','vaderLevel','thorLevel','muryokuLevel','ironmanSuitLevel','disneyMagicLevel','infinitySnapLevel','phantomStepLevel','legendaryRailCannonLevel','legendaryBlackholeEmperorLevel','legendaryThunderAegisLevel','legendarySolarDrillLevel','legendaryChronoLotusLevel','legendaryPhoenixCoreLevel','legendaryStarfallLevel'].forEach(k => { player[k] = Math.max(Number(player[k]||0), strong ? 5 : 2); });
+      player.invincibleTimer = Math.max(Number(player.invincibleTimer || 0), strong ? 1200 : 360);
+      try { floatingTexts.push(new FloatingText(player.x, player.y - 70, strong ? 'TRUE GOD RUN!' : 'GOD RUN!', '#facc15', 24)); } catch(e) {}
+      updatePauseWeaponPanel();
+      return true;
+    } catch(e) { return false; }
+  }
+  function executeCheat(raw){
+    const code = String(raw || '').replace(/[^0-9]/g,'').slice(0,7);
+    if (!/^\d{7}$/.test(code)) { alert('7桁の数字を入力してください。'); return; }
+    const data = CHEAT_V6[code];
+    if (!data) { alert('このチートコードは存在しません。'); return; }
+    const u = getUD(); const c = u.cheats = u.cheats || {};
+    let message = data.effect;
+    if (data.kind === 'cancel') {
+      cancelCheats(); toast('CHEATS CANCELLED', '0000000 により、倍率系チートと5倍レベルアップを解除しました。コインや解放済みデータは残します。'); return;
+    }
+    if (data.kind === 'coins') {
+      u.coins = Number(u.coins || 0) + Number(data.amount || 0);
+      u.stats = u.stats || {}; u.stats.totalCoinsEarned = Number(u.stats.totalCoinsEarned || 0) + Number(data.amount || 0);
+    } else if (data.kind === 'hpMult') {
+      c.hpMult = Math.max(Number(c.hpMult || 1), Number(data.mult || 1)); applyBuffs();
+    } else if (data.kind === 'powerMode') {
+      c.damageMult = Math.max(Number(c.damageMult || 1), Number(data.damageMult || 1)); c.speedMult = Math.max(Number(c.speedMult || 1), Number(data.speedMult || 1)); applyBuffs();
+    } else if (data.kind === 'regen') {
+      c.regenBonus = Math.max(Number(c.regenBonus || 0), Number(data.regenBonus || 0)); applyBuffs();
+    } else if (data.kind === 'megaBuff') {
+      c.hpMult = Math.max(Number(c.hpMult || 1), Number(data.hpMult || 1)); c.damageMult = Math.max(Number(c.damageMult || 1), Number(data.damageMult || 1)); c.speedMult = Math.max(Number(c.speedMult || 1), Number(data.speedMult || 1)); c.regenBonus = Math.max(Number(c.regenBonus || 0), Number(data.regenBonus || 0)); applyBuffs();
+    } else if (data.kind === 'upgradePlus' || data.kind === 'megaUpgrade') {
+      try { (upgradeDef || []).forEach(x => { u.upgrades[x.id] = Number(u.upgrades[x.id] || 0) + Number(data.amount || 0); }); } catch(e) {}
+      if (data.kind === 'megaUpgrade') { u.passTickets = Number(u.passTickets || 0) + Number(data.tickets || 0); u.battlePassV2 = u.battlePassV2 || {}; u.battlePassV2.battleStars = Number(u.battlePassV2.battleStars || 0) + Number(data.stars || 0); u.battlePassV2.earnedStars = Number(u.battlePassV2.earnedStars || 0) + Number(data.stars || 0); }
+    } else if (data.kind === 'passBoost') {
+      u.passTickets = Number(u.passTickets || 0) + Number(data.tickets || 0); u.battlePassV2 = u.battlePassV2 || {}; u.battlePassV2.battleStars = Number(u.battlePassV2.battleStars || 0) + Number(data.stars || 0); u.battlePassV2.earnedStars = Number(u.battlePassV2.earnedStars || 0) + Number(data.stars || 0);
+    } else if (data.kind === 'unlockWeapons' || data.kind === 'megaUnlock') {
+      const ids = data.kind === 'megaUnlock' ? allLegendIds() : (data.weapons || []);
+      u.unlocks = u.unlocks || {}; u.unlocks.legendaryWeapons = u.unlocks.legendaryWeapons || {}; ids.forEach(id => { u.unlocks.legendaryWeapons[id] = true; });
+      if (data.kind === 'megaUnlock') { u.codex = u.codex || {}; u.codex.weapons = u.codex.weapons || {}; ids.forEach(id => { u.codex.weapons[id] = true; }); }
+      message = ids.length + '個の武器を解放しました。';
+    } else if (data.kind === 'runGod') {
+      if (!grantRunGod(false)) message = 'プレイ中に使うと反映されます。';
+    } else if (data.kind === 'trueGodRun') {
+      c.hpMult = Math.max(Number(c.hpMult || 1), 80); c.damageMult = Math.max(Number(c.damageMult || 1), 25); c.speedMult = Math.max(Number(c.speedMult || 1), 2.4); c.regenBonus = Math.max(Number(c.regenBonus || 0), 50);
+      if (!grantRunGod(true)) message = 'プレイ中に使うと反映されます。';
+    } else if (data.kind === 'levelFive') {
+      c.levelFive = true; message = 'これ以降、1回のレベルアップで5レベル分上がります。解除は 0000000 です。';
+    }
+    c.usedCodes = c.usedCodes || {}; c.usedCodes[code] = {title:data.title, at:Date.now()};
+    saveUD();
+    try { if (typeof renderUpgradeScreen === 'function') renderUpgradeScreen(); } catch(e) {}
+    try { if (typeof renderShopV2 === 'function') renderShopV2(); } catch(e) {}
+    toast('CHEAT ACTIVATED: ' + data.title, message);
+  }
+
+  function injectStyle(){
+    if ($('nsvV6Style')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvV6Style';
+    st.textContent = `
+      #pauseWeaponLevelsV6{width:min(92vw,560px);max-height:28vh;overflow:auto;margin:10px 0 14px;padding:12px;border:1px solid rgba(34,211,238,.55);border-radius:16px;background:rgba(2,6,23,.86);box-shadow:0 0 16px rgba(34,211,238,.18);pointer-events:auto!important;}
+      #pauseWeaponLevelsV6 .v6-title{font-weight:900;color:#67e8f9;text-align:center;margin-bottom:8px;letter-spacing:.08em;}
+      #pauseWeaponLevelsV6 .v6-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+      #pauseWeaponLevelsV6 .v6-item{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(15,23,42,.72);font-size:12px;}
+      #pauseWeaponLevelsV6 .v6-lv{color:#fde68a;font-weight:900;white-space:nowrap;}
+      #pauseWeaponLevelsV6 .v6-empty{text-align:center;color:#cbd5e1;font-size:13px;}
+      #cheatListV6{width:min(92vw,560px);margin-top:8px;padding:10px;border:1px solid rgba(244,114,182,.5);border-radius:14px;background:rgba(88,28,135,.18);font-size:11px;max-height:20vh;overflow:auto;pointer-events:auto!important;}
+      #cheatListV6 summary{cursor:pointer;color:#fbcfe8;font-weight:900;text-align:center;}
+      #cheatListV6 table{width:100%;border-collapse:collapse;margin-top:8px;}
+      #cheatListV6 td{border-top:1px solid rgba(244,114,182,.22);padding:5px;color:#fce7f3;vertical-align:top;}
+      #cheatListV6 code{color:#fde68a;font-weight:900;}
+      #nsvV6Badge{position:fixed;right:10px;bottom:42px;z-index:99999;background:rgba(2,6,23,.9);border:1px solid #a78bfa;color:#ddd6fe;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:900;pointer-events:none;}
+      @media(max-width:720px){#pauseWeaponLevelsV6 .v6-grid{grid-template-columns:1fr;}#pauseWeaponLevelsV6{max-height:26vh;}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  const KNOWN_NAMES = {
+    bladeRingLevel:'円環の刃界', electricFieldLevel:'破滅の雷域', voidTempestLevel:'虚空次元の暴風', phantomStepLevel:'ファントムステップ', hollowMurasakiLevel:'虚式「茈」', kamehamehaLevel:'龍星・崩命破', infinitySnapLevel:'終焉の指弾', infiniteBladeLevel:'無限の剣陣', ironmanSuitLevel:'創世の光芒', keraunosLevel:'天帝の裁界・霹靂', funnelLevel:'星砕きの流星群', vaderLevel:'深淵の重力刃', thorLevel:'雷霆砕破・轟', disneyMagicLevel:'星夢の輪舞曲', muryokuLevel:'無量空処', shieldLevel:'絶対防壁の反響', recoveryMasteryLevel:'回復の極意', onlineShieldLevel:'蒼盾アイギス', onlineSniperLevel:'スナイパーライフル', onlineBounceBombLevel:'バウンスボム', onlinePoisonLevel:'トキシックトラップ', onlinePhantomLevel:'ファントムダガー', onlineGravityLevel:'グラビティ・パルサー', onlineBananaLevel:'バナナスリップ砲', onlineAstralLevel:'アストラル・ジャッジメント', onlineHarisenLevel:'ネビュラ・ハリセンノヴァ', onlineSushiLevel:'コズミック・スシレイン', legendaryNeonLanceLevel:'ネオンランス', legendaryPhoenixCoreLevel:'フェニックスコア', legendaryStarfallLevel:'星落としの王冠', legendaryVoidCollectorLevel:'虚空コレクター', legendaryRailCannonLevel:'レールキャノン', legendaryBlackholeEmperorLevel:'ブラックホールエンペラー', legendaryThunderAegisLevel:'サンダーイージス', legendarySolarDrillLevel:'ソーラードリル', legendaryChronoLotusLevel:'クロノロータス'
+  };
+  const EVO_NAMES = { evoBlackhole:'ブラックホール・ノヴァ', evoGravityBeam:'超重力・崩命破', evoThunderBlade:'雷鳴の剣域', evoRicochetSniper:'リコシェスナイパー', evoToxicAegis:'トキシックアイギス', evoGravitonDagger:'グラビトンダガー', evoSingularityBomb:'シンギュラリティボム', evoRailBurst:'星核レールバースト', evoEndBlackhole:'終焉ブラックホール' };
+  function levelNameFromProp(prop){ return KNOWN_NAMES[prop] || prop.replace(/^legendary/,'').replace(/^online/,'').replace(/Level$/,'').replace(/([A-Z])/g,' $1').trim(); }
+  function collectWeapons(){
+    const p = (typeof player !== 'undefined') ? player : null;
+    if (!p) return [];
+    const list = [];
+    Object.keys(KNOWN_NAMES).forEach(k => { const v = Number(p[k] || 0); if (v > 0) list.push({name: levelNameFromProp(k), lv: v}); });
+    Object.keys(p).forEach(k => { if (/Level$/.test(k) && !(k in KNOWN_NAMES)) { const v = Number(p[k] || 0); if (v > 0) list.push({name: levelNameFromProp(k), lv: v}); } });
+    Object.keys(EVO_NAMES).forEach(k => { if (p[k]) list.push({name:EVO_NAMES[k], lv:'進化'}); });
+    const seen = new Set();
+    return list.filter(x => { const key=x.name+'|'+x.lv; if(seen.has(key)) return false; seen.add(key); return true; });
+  }
+  function renderCheatTableHTML(){ return '<table>' + Object.entries(CHEAT_V6).map(([code, d]) => `<tr><td><code>${code}</code></td><td><b>${d.title}</b><br>${d.effect}</td></tr>`).join('') + '</table>'; }
+  function ensurePauseWeaponPanel(){
+    injectStyle();
+    const ps = $('pauseScreen'); if (!ps) return;
+    if (!$('pauseWeaponLevelsV6')) {
+      const panel = document.createElement('div'); panel.id = 'pauseWeaponLevelsV6'; panel.innerHTML = '<div class="v6-title">現在の武器レベル</div><div class="v6-empty">プレイ中に武器を取るとここに表示されます。</div>';
+      const resume = $('resumeBtn'); if (resume && resume.parentElement && resume.parentElement.parentElement === ps) ps.insertBefore(panel, resume.parentElement); else ps.appendChild(panel);
+    }
+    if (!$('cheatListV6')) {
+      const details = document.createElement('details'); details.id = 'cheatListV6'; details.innerHTML = '<summary>チートコード一覧を表示</summary>' + renderCheatTableHTML();
+      const cheatWrap = $('cheatCodePauseWrap'); if (cheatWrap && cheatWrap.parentElement) cheatWrap.parentElement.insertBefore(details, cheatWrap.nextSibling); else ps.appendChild(details);
+    }
+  }
+  function updatePauseWeaponPanel(){
+    ensurePauseWeaponPanel();
+    const panel = $('pauseWeaponLevelsV6'); if (!panel) return;
+    const weapons = collectWeapons();
+    if (!weapons.length) { panel.innerHTML = '<div class="v6-title">現在の武器レベル</div><div class="v6-empty">まだ武器を取得していません。</div>'; return; }
+    panel.innerHTML = `<div class="v6-title">現在の武器レベル</div><div class="v6-grid">${weapons.map(w => `<div class="v6-item"><span>${w.name}</span><span class="v6-lv">Lv ${w.lv}</span></div>`).join('')}</div>`;
+  }
+  function replaceCheatButtons(){
+    ['cheatCodeStartBtn','cheatCodePauseBtn'].forEach(id => {
+      const b = $(id); if (!b || b.__nsvV6Replaced) return;
+      const nb = b.cloneNode(true); nb.__nsvV6Replaced = true; nb.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); const code = prompt('7桁のチートコードを入力してください'); if (code != null) executeCheat(code); }, true);
+      b.parentNode.replaceChild(nb, b);
+    });
+  }
+  function patchLevelUpX5(){
+    try {
+      if (typeof Player === 'undefined' || !Player.prototype || Player.prototype.__nsvV6Level5Patched) return;
+      const old = Player.prototype.processLevelUp;
+      Player.prototype.processLevelUp = function(){
+        old.apply(this, arguments);
+        try {
+          const u = getUD();
+          if (u.cheats && u.cheats.levelFive && !this.__nsvV6AddingLevels) {
+            this.__nsvV6AddingLevels = true;
+            for (let i=0;i<4;i++) {
+              this.level++;
+              try { if (typeof recordLevelUp === 'function') recordLevelUp(this.level); } catch(e) {}
+              if (!isOnlineMode) {
+                if (this.level > 0 && this.level % 20 === 0) this.pendingOverlordBoss = true;
+                else if (this.level > 0 && this.level % 10 === 0) this.pendingMonkeyBoss = true;
+                else if (this.level > 3) { if (this.level % 3 === 0) this.pendingBossSpawn = true; else this.pendingMidBossSpawn = true; }
+              }
+              if (this.expToNext) this.expToNext = Math.floor(this.expToNext * (this.level > 15 ? 1.18 : 1.12));
+            }
+            this.exp = 0; try { updateUI(); } catch(e) {}
+            try { floatingTexts.push(new FloatingText(this.x, this.y - 70, '+4 BONUS LEVELS!', '#fde68a', 22)); } catch(e) {}
+            this.__nsvV6AddingLevels = false;
+          }
+        } catch(e) { this.__nsvV6AddingLevels = false; console.warn('V6 level x5 skipped', e); }
+      };
+      Player.prototype.__nsvV6Level5Patched = true;
+    } catch(e) { console.warn('V6 Player patch skipped', e); }
+  }
+  function patchPauseShow(){
+    try {
+      if (typeof showScreen === 'function' && !showScreen.__nsvV6Patched) {
+        const oldShow = showScreen;
+        showScreen = function(id){ const r = oldShow.apply(this, arguments); if (id === 'pauseScreen') setTimeout(updatePauseWeaponPanel, 0); return r; };
+        showScreen.__nsvV6Patched = true;
+      }
+    } catch(e) {}
+    const pb = $('pauseBtn');
+    if (pb && !pb.__nsvV6WeaponPanelBound) { pb.__nsvV6WeaponPanelBound = true; ['click','pointerup','touchend'].forEach(ev => pb.addEventListener(ev, () => setTimeout(updatePauseWeaponPanel, 60), true)); }
+  }
+  function badge(){ if ($('nsvV6Badge')) return; const b = document.createElement('div'); b.id = 'nsvV6Badge'; b.textContent = 'PATCH V6 WEAPON LEVEL ON'; document.body.appendChild(b); }
+  function boot(){ injectStyle(); ensurePauseWeaponPanel(); updatePauseWeaponPanel(); replaceCheatButtons(); patchLevelUpX5(); patchPauseShow(); badge(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+  setInterval(() => { replaceCheatButtons(); patchLevelUpX5(); patchPauseShow(); try { if ($('pauseScreen') && !$('pauseScreen').classList.contains('hidden')) updatePauseWeaponPanel(); } catch(e) {} }, 1000);
 })();
 </script>
 
