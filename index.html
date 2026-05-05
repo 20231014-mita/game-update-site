@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <!-- reset-highscore-intro-v3-checked -->
+<!-- NSV_FINAL_V2_VISIBLE_APPLIED_20260505 -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -13929,5 +13930,182 @@
 })();
 </script>
 
+<!-- NSV_FINAL_V2_VISIBLE_APPLIED_20260505 -->
+
+<script>
+// ===== NSV FINAL V2 GUARANTEED PATCH 2026-05-05 =====
+(function(){
+  'use strict';
+  const PATCH_ID = 'NSV_FINAL_V2_GUARANTEED_20260505';
+  if (window[PATCH_ID]) return;
+  window[PATCH_ID] = true;
+  const $ = (id)=>document.getElementById(id);
+  function gv(name, fallback){ try { return (0,eval)(name); } catch(e){ return fallback; } }
+  function sv(name, val){ try { (0,eval)(name + ' = arguments[1]'); } catch(e){} }
+  function fn(name){ const f = gv(name); return typeof f === 'function' ? f : null; }
+  function toast(t,m){ try{ fn('showMissionToast')?.(t,m); }catch(e){} try{ console.log('[NSV V2]',t,m||''); }catch(e){} }
+  function getUserData(){ let u = gv('userData'); if (!u || typeof u !== 'object') { u = {}; try{ sv('userData',u); }catch(e){} } return u; }
+  function normalizeNick(n){ try{ return fn('normalizeNickname') ? fn('normalizeNickname')(n||'') : String(n||'').trim().slice(0,12); }catch(e){ return String(n||'').trim().slice(0,12); } }
+  function saveNow(){ try{ fn('saveData')?.(); }catch(e){} try{ localStorage.setItem('neon_survivor_save', JSON.stringify(getUserData())); }catch(e){} }
+  function showScreenSafe(id){
+    try{ fn('showScreen')?.(id); }catch(e){}
+    try{
+      const screens = ['startScreen','upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','bossCodexScreen','onlineRoleScreen','leaderboardScreen','shopScreen','battlePassScreen','levelUpScreen','gameOverScreen','pauseScreen'];
+      screens.forEach(s=>{ const el=$(s); if (!el) return; el.classList.toggle('hidden', s!==id); el.style.display = s===id ? 'flex' : 'none'; el.style.pointerEvents = s===id ? 'auto' : ''; });
+    }catch(e){}
+  }
+  function utf8ToB64(str){ return btoa(unescape(encodeURIComponent(str))); }
+  function b64ToUtf8(str){ return decodeURIComponent(escape(atob(str))); }
+  function makeSaveCode(){
+    const u = getUserData();
+    try { u.nickname = normalizeNick(u.nickname || $('nicknameInput')?.value || localStorage.getItem('neon_survivor_nickname') || ''); } catch(e){}
+    const payload = {v:2, app:'NeonSurvivor', at:Date.now(), data:u};
+    return 'NSV2-' + utf8ToB64(JSON.stringify(payload));
+  }
+  function parseSaveCode(code){
+    const raw = String(code||'').trim();
+    if (!raw) throw new Error('EMPTY');
+    if (raw.startsWith('NSV2-')) {
+      const obj = JSON.parse(b64ToUtf8(raw.slice(5)));
+      if (!obj || obj.app !== 'NeonSurvivor' || !obj.data) throw new Error('BAD_NSV2');
+      return obj.data;
+    }
+    // 古い形式救済：JSONそのもの、またはbase64(JSON)
+    try { const j = JSON.parse(raw); if (j && typeof j === 'object') return j.data || j; } catch(e){}
+    try { const j = JSON.parse(b64ToUtf8(raw)); if (j && typeof j === 'object') return j.data || j; } catch(e){}
+    // 以前のコードがハイフンや空白を混ぜた場合も救済
+    const cleaned = raw.replace(/\s+/g,'').replace(/^NSV1-/,'');
+    try { const j = JSON.parse(b64ToUtf8(cleaned)); if (j && typeof j === 'object') return j.data || j; } catch(e){}
+    throw new Error('BAD_CODE');
+  }
+  async function copyText(text){
+    try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+    try { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); return true; } catch(e){ return false; }
+  }
+  function patchSaveButtons(){
+    const exportBtn = $('exportBtn');
+    if (exportBtn && !exportBtn.dataset.nsvV2Save) {
+      exportBtn.dataset.nsvV2Save='1'; exportBtn.textContent='EXPORT SAVE'; exportBtn.style.pointerEvents='auto'; exportBtn.style.position='relative'; exportBtn.style.zIndex='80';
+      exportBtn.addEventListener('click', async (ev)=>{ ev.preventDefault(); ev.stopImmediatePropagation();
+        const code = makeSaveCode(); const ok = await copyText(code);
+        prompt(ok ? 'セーブコードをコピーしました。念のためここからもコピーできます。' : 'このセーブコードをコピーしてください。', code);
+        toast('SAVE EXPORT','NSV2形式で保存しました');
+      }, true);
+    }
+    const importBtn = $('importBtn');
+    if (importBtn && !importBtn.dataset.nsvV2Save) {
+      importBtn.dataset.nsvV2Save='1'; importBtn.textContent='IMPORT SAVE'; importBtn.style.pointerEvents='auto'; importBtn.style.position='relative'; importBtn.style.zIndex='80';
+      importBtn.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopImmediatePropagation();
+        const code = prompt('セーブコードを貼り付けてください。NSV2形式・古い形式どちらも対応します。');
+        if (code == null) return;
+        try {
+          const imported = parseSaveCode(code);
+          const old = getUserData();
+          const merged = Object.assign({}, old, imported);
+          merged.upgrades = Object.assign({}, old.upgrades||{}, imported.upgrades||{});
+          merged.stats = Object.assign({}, old.stats||{}, imported.stats||{});
+          merged.missions = Object.assign({completed:{},claimed:{}}, old.missions||{}, imported.missions||{});
+          merged.unlocks = Object.assign({legendaryWeapons:{},skins:{classic:true},auras:{none:true}}, old.unlocks||{}, imported.unlocks||{});
+          sv('userData', merged);
+          try{ localStorage.setItem('neon_survivor_save', JSON.stringify(merged)); }catch(e){}
+          try{ if (merged.nickname) localStorage.setItem('neon_survivor_nickname', merged.nickname); }catch(e){}
+          saveNow();
+          try{ $('nicknameInput').value = merged.nickname || ''; }catch(e){}
+          try{ fn('updateStartBestDisplay')?.(); fn('renderUpgradeScreen')?.(); fn('renderCollectionScreen')?.(); }catch(e){}
+          alert('セーブデータを読み込みました。途中から続けられます。');
+        } catch(err) { alert('セーブコードを読み込めませんでした。今回の修正版では、EXPORT SAVEで出した「NSV2-」から始まるコードを使ってください。'); }
+      }, true);
+    }
+  }
+  function injectStyle(){
+    if ($('nsvFinalV2Style')) return;
+    const st=document.createElement('style'); st.id='nsvFinalV2Style';
+    st.textContent = `
+      .nsv-v2-badge{position:fixed;right:8px;bottom:8px;z-index:99999;background:rgba(2,6,23,.92);border:1px solid #22d3ee;color:#a5f3fc;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;box-shadow:0 0 12px rgba(34,211,238,.45);pointer-events:none}.nsv-toggle-row-v2{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.nsv-toggle-row-v2>div{min-height:76px}.nsv-coin-pill-v2{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(250,204,21,.8);background:rgba(113,63,18,.35);color:#fde68a;border-radius:999px;padding:8px 12px;font-weight:900;box-shadow:0 0 12px rgba(250,204,21,.2)}.nsv-server-note-v2{font-size:12px;color:#fde68a;margin-top:4px;max-width:320px}.nsv-menu-btn-fix{pointer-events:auto!important;position:relative!important;z-index:75!important;touch-action:manipulation!important}@media(max-width:720px){.nsv-toggle-row-v2{grid-template-columns:1fr 1fr}.nsv-toggle-row-v2>div{padding:10px!important}.nsv-toggle-row-v2 span{font-size:12px!important}}`;
+    document.head.appendChild(st);
+  }
+  function badge(){ if (!$('nsvFinalV2Badge')) { const d=document.createElement('div'); d.id='nsvFinalV2Badge'; d.className='nsv-v2-badge'; d.textContent='PATCH V2 ON'; document.body.appendChild(d); } }
+  function ensureMenuOrder(){
+    const grid = document.querySelector('#startScreen .menu-grid'); if (!grid) return;
+    ensureRankingButton();
+    const rank = $('openLeaderboardBtn');
+    const joy = $('joystickToggle')?.closest('div.bg-gray-900\/80, div.bg-gray-900, div[class*="bg-gray-900"]') || $('joystickToggle')?.closest('div');
+    const light = $('lightModeToggle')?.closest('div.bg-gray-900\/80, div.bg-gray-900, div[class*="bg-gray-900"]') || $('lightModeToggle')?.closest('div');
+    if (rank && rank.parentElement !== grid) grid.appendChild(rank);
+    let row = $('nsvToggleRowV2');
+    if (!row) { row=document.createElement('div'); row.id='nsvToggleRowV2'; row.className='nsv-toggle-row-v2'; }
+    if (rank && rank.nextSibling !== row) grid.insertBefore(row, rank.nextSibling);
+    if (joy && joy.parentElement !== row) row.appendChild(joy);
+    if (light && light.parentElement !== row) row.appendChild(light);
+  }
+  function ensureRankingButton(){
+    let btn=$('openLeaderboardBtn'); const grid=document.querySelector('#startScreen .menu-grid'); if (!grid) return;
+    if (!btn) { btn=document.createElement('button'); btn.id='openLeaderboardBtn'; btn.className='btn-neon menu-secondary px-6 py-3 font-bold rounded cursor-pointer'; grid.appendChild(btn); }
+    btn.innerHTML='RANKING<br><span class="text-xs text-cyan-100 font-bold">友達と勝負</span>'; btn.classList.add('nsv-menu-btn-fix');
+    if (!btn.dataset.nsvV2Rank) { btn.dataset.nsvV2Rank='1'; btn.addEventListener('click',(e)=>{e.preventDefault();e.stopImmediatePropagation();renderFriendRanking();showScreenSafe('leaderboardScreen');},true); }
+  }
+  function ensureLeaderboardScreen(){
+    if ($('leaderboardScreen')) return;
+    const div=document.createElement('div'); div.id='leaderboardScreen'; div.className='absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[58] hidden p-3';
+    div.innerHTML='<div class="menu-panel w-full flex flex-col gap-4"><div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">RANKING</h2><p class="text-gray-300 text-sm mt-2">全ての部門を友達との勝負用にまとめました。</p></div><button id="closeLeaderboardBtn" class="btn-neon px-4 py-2 rounded font-bold">BACK</button></div><div id="leaderboardListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[72vh] pr-1"></div></div>';
+    document.body.appendChild(div); $('closeLeaderboardBtn')?.addEventListener('click',()=>showScreenSafe('startScreen'));
+  }
+  function renderFriendRanking(){
+    ensureLeaderboardScreen();
+    try{ $('copyFriendCodeBtn')?.remove(); $('addFriendCodeBtn')?.remove(); }catch(e){}
+    const u=getUserData(); const stats=u.stats||{};
+    const rows=[{name:u.nickname||'YOU',score:u.score||0,level:stats.bestLevel||stats.maxLevel||1,boss:stats.totalBossLikeKills||0,kills:stats.totalKills||0,time:stats.bestSurvivalTime||0}];
+    try { const s=JSON.parse(localStorage.getItem('nsvLeaderboards20260504')||'{}'); (s.friends||[]).forEach(f=>rows.push({name:f.name||'FRIEND',score:f.bestScore||0,level:f.bestLevel||0,boss:f.totalBoss||0,kills:f.totalKills||0,time:f.bestTime||0})); } catch(e){}
+    const section=(title,key,suffix='')=>'<div class="nsv-rank-card"><h3 class="text-xl font-bold text-cyan-300">'+title+'</h3><div class="mt-2">'+rows.slice().sort((a,b)=>(b[key]||0)-(a[key]||0)).slice(0,8).map((r,i)=>'<div class="nsv-rank-row"><div class="text-yellow-300 font-bold">#'+(i+1)+'</div><div class="font-bold">'+String(r.name).slice(0,12)+'</div><div class="text-right text-cyan-200 font-bold">'+Math.floor(r[key]||0)+suffix+'</div></div>').join('')+'</div></div>';
+    const box=$('leaderboardListContainer'); if (box) box.innerHTML=section('スコアランキング','score')+section('レベルランキング','level',' LV')+section('討伐数ランキング','kills','体')+section('ボス討伐ランキング','boss','体');
+  }
+  function ensureShopCoins(){
+    const shop=$('shopScreen'); if (!shop) return; const panel=shop.querySelector('.menu-panel')||shop; let pill=$('nsvShopCoinPillV2'); if (!pill){ pill=document.createElement('div'); pill.id='nsvShopCoinPillV2'; pill.className='nsv-coin-pill-v2'; const header=panel.querySelector('.flex')||panel.firstElementChild||panel; header.appendChild(pill); }
+    pill.textContent='🪙 COINS: '+Math.floor(Number(getUserData().coins||0)).toLocaleString();
+  }
+  function patchShop(){
+    ['renderShopV2','renderShopScreen20260504'].forEach(name=>{ try{ const old=fn(name); if (old && !old.__nsvV2Coin){ const wrap=function(){ const r=old.apply(this,arguments); setTimeout(ensureShopCoins,0); return r; }; wrap.__nsvV2Coin=true; sv(name,wrap); } }catch(e){} });
+    const b=$('openShopBtn')||$('openShopHeroBtn'); if (b && !b.dataset.nsvV2Shop){ b.dataset.nsvV2Shop='1'; b.classList.add('nsv-menu-btn-fix'); b.addEventListener('click',(e)=>{e.preventDefault();e.stopImmediatePropagation(); try{fn('renderShopV2')?.();}catch(_){try{fn('renderShopScreen20260504')?.();}catch(__){}} ensureShopCoins(); showScreenSafe('shopScreen');},true); }
+  }
+  function ensureButtons(){
+    ['startBtn','onlineStartBtn','openUpgradeBtn','openMissionBtn','openCollectionBtn','openWeaponCodexBtn','openLeaderboardBtn','openShopBtn','openBattlePassBtn','resumeBtn','restartBtn','pauseBtn'].forEach(id=>{ const b=$(id); if(b){ b.classList.add('nsv-menu-btn-fix'); b.disabled=false; b.style.pointerEvents='auto'; }});
+    const map={openUpgradeBtn:()=>{try{fn('renderUpgradeScreen')?.();}catch(e){} showScreenSafe('upgradeScreen');},openMissionBtn:()=>{try{fn('renderMissionsScreen')?.();}catch(e){} showScreenSafe('missionsScreen');},openCollectionBtn:()=>{try{fn('renderCollectionScreen')?.();}catch(e){} showScreenSafe('collectionScreen');},openWeaponCodexBtn:()=>{try{fn('renderWeaponCodexScreen')?.();}catch(e){} showScreenSafe('weaponCodexScreen');},openLeaderboardBtn:()=>{renderFriendRanking();showScreenSafe('leaderboardScreen');}};
+    Object.entries(map).forEach(([id,cb])=>{ const b=$(id); if (b && !b.dataset.nsvV2Click){ b.dataset.nsvV2Click='1'; b.addEventListener('click',(e)=>{e.preventDefault();e.stopImmediatePropagation();cb();},true); }});
+  }
+  function repairProgress(){
+    const u=getUserData(); u.upgrades=u.upgrades||{}; u.missions=u.missions||{completed:{},claimed:{}}; u.unlocks=u.unlocks||{legendaryWeapons:{},skins:{classic:true},auras:{none:true}};
+    const upTotal=Object.values(u.upgrades).reduce((a,b)=>a+Number(b||0),0); const unlocked=Object.values(u.unlocks.legendaryWeapons||{}).filter(Boolean).length;
+    if (!u.nsvV2RepairDone && unlocked>=2 && upTotal===0 && Number(u.coins||0)<12000) { u.coins=Number(u.coins||0)+20000; u.nsvV2RepairDone=true; saveNow(); }
+  }
+  function patchOnline(){
+    try{
+      const note=()=>{ const hud=$('onlineHud'); if(!hud) return; let n=$('nsvServerNoteV2'); if(!n){n=document.createElement('div');n.id='nsvServerNoteV2';n.className='nsv-server-note-v2';hud.appendChild(n);} const ok=!!gv('db') && !!gv('fbSetDoc'); n.textContent= ok ? 'SERVER: CONNECTED / 同じ部屋に接続中' : 'SERVER: 未接続。別端末対戦にはFirebase設定が必要です。'; };
+      const oldStart=fn('startOnlineMode'); if (oldStart && !oldStart.__nsvV2Online){ const wrap=function(){ const r=oldStart.apply(this,arguments); setTimeout(note,100); setTimeout(()=>{try{fn('startOnlinePresence')?.();fn('syncOnlinePresence')?.();}catch(e){} note();},800); return r;}; wrap.__nsvV2Online=true; sv('startOnlineMode',wrap); }
+      note();
+    }catch(e){}
+  }
+  function strengthenStarfallAndBoss(){
+    try { const defs=gv('LEGENDARY_WEAPON_DEFS',[]); if(Array.isArray(defs)) defs.forEach(w=>{ if(String(w.id||'').includes('starfall')||String(w.name||'').includes('星砕き')||String(w.name||'').includes('流星群')){ w.desc=(w.desc||'')+' / V2: 視認性・命中率・威力強化'; w.damage=(Number(w.damage||120)*1.8); w.radius=(Number(w.radius||120)*1.6); }}); } catch(e){}
+    try { const old=fn('triggerAdvancedBossPattern'); if(old && !old.__nsvV2Orange){ const wrap=function(boss){ if(boss && (boss.type===4 || /orange|fire|flame/i.test(String(boss.color||'')+String(boss.bossPattern||'')+String(boss.name||'')))) return; return old.apply(this,arguments); }; wrap.__nsvV2Orange=true; sv('triggerAdvancedBossPattern',wrap); } }catch(e){}
+  }
+  let heavy=0;
+  function capArrays(){
+    try{
+      const names=['particles','floatingTexts','effects','bullets','enemyBullets','enemies','gems','sniperBullets','voidTempests','keraunosStorms','hollowMurasakis','stormbreakers','mapBlackholes','cosmicSushiStorms'];
+      const lv=Number(gv('player',{})?.level||1); const ultra=lv>=30 || !!gv('isLightMode',false);
+      const max={particles:ultra?12:45,floatingTexts:ultra?8:20,effects:ultra?4:10,bullets:ultra?55:110,enemyBullets:ultra?18:50,enemies:ultra?100:190,gems:ultra?45:100,sniperBullets:ultra?12:30,voidTempests:1,keraunosStorms:1,hollowMurasakis:2,stormbreakers:2,mapBlackholes:0,cosmicSushiStorms:ultra?1:3};
+      names.forEach(n=>{ const a=gv(n); if(Array.isArray(a) && a.length>(max[n]||50)) a.splice(0,a.length-(max[n]||50)); });
+    }catch(e){}
+  }
+  function patchSafety(){
+    try { const old=fn('animate'); if(old && !old.__nsvV2Safe){ const wrap=function(){ const t=performance.now(); const r=old.apply(this,arguments); const dt=performance.now()-t; if(dt>48) heavy++; else heavy=Math.max(0,heavy-1); if(heavy>=5){ heavy=0; try{ sv('isLightMode',true); document.body.classList.add('light-mode'); toast('AUTO SAFETY','重くなったため軽量安全モードにしました'); }catch(e){} } capArrays(); return r; }; wrap.__nsvV2Safe=true; sv('animate',wrap); } } catch(e){}
+    setInterval(capArrays,900);
+  }
+  function boot(){ injectStyle(); badge(); patchSaveButtons(); ensureLeaderboardScreen(); ensureMenuOrder(); ensureButtons(); patchShop(); ensureShopCoins(); repairProgress(); patchOnline(); strengthenStarfallAndBoss(); patchSafety(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+  setTimeout(boot,400); setTimeout(boot,1200); setInterval(boot,1800);
+})();
+
+</script>
 </body>
 </html>
