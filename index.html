@@ -13224,6 +13224,110 @@
     setTimeout(placeBtn, 1600);
   }
 })();
+
+
+// ===== 2026-05-05 Hotfix: True high-score-only reset so missions can earn coins again =====
+(() => {
+  'use strict';
+  const TRUE_RESET_VERSION_20260505 = '2026-05-05-true-highscore-only-reset-v1';
+
+  function nsvGetBestScoreFromAnySave20260505() {
+    let best = 0;
+    try { best = Math.max(best, Number((window.userData && userData.score) || 0)); } catch(e) {}
+    try {
+      const raw = localStorage.getItem('neon_survivor_save');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        best = Math.max(best, Number(parsed.score || parsed.bestScore || 0));
+      }
+    } catch(e) {}
+    return Number.isFinite(best) ? Math.max(0, Math.floor(best)) : 0;
+  }
+
+  function nsvFreshUpgradeObject20260505() {
+    return { hp: 0, damage: 0, speed: 0, exp: 0, armor: 0, magnet: 0, rapid: 0, pierce: 0 };
+  }
+
+  function nsvBuildHighScoreOnlyData20260505() {
+    const best = nsvGetBestScoreFromAnySave20260505();
+    let nick = '';
+    try { nick = (typeof normalizeNickname === 'function') ? normalizeNickname(userData?.nickname || localStorage.getItem('neon_survivor_nickname') || '') : (userData?.nickname || ''); } catch(e) {}
+    let fresh = {};
+    try {
+      fresh = (typeof createFreshUserData === 'function') ? createFreshUserData(nick) : {};
+    } catch(e) { fresh = {}; }
+    fresh.score = best;
+    fresh.bestScore = best;
+    fresh.coins = 0;
+    fresh.nickname = nick;
+    fresh.upgrades = nsvFreshUpgradeObject20260505();
+    fresh.stats = {};
+    fresh.daily = { date: '', completed: {}, claimed: {}, progress: {} };
+    fresh.missions = { completed: {}, claimed: {} };
+    fresh.unlocks = { legendaryWeapons: {}, skins: { classic: true }, auras: { none: true }, capes: { none: true } };
+    fresh.codex = { weapons: { base_0_通常弾: true } };
+    fresh.equippedSkin = 'classic';
+    fresh.equippedAura = 'none';
+    fresh.equippedCape = 'none';
+    fresh.passTickets = 0;
+    fresh.shop = { firstPassTicketBought: false };
+    fresh.battlePass = null;
+    fresh.battlePassV2 = null;
+    fresh.cosmetics = { unlocked: {}, equipped: {} };
+    fresh.leaderboards = {};
+    fresh.friendRankings = {};
+    fresh.events = {};
+    fresh.eventProgress = {};
+    fresh.keepBestOnlyResetVersion = TRUE_RESET_VERSION_20260505;
+    fresh.trueHighScoreOnlyResetVersion = TRUE_RESET_VERSION_20260505;
+    try { fresh.resetVersion = SAVE_RESET_VERSION; } catch(e) {}
+    return fresh;
+  }
+
+  function nsvClearOldProgressKeys20260505() {
+    try {
+      const keep = new Set(['neon_survivor_nickname']);
+      Object.keys(localStorage).forEach((key) => {
+        if (keep.has(key)) return;
+        if (/^neon_survivor_/i.test(key) && key !== 'neon_survivor_save') {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch(e) {}
+  }
+
+  function nsvApplyTrueHighScoreOnlyReset20260505() {
+    try {
+      let already = false;
+      try { already = userData?.trueHighScoreOnlyResetVersion === TRUE_RESET_VERSION_20260505; } catch(e) {}
+      if (already) return;
+      const fresh = nsvBuildHighScoreOnlyData20260505();
+      window.userData = fresh;
+      try { userData = fresh; } catch(e) {}
+      nsvClearOldProgressKeys20260505();
+      localStorage.setItem('neon_survivor_save', JSON.stringify(fresh));
+      try { saveData?.(); } catch(e) {}
+      try { ensureProgressionData?.(); } catch(e) {}
+      try { renderMissionScreen?.(); } catch(e) {}
+      try { renderUpgradeScreen?.(); } catch(e) {}
+      try { renderCollectionScreen?.(); } catch(e) {}
+      const bestEl = document.getElementById('currentBestDisplay');
+      if (bestEl) bestEl.innerText = String(fresh.score || 0);
+      const coins = document.getElementById('metaCoinsDisplay');
+      if (coins) coins.innerText = '0';
+      console.log('[Neon Survivor] High score only reset applied. Missions and coin rewards are reset.');
+    } catch(e) {
+      console.warn('true high-score-only reset skipped', e);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(nsvApplyTrueHighScoreOnlyReset20260505, 250));
+  } else {
+    setTimeout(nsvApplyTrueHighScoreOnlyReset20260505, 250);
+  }
+})();
+
 </script>
 
 </body>
