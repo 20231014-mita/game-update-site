@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V25 STABLE home-settings-layout-complete -->
+<!-- V28 STABLE home-settings-ranking-clean-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -2941,7 +2941,9 @@
         window.toggleLightMode = applyLightMode;
 
         function shouldShowTutorial(mode) {
-            return mode === 'solo' && localStorage.getItem('neon_survivor_tutorial_done') !== '1';
+            // V27: 初回プレイでも説明チュートリアル画面は表示しない。
+            try { localStorage.setItem('neon_survivor_tutorial_done', '1'); } catch(e) {}
+            return false;
         }
         function showTutorialOverlay() {
             const overlay = document.getElementById('tutorialOverlay');
@@ -13658,6 +13660,57 @@
   [120, 700, 1600, 3200].forEach(t => setTimeout(bootV24, t));
 })();
 
+
+
+/* V26 module bridge: cheat code can safely edit real game data */
+(function(){
+  'use strict';
+  const ULT_IDS_V26_BRIDGE = ['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'];
+  function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+  function toast(title,msg){ try { if (typeof showMissionToast === 'function') showMissionToast(title, msg || ''); else alert((title||'') + (msg ? '\n' + msg : '')); } catch(e){} }
+  function ensureUser(){ try { if (typeof ensureProgressionData === 'function') ensureProgressionData(); } catch(e){} userData.cheats = userData.cheats || {}; userData.cheats.flags = userData.cheats.flags || {}; return userData; }
+  function save(){ try { if (typeof saveData === 'function') saveData(); } catch(e){} }
+  function addCoins(n){ const u = ensureUser(); u.coins = Math.max(0, num(u.coins) + num(n)); u.stats = u.stats || {}; u.stats.totalCoinsEarned = num(u.stats.totalCoinsEarned) + Math.max(0, num(n)); save(); try { renderUpgradeScreen?.(); } catch(e){} }
+  function flag(k,v){ ensureUser().cheats.flags[k] = v; save(); applyPlayer(); }
+  function hp(mult){ flag('hpMult', mult); }
+  function unlockWeapons(ids){ const u = ensureUser(); u.unlocks = u.unlocks || {}; u.unlocks.legendaryWeapons = u.unlocks.legendaryWeapons || {}; ids.forEach(id => { if (id) u.unlocks.legendaryWeapons[id] = true; }); save(); try { renderWeaponCodexScreen?.(); renderCollectionScreen?.(); } catch(e){} }
+  function upg(amount){ const u = ensureUser(); u.upgrades = u.upgrades || {}; try { (upgradeDef || []).forEach(x => { u.upgrades[x.id] = num(u.upgrades[x.id]) + num(amount); }); } catch(e){} save(); try { renderUpgradeScreen?.(); } catch(e){} }
+  function maxUpg(){ const u = ensureUser(); u.upgrades = u.upgrades || {}; try { (upgradeDef || []).forEach(x => { u.upgrades[x.id] = Math.max(num(u.upgrades[x.id]), 99); }); } catch(e){} save(); try { renderUpgradeScreen?.(); } catch(e){} }
+  function unlockCollection(){ const u = ensureUser(); u.unlocks = u.unlocks || {}; u.unlocks.skins = u.unlocks.skins || {}; u.unlocks.auras = u.unlocks.auras || {}; try { (SKIN_DEFS || []).forEach(x => { if (x && x.id) u.unlocks.skins[x.id] = true; }); } catch(e){} try { (AURA_DEFS || []).forEach(x => { if (x && x.id) u.unlocks.auras[x.id] = true; }); } catch(e){} save(); try { renderCollectionScreen?.(); } catch(e){} }
+  function battlePass(){ const u = ensureUser(); u.passTickets = Math.max(num(u.passTickets), 99); u.battlePass = u.battlePass || {}; u.battlePass.premium = true; u.battlePass.kills = Math.max(num(u.battlePass.kills), 999999); u.battlePass.claimedFree = u.battlePass.claimedFree || {}; u.battlePass.claimedPremium = u.battlePass.claimedPremium || {}; for (let i=0;i<60;i++){ u.battlePass.claimedFree[String(i)] = true; u.battlePass.claimedPremium[String(i)] = true; } unlockCollection(); save(); try { renderBattlePassScreen20260504?.(); } catch(e){} }
+  function cancel(){ const u = ensureUser(); u.cheats.flags = {}; save(); if (player) player.__v26CheatApplied = {}; }
+  function applyPlayer(){
+    try {
+      if (!player) return;
+      const f = ensureUser().cheats.flags || {};
+      player.__v26CheatApplied = player.__v26CheatApplied || {};
+      const hpM = Math.max(1, num(f.hpMult || 1));
+      if (hpM > 1 && player.__v26CheatApplied.hpMult !== hpM) { const base = player.__v26BaseMaxHp || player.maxHp || 100; player.__v26BaseMaxHp = base; player.maxHp = Math.round(base * hpM); player.hp = player.maxHp; player.__v26CheatApplied.hpMult = hpM; }
+      if (f.damage10 && !player.__v26CheatApplied.damage10) { player.damage *= 10; player.__v26CheatApplied.damage10 = true; }
+      if (f.damage20 && !player.__v26CheatApplied.damage20) { player.damage *= 20; player.fireRate *= 0.45; player.speed *= 1.35; player.magnetBonus += 1200; player.__v26CheatApplied.damage20 = true; }
+      if (f.oneHit && !player.__v26CheatApplied.oneHit) { player.damage *= 999; player.pierce += 999; player.__v26CheatApplied.oneHit = true; }
+      if (f.speed3 && !player.__v26CheatApplied.speed3) { player.speed *= 3; player.__v26CheatApplied.speed3 = true; }
+      if (f.ultraRapid && !player.__v26CheatApplied.ultraRapid) { player.fireRate = Math.max(3, player.fireRate * 0.12); player.bulletSpeed *= 1.8; player.__v26CheatApplied.ultraRapid = true; }
+      if (f.magnetGod && !player.__v26CheatApplied.magnetGod) { player.magnetBonus += 9999; player.__v26CheatApplied.magnetGod = true; }
+      if (f.exp20 && !player.__v26CheatApplied.exp20) { player.expBoost *= 20; player.__v26CheatApplied.exp20 = true; }
+      if (f.bulletMega && !player.__v26CheatApplied.bulletMega) { player.bulletSize *= 3.2; player.pierce += 99; player.attackRange *= 1.8; player.__v26CheatApplied.bulletMega = true; }
+      if (f.invincible) { player.hp = player.maxHp; player.invincibleTimer = Math.max(player.invincibleTimer || 0, 120); }
+      if (f.autoHealMega && player.hp < player.maxHp) player.hp = Math.min(player.maxHp, player.hp + Math.max(5, Math.round((player.maxHp || 100) * 0.015)));
+      if (f.allWeaponLevels) ['bladeRingLevel','electricFieldLevel','voidTempestLevel','hollowMurasakiLevel','orbitalStrikeLevel','kamehamehaLevel','infinitySnapLevel','infiniteBladeLevel','funnelLevel','vaderLevel','thorLevel','disneyMagicLevel','muryokuLevel','shieldLevel','onlineSniperLevel','onlineBounceBombLevel','onlinePoisonLevel','onlinePhantomLevel','onlineGravityLevel','legendaryRailCannonLevel','legendaryBlackholeEmperorLevel','legendaryThunderAegisLevel','legendarySolarDrillLevel','legendaryChronoLotusLevel'].forEach(k => { player[k] = Math.max(num(player[k]), 5); });
+      try { updateUI?.(); } catch(e){}
+    } catch(e) {}
+  }
+  const CHEATS = {
+    '0000000':['チート効果をキャンセル', cancel], '9384721':['コイン +10,000', () => addCoins(10000)], '7162948':['コイン +100,000', () => addCoins(100000)], '9274836':['コイン +1,000,000', () => addCoins(1000000)], '4819367':['コイン +5,000,000', () => addCoins(5000000)],
+    '4829137':['最大HP 2倍', () => hp(2)], '8357194':['最大HP 3倍', () => hp(3)], '2679485':['最大HP 5倍', () => hp(5)], '3587264':['最大HP10倍＋復活コア', () => { hp(10); unlockWeapons(['phoenixCore']); flag('phoenixBoost', true); }], '8627419':['無敵モード', () => { flag('invincible', true); hp(30); }],
+    '4196728':['ワンパンモード', () => flag('oneHit', true)], '7368194':['移動速度3倍', () => flag('speed3', true)], '2846193':['磁力MAX＋経験値20倍', () => { flag('magnetGod', true); flag('exp20', true); }], '6928473':['超連射モード', () => flag('ultraRapid', true)], '5369184':['レベルアップ10倍モード', () => flag('levelBurst10', true)], '3748296':['レベルアップ5倍モード', () => flag('levelBurst5', true)],
+    '2938476':['オート回復MAX', () => flag('autoHealMega', true)], '4618297':['弾巨大化＋貫通MAX', () => flag('bulletMega', true)], '7492816':['攻撃力10倍＋高速成長', () => { flag('damage10', true); flag('fastGrowth', true); }], '5917362':['強武器スターター解放', () => unlockWeapons(['neonLance','phoenixCore','starfallCrown','funnel','phantomStep'])],
+    '6842197':['全アルティメット武器解放', () => unlockWeapons(ULT_IDS_V26_BRIDGE)], '8726149':['全武器レベルMAXスターター', () => { unlockWeapons(ULT_IDS_V26_BRIDGE); flag('allWeaponLevels', true); }], '1583947':['全コレクション解放', unlockCollection], '9472618':['バトルパス完全解放', battlePass], '9246813':['全アップグレード +10', () => upg(10)], '5739284':['全アップグレードMAX', maxUpg], '8294651':['オーバードライブ強化', () => { flag('overdrive', true); addCoins(250000); }], '7893462':['全強化セット', () => { hp(25); flag('damage20', true); flag('ultraRapid', true); flag('magnetGod', true); flag('exp20', true); flag('levelBurst10', true); addCoins(3000000); unlockWeapons(ULT_IDS_V26_BRIDGE); unlockCollection(); }], '6159482':['ネオン神モード', () => { hp(20); flag('damage20', true); flag('levelBurst5', true); addCoins(2000000); unlockWeapons(ULT_IDS_V26_BRIDGE); }]
+  };
+  window.nsvApplyCheatCodeV26 = function(code){ const raw = String(code || '').replace(/\D/g,'').slice(0,7); if (raw.length !== 7) { toast('CHEAT CODE','7桁の数字を入力してください。'); return false; } const item = CHEATS[raw]; if (!item) { toast('CHEAT CODE','このコードは使えません。'); return false; } try { item[1](); toast('CHEAT OK', item[0]); return true; } catch(e) { console.warn(e); toast('CHEAT ERROR','もう一度入力してください。'); return false; } };
+  setInterval(applyPlayer, 1200);
+})();
+
 </script>
 
 
@@ -13677,17 +13730,16 @@
         }, 560);
     }
     function showSeasonIntroOnce(){
+        // V27: 初回起動のSeason説明画面も表示しない。
         const intro = document.getElementById('seasonLaunchIntro');
-        if (!intro) return;
-        let seen = false;
-        try { seen = localStorage.getItem(SEASON_INTRO_KEY) === '1'; } catch(e) { seen = false; }
-        if (seen) return;
-        intro.style.display = 'flex';
-        requestAnimationFrame(function(){ intro.classList.add('active'); });
-        intro.addEventListener('click', closeSeasonIntro, { once: true });
-        intro.addEventListener('touchstart', closeSeasonIntro, { once: true, passive: true });
-        window.addEventListener('keydown', closeSeasonIntro, { once: true });
-        setTimeout(closeSeasonIntro, 4200);
+        try { localStorage.setItem(SEASON_INTRO_KEY, '1'); } catch(e) {}
+        if (intro) {
+            intro.classList.remove('active');
+            intro.classList.remove('closing');
+            intro.style.display = 'none';
+            intro.style.pointerEvents = 'none';
+        }
+        return;
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', showSeasonIntroOnce);
@@ -15332,6 +15384,579 @@
   window.addEventListener('orientationchange', function(){ setTimeout(bootV25, 180); }, { passive:true });
 })();
 
+
+
+/* =========================================================
+   V28 STABLE: HOME CLEANUP / TOGGLE SETTINGS / CHEAT POSITION / BIG RANKING
+   - データ引き継ぎ欄の下に残る不要表示を削除
+   - SETTINGSをON/OFFトグル式に整理
+   - チートコード欄をデータ引き継ぎの真上へ移動
+   - ランキングを大きく見やすく表示
+   - プレビューなし
+========================================================= */
+(function(){
+  'use strict';
+  const V26_LABEL = 'V28 STABLE';
+  const ROOT_ID = 'nsvCleanStartRoot20260504';
+  const ADMIN_FORM_URL_V26 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
+  const FRIEND_KEY_V26 = 'neon_survivor_friend_rows_v26';
+
+  function $(id){ return document.getElementById(id); }
+  function q(sel, root){ return (root || document).querySelector(sel); }
+  function esc(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+  function toast(title, msg){ try { if (typeof showMissionToast === 'function') showMissionToast(title, msg || ''); else alert((title||'') + (msg ? '\n' + msg : '')); } catch(e){} }
+
+  function styleV26(){
+    if ($('nsvV26Style')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvV26Style';
+    st.textContent = `
+      #nsvV13Badge,#nsvV25Badge{display:none!important;}
+      #startScreen .menu-panel.nsv-v26-home-panel{width:min(96vw,980px)!important;max-height:96vh!important;overflow-y:auto!important;overflow-x:hidden!important;padding:clamp(14px,2.4vw,24px)!important;gap:0!important;scroll-behavior:auto!important;overscroll-behavior:contain!important;}
+      #${ROOT_ID}.nsv-v26-home-root{width:100%;display:flex;flex-direction:column;gap:14px;align-items:stretch;transform:none!important;transition:none!important;animation:none!important;}
+      #${ROOT_ID}.nsv-v26-home-root *{animation:none!important;}
+      .nsv-v26-top{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;align-items:stretch;width:100%;}
+      .nsv-v26-title-card{border:1px solid rgba(34,211,238,.38);border-radius:24px;padding:18px;background:linear-gradient(135deg,rgba(2,6,23,.94),rgba(8,47,73,.52),rgba(0,0,0,.78));box-shadow:0 0 28px rgba(34,211,238,.16);}
+      .nsv-v26-title-card h1{margin:0!important;}
+      .nsv-v26-section{width:100%;border:1px solid rgba(148,163,184,.25);border-radius:22px;background:linear-gradient(180deg,rgba(15,23,42,.78),rgba(0,0,0,.56));padding:14px;box-shadow:inset 0 0 18px rgba(255,255,255,.03);}
+      .nsv-v26-section-title{font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:.82rem;letter-spacing:.15em;color:#a5f3fc;font-weight:1000;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+      .nsv-v26-section-sub{font-family:'Noto Sans JP',sans-serif;font-size:.74rem;letter-spacing:0;color:#94a3b8;font-weight:800;}
+      .nsv-v26-profile{display:grid;grid-template-columns:1fr;gap:10px;}
+      .nsv-v26-play{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+      .nsv-v26-play #startBtn,.nsv-v26-play #onlineStartBtn{min-height:104px!important;font-size:clamp(1.35rem,3.8vw,2.45rem)!important;line-height:1.05!important;}
+      .nsv-v26-event-wrap{display:grid;grid-template-columns:1fr;gap:10px;}
+      .nsv-v26-button-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;width:100%;}
+      .nsv-v26-button-grid button,.nsv-v26-event-wrap button{min-height:68px!important;font-size:.94rem!important;line-height:1.1!important;white-space:normal!important;}
+      .nsv-v26-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;}
+      .nsv-v26-setting-card{border:1px solid rgba(34,211,238,.38);border-radius:18px;background:linear-gradient(180deg,rgba(2,6,23,.88),rgba(15,23,42,.64));padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:90px;box-shadow:0 0 14px rgba(34,211,238,.10);}
+      .nsv-v26-setting-title{font-weight:1000;color:#e0f2fe;font-size:1rem;}
+      .nsv-v26-setting-desc{font-size:.78rem;color:#94a3b8;font-weight:700;line-height:1.35;margin-top:4px;}
+      .nsv-v26-switch{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;touch-action:manipulation;flex-shrink:0;}
+      .nsv-v26-switch input{position:absolute;opacity:0;pointer-events:none;}
+      .nsv-v26-track{width:64px;height:34px;border-radius:999px;background:#334155;border:2px solid rgba(148,163,184,.55);position:relative;box-shadow:inset 0 0 10px rgba(0,0,0,.45);transition:.18s;}
+      .nsv-v26-knob{position:absolute;width:26px;height:26px;left:3px;top:2px;border-radius:999px;background:#e5e7eb;box-shadow:0 0 8px rgba(255,255,255,.55);transition:.18s;}
+      .nsv-v26-status{min-width:34px;font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:.75rem;font-weight:1000;color:#94a3b8;}
+      .nsv-v26-switch input:checked + .nsv-v26-track{background:#06b6d4;border-color:#67e8f9;box-shadow:0 0 14px rgba(34,211,238,.62),inset 0 0 10px rgba(255,255,255,.2);}
+      .nsv-v26-switch input:checked + .nsv-v26-track .nsv-v26-knob{transform:translateX(30px);background:#fff;}
+      .nsv-v26-switch input:checked ~ .nsv-v26-status{color:#67e8f9;}
+      .nsv-v26-cheat-card{border:1px solid rgba(250,204,21,.45);border-radius:18px;background:linear-gradient(180deg,rgba(24,18,2,.78),rgba(15,23,42,.66));padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+      .nsv-v26-cheat-left{min-width:0;}
+      .nsv-v26-cheat-title{font-weight:1000;color:#fde68a;}
+      .nsv-v26-cheat-desc{font-size:.76rem;color:#cbd5e1;margin-top:3px;font-weight:700;}
+      .nsv-v26-cheat-actions{display:flex;gap:8px;align-items:center;}
+      .nsv-v26-cheat-actions input{width:190px;background:rgba(0,0,0,.68);border:1px solid rgba(250,204,21,.72);border-radius:12px;color:white;padding:11px 12px;font-weight:1000;letter-spacing:.18em;text-align:center;outline:none;font-size:16px;}
+      .nsv-v26-save-card{border:1px solid rgba(96,165,250,.42);border-radius:18px;background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(0,0,0,.55));padding:14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+      .nsv-v26-save-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+      .nsv-v26-save-title{font-weight:1000;color:#e0f2fe;}
+      .nsv-v26-save-desc{font-size:.76rem;color:#94a3b8;margin-top:4px;font-weight:700;line-height:1.35;}
+      #startScreen button,#startScreen label,#startScreen input{touch-action:manipulation!important;pointer-events:auto!important;-webkit-tap-highlight-color:transparent!important;}
+      #leaderboardScreen .menu-panel.nsv-v26-rank-panel{width:min(96vw,1040px)!important;max-height:94vh!important;padding:clamp(14px,2.2vw,24px)!important;}
+      .nsv-v26-rank-top{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;}
+      .nsv-v26-friend-box{border:1px solid rgba(250,204,21,.35);border-radius:20px;background:rgba(2,6,23,.82);padding:14px;display:grid;grid-template-columns:1.1fr auto;gap:12px;align-items:start;}
+      .nsv-v26-code{width:100%;border:1px solid rgba(250,204,21,.55);border-radius:14px;background:rgba(0,0,0,.58);color:#fde68a;font-size:.95rem;font-weight:900;word-break:break-all;text-align:left;padding:12px;line-height:1.35;}
+      .nsv-v26-code-input{width:100%;min-height:86px;border:1px solid rgba(34,197,94,.55);border-radius:14px;background:rgba(0,0,0,.58);color:#dcfce7;font-size:1rem;font-weight:800;padding:12px;outline:none;resize:vertical;line-height:1.35;}
+      .nsv-v26-rank-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+      .nsv-v26-rank-card{background:rgba(2,6,23,.92);border:1px solid rgba(6,182,212,.52);border-radius:20px;padding:16px;box-shadow:0 0 18px rgba(34,211,238,.14);}
+      .nsv-v26-rank-card h3{font-size:1.3rem!important;line-height:1.15!important;margin-bottom:10px!important;color:#67e8f9!important;}
+      .nsv-v26-rank-row{display:grid;grid-template-columns:52px 1fr minmax(78px,auto);gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(148,163,184,.22);font-size:1rem;}
+      .nsv-v26-rank-row:last-child{border-bottom:0;}
+      .nsv-v26-rank-pos{font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:1.25rem;font-weight:1000;color:#fde047;text-shadow:0 0 9px rgba(250,204,21,.45);}
+      .nsv-v26-rank-name{font-size:1.06rem;font-weight:1000;color:white;}
+      .nsv-v26-rank-date{font-size:.8rem;color:#94a3b8;margin-top:2px;}
+      .nsv-v26-rank-score{font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:1.05rem;font-weight:1000;color:#f8fafc;text-align:right;}
+      .nsv-v26-rank-row.nsv-empty{opacity:.66;}
+      @media(max-width:820px){.nsv-v26-top,.nsv-v26-play,.nsv-v26-settings-grid,.nsv-v26-save-card,.nsv-v26-cheat-card,.nsv-v26-rank-top,.nsv-v26-friend-box{grid-template-columns:1fr;}.nsv-v26-button-grid,.nsv-v26-rank-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.nsv-v26-save-actions,.nsv-v26-cheat-actions{justify-content:stretch}.nsv-v26-save-actions button,.nsv-v26-cheat-actions button{flex:1}.nsv-v26-cheat-actions input{width:100%;}}
+      @media(max-width:560px){.nsv-v26-button-grid,.nsv-v26-rank-grid{grid-template-columns:1fr;}.nsv-v26-play #startBtn,.nsv-v26-play #onlineStartBtn{min-height:82px!important;font-size:1.7rem!important;}.nsv-v26-section{padding:12px;}.nsv-v26-rank-row{grid-template-columns:48px 1fr;}.nsv-v26-rank-score{grid-column:2;text-align:left;font-size:1.12rem;}.nsv-v26-friend-box button{width:100%;}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function patchLabel(){
+    try {
+      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(function(node){
+        if (node && /V\d+ STABLE/.test(node.textContent || '')) node.textContent = V26_LABEL;
+      });
+    } catch(e) {}
+  }
+
+  function makeButton(id, cls, html){
+    let b = $(id);
+    if (!b) { b = document.createElement('button'); b.id = id; }
+    b.className = cls + ' menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
+    b.innerHTML = html;
+    b.disabled = false;
+    b.style.pointerEvents = 'auto';
+    b.style.touchAction = 'manipulation';
+    return b;
+  }
+  function section(title, sub){
+    const sec = document.createElement('section');
+    sec.className = 'nsv-v26-section';
+    const h = document.createElement('div');
+    h.className = 'nsv-v26-section-title';
+    h.innerHTML = `<span>${title}</span>${sub ? `<span class="nsv-v26-section-sub">${sub}</span>` : ''}`;
+    sec.appendChild(h);
+    return sec;
+  }
+  function removeIf(id){ const n = $(id); if (n) n.remove(); }
+
+  function syncToggleStatus(label, input){
+    const s = label.querySelector('.nsv-v26-status');
+    if (s) s.textContent = input.checked ? 'ON' : 'OFF';
+  }
+  function makeToggleCard(inputId, title, desc, checked, onChange){
+    const card = document.createElement('div');
+    card.className = 'nsv-v26-setting-card';
+    const main = document.createElement('div');
+    main.innerHTML = `<div class="nsv-v26-setting-title">${esc(title)}</div><div class="nsv-v26-setting-desc">${esc(desc)}</div>`;
+    const label = document.createElement('label');
+    label.className = 'nsv-v26-switch';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = inputId;
+    input.checked = !!checked;
+    label.appendChild(input);
+    label.insertAdjacentHTML('beforeend','<span class="nsv-v26-track"><span class="nsv-v26-knob"></span></span><span class="nsv-v26-status"></span>');
+    input.addEventListener('change', function(ev){
+      syncToggleStatus(label, input);
+      try { onChange(!!input.checked, ev); } catch(e) {}
+      try { localStorage.setItem('nsv_setting_' + inputId, input.checked ? '1' : '0'); } catch(e) {}
+    }, { passive:true });
+    syncToggleStatus(label, input);
+    card.appendChild(main);
+    card.appendChild(label);
+    return card;
+  }
+  function readStoredToggle(id, fallback){
+    try { const v = localStorage.getItem('nsv_setting_' + id); if (v === '1') return true; if (v === '0') return false; } catch(e) {}
+    const old = $(id);
+    return old && typeof old.checked === 'boolean' ? old.checked : fallback;
+  }
+
+  const ULT_IDS = ['hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep','neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'];
+  function ensureUser(){ try { if (typeof ensureProgressionData === 'function') ensureProgressionData(); } catch(e){} if (typeof userData === 'undefined' || !userData) return {}; userData.cheats = userData.cheats || {}; userData.cheats.flags = userData.cheats.flags || {}; return userData; }
+  function save(){ try { if (typeof saveData === 'function') saveData(); } catch(e){} }
+  function addCoins(n){ const u = ensureUser(); u.coins = Math.max(0, num(u.coins) + num(n)); u.stats = u.stats || {}; u.stats.totalCoinsEarned = num(u.stats.totalCoinsEarned) + Math.max(0, num(n)); save(); }
+  function flag(k,v){ ensureUser().cheats.flags[k] = v; save(); applyPlayerCheats(); }
+  function hp(mult){ flag('hpMult', mult); }
+  function unlockWeapons(ids){ const u = ensureUser(); u.unlocks = u.unlocks || {}; u.unlocks.legendaryWeapons = u.unlocks.legendaryWeapons || {}; ids.forEach(id => { u.unlocks.legendaryWeapons[id] = true; }); save(); }
+  function upg(amount){ const u = ensureUser(); u.upgrades = u.upgrades || {}; try { (upgradeDef || []).forEach(x => { u.upgrades[x.id] = num(u.upgrades[x.id]) + num(amount); }); } catch(e){} save(); }
+  function maxUpg(){ const u = ensureUser(); u.upgrades = u.upgrades || {}; try { (upgradeDef || []).forEach(x => { u.upgrades[x.id] = Math.max(num(u.upgrades[x.id]), 99); }); } catch(e){} save(); }
+  function unlockCollection(){ const u = ensureUser(); u.unlocks = u.unlocks || {}; u.unlocks.skins = u.unlocks.skins || {}; u.unlocks.auras = u.unlocks.auras || {}; try { (SKIN_DEFS || []).forEach(x => { if (x && x.id) u.unlocks.skins[x.id] = true; }); } catch(e){} try { (AURA_DEFS || []).forEach(x => { if (x && x.id) u.unlocks.auras[x.id] = true; }); } catch(e){} save(); }
+  function battlePass(){ const u = ensureUser(); u.passTickets = Math.max(num(u.passTickets), 99); u.battlePass = u.battlePass || {}; u.battlePass.premium = true; u.battlePass.kills = Math.max(num(u.battlePass.kills), 999999); unlockCollection(); save(); }
+  function cancelCheats(){ const u = ensureUser(); u.cheats.flags = {}; save(); try { if (player) player.__v26CheatApplied = {}; } catch(e){} }
+  function applyPlayerCheats(){
+    try {
+      if (typeof player === 'undefined' || !player) return;
+      const f = (ensureUser().cheats && ensureUser().cheats.flags) || {};
+      player.__v26CheatApplied = player.__v26CheatApplied || {};
+      const hpM = Math.max(1, num(f.hpMult || 1));
+      if (hpM > 1 && player.__v26CheatApplied.hpMult !== hpM) { const base = player.__v26BaseMaxHp || player.maxHp || 100; player.__v26BaseMaxHp = base; player.maxHp = Math.round(base * hpM); player.hp = player.maxHp; player.__v26CheatApplied.hpMult = hpM; }
+      if (f.damage10 && !player.__v26CheatApplied.damage10) { player.damage *= 10; player.__v26CheatApplied.damage10 = true; }
+      if (f.damage20 && !player.__v26CheatApplied.damage20) { player.damage *= 20; player.fireRate *= 0.45; player.speed *= 1.35; player.magnetBonus += 1200; player.__v26CheatApplied.damage20 = true; }
+      if (f.oneHit && !player.__v26CheatApplied.oneHit) { player.damage *= 999; player.pierce += 999; player.__v26CheatApplied.oneHit = true; }
+      if (f.speed3 && !player.__v26CheatApplied.speed3) { player.speed *= 3; player.__v26CheatApplied.speed3 = true; }
+      if (f.ultraRapid && !player.__v26CheatApplied.ultraRapid) { player.fireRate = Math.max(3, player.fireRate * 0.12); player.bulletSpeed *= 1.8; player.__v26CheatApplied.ultraRapid = true; }
+      if (f.magnetGod && !player.__v26CheatApplied.magnetGod) { player.magnetBonus += 9999; player.__v26CheatApplied.magnetGod = true; }
+      if (f.exp20 && !player.__v26CheatApplied.exp20) { player.expBoost *= 20; player.__v26CheatApplied.exp20 = true; }
+      if (f.bulletMega && !player.__v26CheatApplied.bulletMega) { player.bulletSize *= 3.2; player.pierce += 99; player.attackRange *= 1.8; player.__v26CheatApplied.bulletMega = true; }
+      if (f.invincible) { player.hp = player.maxHp; player.invincibleTimer = Math.max(player.invincibleTimer || 0, 120); }
+      if (f.autoHealMega && player.hp < player.maxHp) player.hp = Math.min(player.maxHp, player.hp + Math.max(5, Math.round((player.maxHp || 100) * 0.015)));
+      if (f.allWeaponLevels) {
+        ['bladeRingLevel','electricFieldLevel','voidTempestLevel','hollowMurasakiLevel','orbitalStrikeLevel','kamehamehaLevel','infinitySnapLevel','infiniteBladeLevel','funnelLevel','vaderLevel','thorLevel','disneyMagicLevel','muryokuLevel','shieldLevel','onlineSniperLevel','onlineBounceBombLevel','onlinePoisonLevel','onlinePhantomLevel','onlineGravityLevel','legendaryRailCannonLevel','legendaryBlackholeEmperorLevel','legendaryThunderAegisLevel','legendarySolarDrillLevel','legendaryChronoLotusLevel'].forEach(k => { player[k] = Math.max(num(player[k]), 5); });
+      }
+      try { if (typeof updateUI === 'function') updateUI(); } catch(e){}
+    } catch(e) {}
+  }
+  const CHEATS = {
+    '0000000':['チート効果をキャンセル', cancelCheats], '9384721':['コイン +10,000', () => addCoins(10000)], '7162948':['コイン +100,000', () => addCoins(100000)], '9274836':['コイン +1,000,000', () => addCoins(1000000)], '4819367':['コイン +5,000,000', () => addCoins(5000000)],
+    '4829137':['最大HP 2倍', () => hp(2)], '8357194':['最大HP 3倍', () => hp(3)], '2679485':['最大HP 5倍', () => hp(5)], '3587264':['最大HP10倍＋復活コア', () => { hp(10); unlockWeapons(['phoenixCore']); flag('phoenixBoost', true); }], '8627419':['無敵モード', () => { flag('invincible', true); hp(30); }],
+    '4196728':['ワンパンモード', () => flag('oneHit', true)], '7368194':['移動速度3倍', () => flag('speed3', true)], '2846193':['磁力MAX＋経験値20倍', () => { flag('magnetGod', true); flag('exp20', true); }], '6928473':['超連射モード', () => flag('ultraRapid', true)], '5369184':['レベルアップ10倍モード', () => flag('levelBurst10', true)], '3748296':['レベルアップ5倍モード', () => flag('levelBurst5', true)],
+    '2938476':['オート回復MAX', () => flag('autoHealMega', true)], '4618297':['弾巨大化＋貫通MAX', () => flag('bulletMega', true)], '7492816':['攻撃力10倍＋高速成長', () => { flag('damage10', true); flag('fastGrowth', true); }], '5917362':['強武器スターター解放', () => unlockWeapons(['neonLance','phoenixCore','starfallCrown','funnel','phantomStep'])],
+    '6842197':['全アルティメット武器解放', () => unlockWeapons(ULT_IDS)], '8726149':['全武器レベルMAXスターター', () => { unlockWeapons(ULT_IDS); flag('allWeaponLevels', true); }], '1583947':['全コレクション解放', unlockCollection], '9472618':['バトルパス完全解放', battlePass], '9246813':['全アップグレード +10', () => upg(10)], '5739284':['全アップグレードMAX', maxUpg], '8294651':['オーバードライブ強化', () => { flag('overdrive', true); addCoins(250000); }], '7893462':['全強化セット', () => { hp(25); flag('damage20', true); flag('ultraRapid', true); flag('magnetGod', true); flag('exp20', true); flag('levelBurst10', true); addCoins(3000000); unlockWeapons(ULT_IDS); unlockCollection(); }], '6159482':['ネオン神モード', () => { hp(20); flag('damage20', true); flag('levelBurst5', true); addCoins(2000000); unlockWeapons(ULT_IDS); }]
+  };
+  function applyCheat(code){ const raw = String(code || '').replace(/\D/g,'').slice(0,7); if (typeof window.nsvApplyCheatCodeV26 === 'function') { window.nsvApplyCheatCodeV26(raw); return; } if (raw.length !== 7) return toast('CHEAT CODE','7桁の数字を入力してください。'); const item = CHEATS[raw]; if (!item) return toast('CHEAT CODE','このコードは使えません。'); try { item[1](); toast('CHEAT OK', item[0]); } catch(e) { console.warn(e); toast('CHEAT ERROR','もう一度入力してください。'); } }
+  function cheatCard(){
+    const card = document.createElement('div');
+    card.className = 'nsv-v26-cheat-card';
+    card.id = 'nsvV26CheatCard';
+    const left = document.createElement('div');
+    left.className = 'nsv-v26-cheat-left';
+    left.innerHTML = '<div class="nsv-v26-cheat-title">チートコード</div><div class="nsv-v26-cheat-desc">7桁の数字を入れてOK。0000000で継続効果をキャンセルできます。</div>';
+    const actions = document.createElement('div');
+    actions.className = 'nsv-v26-cheat-actions';
+    actions.innerHTML = '<input id="nsvV26CheatInput" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="7桁コード"><button id="nsvV26CheatBtn" class="btn-gold px-4 py-2 rounded font-bold">OK</button>';
+    const input = actions.querySelector('input');
+    const run = () => { applyCheat(input.value); input.value = ''; };
+    input.addEventListener('input', () => { input.value = input.value.replace(/\D/g,'').slice(0,7); });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+    actions.querySelector('button').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); run(); }, { passive:false });
+    card.appendChild(left); card.appendChild(actions); return card;
+  }
+
+  function saveCard(){
+    const card = document.createElement('div');
+    card.className = 'nsv-v26-save-card';
+    const left = document.createElement('div');
+    left.innerHTML = '<div class="nsv-v26-save-title">データ引き継ぎ</div><div class="nsv-v26-save-desc">ニックネーム・コイン・アップグレード・友達登録をコードで保存/復元します。</div>';
+    const actions = document.createElement('div');
+    actions.className = 'nsv-v26-save-actions';
+    const ex = makeButton('exportBtn','bg-blue-900 border border-blue-500 text-blue-200 hover:bg-blue-700','EXPORT');
+    const im = makeButton('importBtn','bg-green-900 border border-green-500 text-green-200 hover:bg-green-700','IMPORT');
+    ex.classList.remove('menu-secondary'); im.classList.remove('menu-secondary'); ex.classList.add('px-4','py-2','rounded','font-bold'); im.classList.add('px-4','py-2','rounded','font-bold');
+    actions.appendChild(ex); actions.appendChild(im); card.appendChild(left); card.appendChild(actions); return card;
+  }
+
+  function organizeHome(){
+    const startScreen = $('startScreen');
+    const panel = q('#startScreen .menu-panel');
+    if (!startScreen || !panel) return false;
+    styleV26(); patchLabel();
+    panel.classList.add('nsv-v26-home-panel');
+    ['nsvV13ExtraMenu','nsvV13StartCheat','nsvV25Badge','nsvV13Badge'].forEach(removeIf);
+
+    const startBtn = makeButton('startBtn','btn-neon solo-hero','SOLO START<span class="solo-sub">1人で練習・ミッション進行</span>');
+    const onlineBtn = makeButton('onlineStartBtn','btn-gold','ONLINE BATTLE<br><span class="text-xs text-yellow-100 font-bold">友達と対戦</span>');
+    const eventBtn = $('openDailyEventBtnV13') || $('openEventModeBtn') || makeButton('openDailyEventBtnV13','btn-purple','DAILY EVENT<br><span class="text-xs text-purple-100 font-bold">今日のイベント</span>');
+    eventBtn.id = 'openDailyEventBtnV13'; eventBtn.className = 'btn-purple menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
+
+    const upgradeBtn = makeButton('openUpgradeBtn','bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow]','UPGRADE<br><span class="text-xs text-yellow-100 font-bold">強化</span>');
+    const missionBtn = makeButton('openMissionBtn','btn-purple','MISSIONS<br><span class="text-xs text-purple-100 font-bold">報酬解放</span>');
+    const collectionBtn = makeButton('openCollectionBtn','btn-green','COLLECTION<br><span class="text-xs text-green-100 font-bold">装備</span>');
+    const codexBtn = makeButton('openWeaponCodexBtn','btn-neon','WEAPON CODEX<br><span class="text-xs text-cyan-100 font-bold">武器図鑑</span>');
+    const bossBtn = makeButton('openBossCodexBtn','btn-red','BOSS CODEX<br><span class="text-xs text-red-100 font-bold">ボス図鑑</span>');
+    const rankBtn = makeButton('openRankViewBtnV26','btn-neon','ランキング<br><span class="text-xs text-cyan-100 font-bold">友達記録</span>');
+    const passBtn = makeButton('openBattlePassBtn','btn-purple','NEON PASS<br><span class="text-xs text-purple-100 font-bold">シーズン報酬</span>');
+    const shopBtn = makeButton('openShopBtn','btn-gold','SHOP<br><span class="text-xs text-yellow-100 font-bold">コイン交換</span>');
+    const adminBtn = makeButton('adminContactBtn','btn-green','管理者フォーム<br><span class="text-xs text-green-100 font-bold">連絡・要望</span>');
+
+    const title = q('h1.neon-title', panel) || q('h1.neon-title');
+    const nickCard = $('nicknameInput') && ($('nicknameInput').closest('.bg-gray-900\/80') || $('nicknameInput').parentElement);
+    const bestCard = $('currentBestDisplay') && ($('currentBestDisplay').closest('.bg-gray-900\/80') || $('currentBestDisplay').parentElement);
+    const root = document.createElement('div'); root.id = ROOT_ID; root.className = 'nsv-v26-home-root';
+
+    const top = document.createElement('div'); top.className = 'nsv-v26-top';
+    const titleCard = document.createElement('div'); titleCard.className = 'nsv-v26-title-card'; if (title) titleCard.appendChild(title);
+    const chip = document.createElement('div'); chip.className = 'nsv-clean-season-chip'; chip.innerHTML = '<span class="nsv-clean-season-big">SEASON 1</span><span class="nsv-clean-season-name">NEON GENESIS</span>'; titleCard.appendChild(chip);
+    const profile = section('PLAYER DATA','名前と自己ベスト'); const pg = document.createElement('div'); pg.className = 'nsv-v26-profile'; if (nickCard) pg.appendChild(nickCard); if (bestCard) pg.appendChild(bestCard); profile.appendChild(pg);
+    top.appendChild(titleCard); top.appendChild(profile); root.appendChild(top);
+
+    const playSec = section('PLAY','まずはここから'); const playGrid = document.createElement('div'); playGrid.className = 'nsv-v26-play'; playGrid.appendChild(startBtn); playGrid.appendChild(onlineBtn); playSec.appendChild(playGrid); root.appendChild(playSec);
+    const todaySec = section('TODAY','日替わりイベント'); const evWrap = document.createElement('div'); evWrap.className = 'nsv-v26-event-wrap'; evWrap.appendChild(eventBtn); todaySec.appendChild(evWrap); root.appendChild(todaySec);
+    const menuSec = section('MENU','成長・記録・連絡'); const grid = document.createElement('div'); grid.className = 'nsv-v26-button-grid'; [upgradeBtn,missionBtn,collectionBtn,codexBtn,bossBtn,rankBtn,passBtn,shopBtn,adminBtn].forEach(b => grid.appendChild(b)); menuSec.appendChild(grid); root.appendChild(menuSec);
+
+    const settingsSec = section('SETTINGS','ON/OFFで切り替え'); const sg = document.createElement('div'); sg.className = 'nsv-v26-settings-grid';
+    sg.appendChild(makeToggleCard('joystickToggle','ジョイスティック','スマホ・iPadで移動しやすくします。', readStoredToggle('joystickToggle', true), on => { try { if (typeof window.toggleJoystickFromPause === 'function') window.toggleJoystickFromPause(on); } catch(e){} }));
+    sg.appendChild(makeToggleCard('lightModeToggle','軽量モード','重い時にエフェクトを減らして落ちにくくします。', readStoredToggle('lightModeToggle', false), on => { try { if (typeof window.toggleLightMode === 'function') window.toggleLightMode(on); } catch(e){} }));
+    settingsSec.appendChild(sg); root.appendChild(settingsSec);
+
+    const cheatSec = section('CHEAT CODE','データ引き継ぎの真上'); cheatSec.appendChild(cheatCard()); root.appendChild(cheatSec);
+    const saveSec = section('SAVE CODE','一番下'); saveSec.appendChild(saveCard()); root.appendChild(saveSec);
+
+    panel.innerHTML = ''; panel.appendChild(root);
+    try { if (typeof updateHomeEventButtonV24 === 'function') updateHomeEventButtonV24(); } catch(e){}
+    Array.from(panel.querySelectorAll('button,label,input,textarea')).forEach(n => { n.style.pointerEvents = 'auto'; n.style.touchAction = 'manipulation'; if ('disabled' in n) n.disabled = false; });
+    patchLabel(); return true;
+  }
+
+  function selfRow(){
+    let d = {}; try { d = JSON.parse(localStorage.getItem('neon_survivor_save') || 'null') || {}; } catch(e){}
+    try { if (typeof userData !== 'undefined' && userData) d = Object.assign({}, d, userData); } catch(e){}
+    const st = d.stats || {};
+    return { name:d.nickname || localStorage.getItem('neon_survivor_nickname') || 'YOU', bestScore:num(d.score || st.bestScore || 0), totalBoss:num(st.totalBossLikeKills || st.totalBoss || 0), totalKills:num(st.totalKills || 0), bestTime:num(st.bestTime || 0), totalCoins:num(st.totalCoinsEarned || d.coins || 0), bestLevel:num(st.bestLevel || 0), date:'YOU' };
+  }
+  function getFriends(){
+    let rows = []; try { rows = JSON.parse(localStorage.getItem(FRIEND_KEY_V26) || '[]') || []; } catch(e){}
+    try { const old = JSON.parse(localStorage.getItem('neon_survivor_friend_rows_v24') || '[]') || []; rows = rows.concat(old); } catch(e){}
+    try { if (typeof userData !== 'undefined' && userData.leaderboards && Array.isArray(userData.leaderboards.friends)) rows = rows.concat(userData.leaderboards.friends); } catch(e){}
+    const seen = new Set();
+    return rows.filter(r => { if (!r) return false; const k = String(r.name||'') + ':' + String(r.date||''); if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+  function saveFriends(rows){ try { localStorage.setItem(FRIEND_KEY_V26, JSON.stringify((rows || []).slice(-80))); } catch(e){} try { if (typeof userData !== 'undefined') { userData.leaderboards = userData.leaderboards || {}; userData.leaderboards.friends = rows; save(); } } catch(e){} }
+  function b64(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+  function b64d(s){ const body = String(s||'').replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(body + '='.repeat((4 - body.length % 4) % 4))))); }
+  function friendCode(){ return 'FR26.' + b64(Object.assign({ v:26, d:new Date().toLocaleDateString('ja-JP') }, selfRow())); }
+  function decodeFriend(code){ const raw = String(code || '').trim(); let m = raw.match(/FR26\.([A-Za-z0-9_-]+)/) || raw.match(/FR24\.([A-Za-z0-9_-]+)/) || raw.match(/FR13\.([A-Za-z0-9_-]+)/); if (m) return b64d(m[1]); m = raw.match(/\{[\s\S]+\}/); if (m) return JSON.parse(m[0]); throw new Error('bad code'); }
+  function copyText(text){
+    try { if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(() => toast('COPY','フレンドコードをコピーしました')).catch(() => fallbackCopy(text)); } else fallbackCopy(text); } catch(e) { fallbackCopy(text); }
+  }
+  function fallbackCopy(text){ try { const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove(); } catch(e){} toast('COPY','フレンドコードをコピーしました'); }
+  function addFriend(code){ const d = decodeFriend(code); const name = String(d.name || d.n || 'FRIEND').slice(0,12) || 'FRIEND'; const row = { name, bestScore:num(d.bestScore || d.s || d.score || 0), totalBoss:num(d.totalBoss || d.b || 0), totalKills:num(d.totalKills || d.k || 0), bestTime:num(d.bestTime || d.t || 0), totalCoins:num(d.totalCoins || d.c || 0), bestLevel:num(d.bestLevel || d.l || 0), date:d.date || d.d || new Date().toLocaleDateString('ja-JP') }; const rows = getFriends().filter(r => r.name !== name); rows.push(row); saveFriends(rows); renderRanking(); toast('FRIEND ADDED', name + ' を追加しました'); }
+  function rowsAll(){ return [selfRow()].concat(getFriends()); }
+  function top3(rows,key){ const a = rows.slice().sort((x,y) => num(y[key]) - num(x[key])).slice(0,3); while (a.length < 3) a.push({ name:'記録なし', date:'友達追加・プレイで表示', __empty:true, bestScore:0,totalBoss:0,totalKills:0,bestTime:0,totalCoins:0,bestLevel:0 }); return a; }
+  function rankCard(title, rows, key, suffix){ return `<div class="nsv-v26-rank-card"><h3>${esc(title)}</h3>${top3(rows,key).map((r,i) => `<div class="nsv-v26-rank-row ${r.__empty ? 'nsv-empty' : ''}"><div class="nsv-v26-rank-pos">#${i+1}</div><div><div class="nsv-v26-rank-name">${esc(r.name || 'PLAYER')}</div><div class="nsv-v26-rank-date">${esc(r.date || '')}</div></div><div class="nsv-v26-rank-score">${Math.floor(num(r[key])).toLocaleString()}${suffix || ''}</div></div>`).join('')}</div>`; }
+  function ensureRankScreen(){ let div = $('leaderboardScreen'); if (!div) { div = document.createElement('div'); div.id = 'leaderboardScreen'; div.className = 'absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3'; document.body.appendChild(div); } div.style.pointerEvents = 'auto'; return div; }
+  function renderRanking(){
+    styleV26(); const div = ensureRankScreen(); const code = friendCode(); const rows = rowsAll();
+    div.innerHTML = `<div class="menu-panel nsv-v26-rank-panel w-full flex flex-col gap-4">
+      <div class="nsv-v26-rank-top"><div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">ランキング</h2><p class="text-gray-200 text-base mt-2">友達と比べる記録です。各部門を3位まで大きく表示します。</p></div><button id="closeLeaderboardBtnV26" class="btn-neon px-5 py-3 rounded font-bold">BACK</button></div>
+      <div class="nsv-v26-friend-box"><div><div class="text-yellow-300 font-bold text-base mb-2">自分のフレンドコード</div><button id="friendCodeValueV26" class="nsv-v26-code" title="押すとコピー">${esc(code)}</button><p class="text-sm text-gray-400 mt-2">コード部分かCOPYを押すとコピーできます。</p></div><div class="flex flex-col gap-2"><button id="copyFriendCodeBtnV26" class="btn-gold px-4 py-3 rounded font-bold">COPY</button><button id="readClipboardFriendBtnV26" class="btn-green px-4 py-3 rounded font-bold">貼り付け読込</button></div><div><div class="text-green-300 font-bold text-base mb-2">友達のフレンドコードを貼り付け</div><textarea id="friendCodePasteInputV26" class="nsv-v26-code-input" placeholder="ここに友達のFR26/FR24/FR13コードを貼り付け"></textarea></div><div class="flex flex-col gap-2"><button id="addFriendCodeBtnV26" class="btn-green px-4 py-3 rounded font-bold">ADD FRIEND</button><button id="clearFriendCodeInputV26" class="btn-neon px-4 py-3 rounded font-bold">CLEAR</button></div></div>
+      <div id="leaderboardListContainer" class="overflow-y-auto max-h-[54vh] pr-1"><div class="nsv-v26-rank-grid">${rankCard('スコア部門', rows, 'bestScore')}${rankCard('ボス討伐部門', rows, 'totalBoss', '体')}${rankCard('討伐数部門', rows, 'totalKills', '体')}${rankCard('生存時間部門', rows, 'bestTime', '秒')}${rankCard('コイン部門', rows, 'totalCoins', '枚')}${rankCard('最高レベル部門', rows, 'bestLevel', 'Lv')}</div></div>
+    </div>`;
+    const copy = () => copyText(code);
+    div.querySelector('#closeLeaderboardBtnV26')?.addEventListener('click', () => { try { if (typeof showScreen === 'function') showScreen('startScreen'); } catch(e){} }, { passive:false });
+    div.querySelector('#copyFriendCodeBtnV26')?.addEventListener('click', copy, { passive:false });
+    div.querySelector('#friendCodeValueV26')?.addEventListener('click', copy, { passive:false });
+    div.querySelector('#clearFriendCodeInputV26')?.addEventListener('click', () => { const i = $('friendCodePasteInputV26'); if (i) i.value = ''; }, { passive:false });
+    div.querySelector('#addFriendCodeBtnV26')?.addEventListener('click', () => { const i = $('friendCodePasteInputV26'); try { addFriend(i ? i.value : ''); } catch(e) { alert('フレンドコードが正しくありません。'); } }, { passive:false });
+    div.querySelector('#readClipboardFriendBtnV26')?.addEventListener('click', async () => { const i = $('friendCodePasteInputV26'); try { if (navigator.clipboard && i) i.value = await navigator.clipboard.readText(); else if (i) i.focus(); } catch(e) { if (i) i.focus(); } }, { passive:false });
+  }
+  function openRanking(ev){ if (ev) { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); } renderRanking(); try { if (typeof showScreen === 'function') showScreen('leaderboardScreen'); else $('leaderboardScreen')?.classList.remove('hidden'); } catch(e){} }
+
+  function installRoutes(){
+    if (window.__nsvV26Routes) return; window.__nsvV26Routes = true;
+    window.addEventListener('pointerup', function(ev){ const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null; if (!btn) return; if (btn.id === 'openRankViewBtnV26') return openRanking(ev); if (btn.id === 'adminContactBtn') { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); window.open(ADMIN_FORM_URL_V26, '_blank', 'noopener,noreferrer'); } }, true);
+    window.addEventListener('click', function(ev){ const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null; if (!btn) return; if (btn.id === 'openRankViewBtnV26') return openRanking(ev); }, true);
+    setInterval(applyPlayerCheats, 1200);
+  }
+  function boot(){ organizeHome(); installRoutes(); patchLabel(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true }); else boot();
+  window.addEventListener('pageshow', boot, { passive:true });
+  window.addEventListener('orientationchange', function(){ setTimeout(boot, 180); }, { passive:true });
+})();
+
+</script>
+
+
+<script>
+(function(){
+  'use strict';
+  // V28 STABLE: 初回説明画面を常に非表示にする安全パッチ。
+  const keys = ['neon_survivor_tutorial_done','neon_survivor_seen_intro_s1_neon_genesis_v3'];
+  function markDone(){ keys.forEach(k => { try { localStorage.setItem(k, '1'); } catch(e) {} }); }
+  function hideFirstPlayOverlays(){
+    markDone();
+    ['tutorialOverlay','seasonLaunchIntro'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('hidden');
+      el.classList.remove('flex','active','closing');
+      el.style.display = 'none';
+      el.style.pointerEvents = 'none';
+    });
+  }
+  hideFirstPlayOverlays();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideFirstPlayOverlays, { once:true });
+  window.addEventListener('pageshow', hideFirstPlayOverlays, { passive:true });
+})();
+</script>
+
+
+
+<script>
+(function(){
+  'use strict';
+  // V28 STABLE: ゲームオーバー画面の縦スクロール復旧 + 一時停止画面チート入力。
+  const LABEL = 'V28 STABLE';
+
+  function $(id){ return document.getElementById(id); }
+
+  function installStyle(){
+    if ($('nsvV28Style')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvV28Style';
+    st.textContent = `
+      #gameOverScreen:not(.hidden){
+        display:flex!important;
+        flex-direction:column!important;
+        align-items:center!important;
+        justify-content:flex-start!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        height:100dvh!important;
+        max-height:100dvh!important;
+        min-height:0!important;
+        padding:clamp(14px,3vw,26px)!important;
+        padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))!important;
+        box-sizing:border-box!important;
+        -webkit-overflow-scrolling:touch!important;
+        overscroll-behavior:contain!important;
+        touch-action:pan-y!important;
+      }
+      #gameOverScreen:not(.hidden) > *{
+        flex:0 0 auto!important;
+        max-width:min(94vw,820px)!important;
+      }
+      #gameOverScreen #restartBtn{
+        position:sticky!important;
+        bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+        z-index:90!important;
+        width:min(92vw,420px)!important;
+        min-height:64px!important;
+        margin-top:18px!important;
+        margin-bottom:22px!important;
+        pointer-events:auto!important;
+        touch-action:manipulation!important;
+      }
+      #gameOverScreen .nsv-v22-result-wrap,
+      #gameOverScreen #resultSummary{
+        max-width:100%!important;
+      }
+      #pauseScreen:not(.hidden){
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        justify-content:flex-start!important;
+        padding:clamp(18px,3vw,30px)!important;
+        padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
+        -webkit-overflow-scrolling:touch!important;
+        overscroll-behavior:contain!important;
+        touch-action:pan-y!important;
+      }
+      #pauseScreen:not(.hidden) > *{flex:0 0 auto!important;}
+      .nsv-v28-pause-cheat{
+        width:min(92vw,560px)!important;
+        border:1px solid rgba(250,204,21,.55)!important;
+        background:linear-gradient(180deg,rgba(24,18,2,.86),rgba(15,23,42,.74))!important;
+        border-radius:18px!important;
+        padding:14px!important;
+        margin-top:14px!important;
+        box-shadow:0 0 18px rgba(250,204,21,.16)!important;
+        pointer-events:auto!important;
+      }
+      .nsv-v28-pause-cheat-title{font-weight:1000;color:#fde68a;margin-bottom:4px;}
+      .nsv-v28-pause-cheat-desc{font-size:12px;color:#cbd5e1;font-weight:800;margin-bottom:10px;}
+      .nsv-v28-pause-cheat-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;}
+      .nsv-v28-pause-cheat input{
+        min-height:46px!important;
+        background:rgba(0,0,0,.68)!important;
+        border:1px solid rgba(250,204,21,.72)!important;
+        border-radius:12px!important;
+        color:white!important;
+        padding:11px 12px!important;
+        font-weight:1000!important;
+        letter-spacing:.18em!important;
+        text-align:center!important;
+        outline:none!important;
+        font-size:16px!important;
+        pointer-events:auto!important;
+        touch-action:manipulation!important;
+      }
+      .nsv-v28-pause-cheat button{
+        min-height:46px!important;
+        pointer-events:auto!important;
+        touch-action:manipulation!important;
+      }
+      #nsvV28Badge{position:fixed;left:10px;bottom:8px;z-index:2200;pointer-events:none;color:#67e8f9;background:rgba(2,6,23,.82);border:1px solid rgba(103,232,249,.55);border-radius:999px;padding:4px 9px;font:900 11px/1.2 Orbitron,'Noto Sans JP',sans-serif;box-shadow:0 0 12px rgba(34,211,238,.28)}
+      @media(max-width:560px){
+        #gameOverScreen h2{font-size:2.35rem!important;}
+        #gameOverScreen #finalScore{font-size:2.65rem!important;}
+        .nsv-v28-pause-cheat-row{grid-template-columns:1fr!important;}
+        .nsv-v28-pause-cheat button{width:100%!important;}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function patchLabel(){
+    try {
+      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(el => {
+        if (el && /V\d+ STABLE/.test(el.textContent || '')) el.textContent = LABEL;
+      });
+      let b = $('nsvV28Badge');
+      if (!b) { b = document.createElement('div'); b.id = 'nsvV28Badge'; document.body.appendChild(b); }
+      b.textContent = LABEL;
+    } catch(e) {}
+  }
+
+  function toast(title, msg){
+    try {
+      if (typeof window.showToast === 'function') return window.showToast(title, msg);
+      const box = $('missionToast') || document.body.appendChild(document.createElement('div'));
+      box.id = box.id || 'missionToast';
+      box.innerHTML = `<div class="toast-card"><b>${String(title || '').replace(/[&<>"]/g, '')}</b><br><span>${String(msg || '').replace(/[&<>"]/g, '')}</span></div>`;
+      setTimeout(() => { if (box) box.innerHTML = ''; }, 2600);
+    } catch(e) {}
+  }
+
+  function runCheat(code){
+    const raw = String(code || '').replace(/\D/g,'').slice(0,7);
+    if (raw.length !== 7) { toast('CHEAT CODE','7桁の数字を入力してください。'); return; }
+    if (typeof window.nsvApplyCheatCodeV26 === 'function') {
+      window.nsvApplyCheatCodeV26(raw);
+      return;
+    }
+    toast('CHEAT CODE','チート処理の準備中です。もう一度押してください。');
+  }
+
+  function ensurePauseCheat(){
+    const pause = $('pauseScreen');
+    if (!pause) return;
+    installStyle();
+    let card = $('nsvV28PauseCheat');
+    if (!card) {
+      card = document.createElement('div');
+      card.id = 'nsvV28PauseCheat';
+      card.className = 'nsv-v28-pause-cheat';
+      card.innerHTML = `
+        <div class="nsv-v28-pause-cheat-title">チートコード</div>
+        <div class="nsv-v28-pause-cheat-desc">一時停止中でも7桁コードを入力できます。0000000で継続効果をキャンセル。</div>
+        <div class="nsv-v28-pause-cheat-row">
+          <input id="nsvV28PauseCheatInput" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="7桁コード">
+          <button id="nsvV28PauseCheatBtn" class="btn-gold px-5 py-2 rounded font-bold">OK</button>
+        </div>`;
+      pause.appendChild(card);
+      const input = $('nsvV28PauseCheatInput');
+      const btn = $('nsvV28PauseCheatBtn');
+      const submit = (ev) => {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }
+        runCheat(input ? input.value : '');
+        if (input) input.value = '';
+      };
+      if (input) {
+        input.addEventListener('input', () => { input.value = input.value.replace(/\D/g,'').slice(0,7); });
+        input.addEventListener('keydown', ev => { if (ev.key === 'Enter') submit(ev); });
+      }
+      if (btn) {
+        btn.addEventListener('pointerup', submit, { passive:false });
+        btn.addEventListener('click', submit, { passive:false });
+      }
+    }
+    card.style.pointerEvents = 'auto';
+  }
+
+  function unlockGameOverScroll(){
+    const go = $('gameOverScreen');
+    if (!go) return;
+    go.style.overflowY = 'auto';
+    go.style.overflowX = 'hidden';
+    go.style.justifyContent = 'flex-start';
+    go.style.alignItems = 'center';
+    go.style.touchAction = 'pan-y';
+    go.style.webkitOverflowScrolling = 'touch';
+    Array.from(go.children || []).forEach(ch => { ch.style.flexShrink = '0'; });
+    const btn = $('restartBtn');
+    if (btn) {
+      btn.style.pointerEvents = 'auto';
+      btn.style.touchAction = 'manipulation';
+      btn.disabled = false;
+    }
+  }
+
+  function fixVisibleScreens(){
+    installStyle(); patchLabel(); ensurePauseCheat(); unlockGameOverScroll();
+    const go = $('gameOverScreen');
+    if (go && !go.classList.contains('hidden') && !go.__nsvV28ScrolledTop) {
+      go.__nsvV28ScrolledTop = true;
+      try { go.scrollTop = 0; } catch(e) {}
+    }
+    if (go && go.classList.contains('hidden')) go.__nsvV28ScrolledTop = false;
+  }
+
+  function installObservers(){
+    if (window.__nsvV28Installed) return;
+    window.__nsvV28Installed = true;
+    const obs = new MutationObserver(fixVisibleScreens);
+    obs.observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style'] });
+    window.addEventListener('resize', fixVisibleScreens, { passive:true });
+    window.addEventListener('orientationchange', () => setTimeout(fixVisibleScreens, 180), { passive:true });
+    setInterval(fixVisibleScreens, 900);
+  }
+
+  function boot(){ fixVisibleScreens(); installObservers(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true }); else boot();
+  window.addEventListener('pageshow', boot, { passive:true });
+})();
 </script>
 
 </body>
