@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V24 STABLE home-scroll-rank-top3-complete -->
+<!-- V25 STABLE home-settings-layout-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -15061,6 +15061,275 @@
   else nsvV23Init();
   window.addEventListener('pageshow', nsvV23Init, { passive:true });
   window.addEventListener('orientationchange', function(){ setTimeout(nsvV23Init, 160); }, { passive:true });
+})();
+
+
+
+/* =========================================================
+   V25 STABLE: HOME SETTINGS / DATA TRANSFER LAYOUT FIX
+   - データ引き継ぎをホーム最下部へ固定
+   - 設定欄から重複イベントボタンを除去
+   - 管理者フォームを通常ボタン列へ移動
+   - 設定欄を見やすい2カード表示に整理
+   - プレビューなし
+========================================================= */
+(function(){
+  'use strict';
+  const V25_LABEL = 'V25 STABLE';
+  const CLEAN_ROOT_ID = 'nsvCleanStartRoot20260504';
+  const ADMIN_FORM_URL_V25 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
+
+  function $(id){ return document.getElementById(id); }
+  function q(sel, root){ return (root || document).querySelector(sel); }
+
+  function makeStyleV25(){
+    if ($('nsvV25HomeSettingsStyle')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvV25HomeSettingsStyle';
+    st.textContent = `
+      #nsvV25Badge{position:fixed;left:10px;bottom:8px;z-index:98;font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:11px;font-weight:1000;color:#67e8f9;background:rgba(0,0,0,.66);border:1px solid rgba(34,211,238,.55);border-radius:999px;padding:5px 9px;box-shadow:0 0 12px rgba(34,211,238,.32);pointer-events:none;}
+      #startScreen .menu-panel.nsv-v25-home-panel{width:min(96vw,980px)!important;max-height:96vh!important;overflow-y:auto!important;overflow-x:hidden!important;padding:clamp(14px,2.4vw,24px)!important;gap:0!important;scroll-behavior:auto!important;}
+      #${CLEAN_ROOT_ID}.nsv-v25-home-root{width:100%;display:flex;flex-direction:column;gap:14px;align-items:stretch;transform:none!important;transition:none!important;animation:none!important;}
+      #${CLEAN_ROOT_ID}.nsv-v25-home-root *{animation:none!important;}
+      .nsv-v25-top{display:grid;grid-template-columns:1.08fr .92fr;gap:14px;align-items:stretch;width:100%;}
+      .nsv-v25-title-card{border:1px solid rgba(34,211,238,.38);border-radius:24px;padding:18px;background:linear-gradient(135deg,rgba(2,6,23,.94),rgba(8,47,73,.52),rgba(0,0,0,.78));box-shadow:0 0 28px rgba(34,211,238,.16);}
+      .nsv-v25-title-card h1{margin:0!important;}
+      .nsv-v25-section{width:100%;border:1px solid rgba(148,163,184,.25);border-radius:22px;background:linear-gradient(180deg,rgba(15,23,42,.76),rgba(0,0,0,.54));padding:14px;box-shadow:inset 0 0 18px rgba(255,255,255,.03);}
+      .nsv-v25-section-title{font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:.78rem;letter-spacing:.15em;color:#a5f3fc;font-weight:1000;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+      .nsv-v25-section-sub{font-family:'Noto Sans JP',sans-serif;font-size:.72rem;letter-spacing:0;color:#94a3b8;font-weight:800;}
+      .nsv-v25-profile{display:grid;grid-template-columns:1fr;gap:10px;}
+      .nsv-v25-play{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;}
+      .nsv-v25-play #startBtn,.nsv-v25-play #onlineStartBtn{min-height:104px!important;font-size:clamp(1.35rem,3.8vw,2.45rem)!important;line-height:1.05!important;}
+      .nsv-v25-event-wrap{display:grid;grid-template-columns:1fr;gap:10px;}
+      .nsv-v25-button-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;width:100%;}
+      .nsv-v25-button-grid button,.nsv-v25-event-wrap button{min-height:68px!important;font-size:.93rem!important;line-height:1.1!important;white-space:normal!important;}
+      .nsv-v25-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;}
+      .nsv-v25-setting-card{border:1px solid rgba(34,211,238,.35);border-radius:18px;background:linear-gradient(180deg,rgba(2,6,23,.85),rgba(15,23,42,.62));padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:86px;box-shadow:0 0 14px rgba(34,211,238,.08);}
+      .nsv-v25-setting-main{display:flex;flex-direction:column;gap:4px;min-width:0;}
+      .nsv-v25-setting-title{font-weight:1000;color:#e0f2fe;font-size:.98rem;}
+      .nsv-v25-setting-desc{font-size:.76rem;color:#94a3b8;font-weight:700;line-height:1.35;}
+      .nsv-v25-setting-card label{margin-left:auto;flex-shrink:0;}
+      .nsv-v25-save-card{border:1px solid rgba(96,165,250,.42);border-radius:18px;background:linear-gradient(180deg,rgba(15,23,42,.86),rgba(0,0,0,.55));padding:14px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+      .nsv-v25-save-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+      .nsv-v25-save-title{font-weight:1000;color:#e0f2fe;}
+      .nsv-v25-save-desc{font-size:.76rem;color:#94a3b8;margin-top:4px;font-weight:700;line-height:1.35;}
+      #startScreen button,#startScreen label{touch-action:manipulation!important;pointer-events:auto!important;-webkit-tap-highlight-color:transparent!important;}
+      @media(max-width:820px){.nsv-v25-top,.nsv-v25-play,.nsv-v25-settings-grid,.nsv-v25-save-card{grid-template-columns:1fr;}.nsv-v25-button-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.nsv-v25-save-actions{justify-content:stretch}.nsv-v25-save-actions button{flex:1;}}
+      @media(max-width:430px){.nsv-v25-button-grid{grid-template-columns:1fr;}.nsv-v25-play #startBtn,.nsv-v25-play #onlineStartBtn{min-height:82px!important;font-size:1.7rem!important;}.nsv-v25-section{padding:12px;}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function patchLabelV25(){
+    try {
+      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(function(node){
+        if (node && /V\d+ STABLE/.test(node.textContent || '')) node.textContent = V25_LABEL;
+      });
+      let b = $('nsvV25Badge');
+      if (!b) { b = document.createElement('div'); b.id = 'nsvV25Badge'; document.body.appendChild(b); }
+      b.textContent = V25_LABEL;
+    } catch(e) {}
+  }
+
+  function makeButton(id, cls, html){
+    let b = $(id);
+    if (!b) { b = document.createElement('button'); b.id = id; }
+    b.className = cls + ' menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
+    b.innerHTML = html;
+    b.disabled = false;
+    b.style.pointerEvents = 'auto';
+    b.style.touchAction = 'manipulation';
+    return b;
+  }
+
+  function section(title, sub){
+    const sec = document.createElement('section');
+    sec.className = 'nsv-v25-section';
+    const h = document.createElement('div');
+    h.className = 'nsv-v25-section-title';
+    h.innerHTML = `<span>${title}</span>${sub ? `<span class="nsv-v25-section-sub">${sub}</span>` : ''}`;
+    sec.appendChild(h);
+    return sec;
+  }
+
+  function findOldCardByInput(id){
+    const input = $(id);
+    if (!input) return null;
+    return input.closest('.bg-gray-900\\/80') || input.closest('.nsv-v15-home-section') || input.closest('div');
+  }
+
+  function settingCard(inputId, title, desc){
+    const card = document.createElement('div');
+    card.className = 'nsv-v25-setting-card';
+    const main = document.createElement('div');
+    main.className = 'nsv-v25-setting-main';
+    main.innerHTML = `<div class="nsv-v25-setting-title">${title}</div><div class="nsv-v25-setting-desc">${desc}</div>`;
+    card.appendChild(main);
+    const input = $(inputId);
+    let label = input && input.closest('label');
+    if (label) {
+      label.style.margin = '0';
+      card.appendChild(label);
+    } else if (input) {
+      card.appendChild(input);
+    } else {
+      const empty = document.createElement('div');
+      empty.className = 'text-xs text-gray-400';
+      empty.textContent = '未設定';
+      card.appendChild(empty);
+    }
+    return card;
+  }
+
+  function buildSaveCard(){
+    const card = document.createElement('div');
+    card.className = 'nsv-v25-save-card';
+    const left = document.createElement('div');
+    left.innerHTML = `<div class="nsv-v25-save-title">データ引き継ぎ</div><div class="nsv-v25-save-desc">ニックネーム・コイン・アップグレード・友達登録をコードで保存/復元できます。ホーム画面の一番下に固定しています。</div>`;
+    const actions = document.createElement('div');
+    actions.className = 'nsv-v25-save-actions';
+    const exportBtn = makeButton('exportBtn','bg-blue-900 border border-blue-500 text-blue-200 hover:bg-blue-700','EXPORT');
+    const importBtn = makeButton('importBtn','bg-green-900 border border-green-500 text-green-200 hover:bg-green-700','IMPORT');
+    exportBtn.classList.remove('menu-secondary');
+    importBtn.classList.remove('menu-secondary');
+    exportBtn.classList.add('px-4','py-2','rounded','font-bold');
+    importBtn.classList.add('px-4','py-2','rounded','font-bold');
+    actions.appendChild(exportBtn);
+    actions.appendChild(importBtn);
+    card.appendChild(left);
+    card.appendChild(actions);
+    return card;
+  }
+
+  function removeDuplicateEventButton(chosen){
+    ['openEventModeBtn','openDailyEventBtnV13'].forEach(function(id){
+      const b = $(id);
+      if (b && b !== chosen) b.remove();
+    });
+  }
+
+  function organizeHomeV25(){
+    const startScreen = $('startScreen');
+    const panel = q('#startScreen .menu-panel');
+    if (!startScreen || !panel) return false;
+    makeStyleV25();
+    patchLabelV25();
+    panel.classList.add('nsv-v25-home-panel');
+
+    // 必要なボタンを先に確保
+    const startBtn = makeButton('startBtn','btn-neon solo-hero','SOLO START<span class="solo-sub">1人で練習・ミッション進行</span>');
+    const onlineBtn = makeButton('onlineStartBtn','btn-gold','ONLINE BATTLE<br><span class="text-xs text-yellow-100 font-bold">友達と対戦</span>');
+    const eventBtn = $('openDailyEventBtnV13') || $('openEventModeBtn') || makeButton('openDailyEventBtnV13','btn-purple','DAILY EVENT<br><span class="text-xs text-purple-100 font-bold">今日のイベント</span>');
+    eventBtn.id = 'openDailyEventBtnV13';
+    eventBtn.className = 'btn-purple menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
+    removeDuplicateEventButton(eventBtn);
+
+    const upgradeBtn = makeButton('openUpgradeBtn','bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow]','UPGRADE<br><span class="text-xs text-yellow-100 font-bold">強化</span>');
+    const missionBtn = makeButton('openMissionBtn','btn-purple','MISSIONS<br><span class="text-xs text-purple-100 font-bold">報酬解放</span>');
+    const collectionBtn = makeButton('openCollectionBtn','btn-green','COLLECTION<br><span class="text-xs text-green-100 font-bold">装備</span>');
+    const codexBtn = makeButton('openWeaponCodexBtn','btn-neon','WEAPON CODEX<br><span class="text-xs text-cyan-100 font-bold">武器図鑑</span>');
+    const bossBtn = makeButton('openBossCodexBtn','btn-red','BOSS CODEX<br><span class="text-xs text-red-100 font-bold">ボス図鑑</span>');
+    const rankBtn = makeButton('openLeaderboardBtn','btn-neon','RANKING<br><span class="text-xs text-cyan-100 font-bold">友達ランキング</span>');
+    const passBtn = makeButton('openBattlePassBtn','btn-purple','NEON PASS<br><span class="text-xs text-purple-100 font-bold">シーズン報酬</span>');
+    const shopBtn = makeButton('openShopBtn','btn-gold','SHOP<br><span class="text-xs text-yellow-100 font-bold">コイン交換</span>');
+    const adminBtn = makeButton('adminContactBtn','btn-green','管理者フォーム<br><span class="text-xs text-green-100 font-bold">連絡・要望</span>');
+
+    const title = q('h1.neon-title', panel) || q('h1.neon-title');
+    const nickCard = $('nicknameInput') && ($('nicknameInput').closest('.bg-gray-900\\/80') || $('nicknameInput').parentElement);
+    const bestCard = $('currentBestDisplay') && ($('currentBestDisplay').closest('.bg-gray-900\\/80') || $('currentBestDisplay').parentElement);
+
+    const root = document.createElement('div');
+    root.id = CLEAN_ROOT_ID;
+    root.className = 'nsv-v25-home-root';
+
+    const top = document.createElement('div');
+    top.className = 'nsv-v25-top';
+    const titleCard = document.createElement('div');
+    titleCard.className = 'nsv-v25-title-card';
+    if (title) titleCard.appendChild(title);
+    const chip = document.createElement('div');
+    chip.className = 'nsv-clean-season-chip';
+    chip.innerHTML = '<span class="nsv-clean-season-big">SEASON 1</span><span class="nsv-clean-season-name">NEON GENESIS</span>';
+    titleCard.appendChild(chip);
+    const profile = section('PLAYER DATA','名前と自己ベスト');
+    const profileGrid = document.createElement('div');
+    profileGrid.className = 'nsv-v25-profile';
+    if (nickCard) profileGrid.appendChild(nickCard);
+    if (bestCard) profileGrid.appendChild(bestCard);
+    profile.appendChild(profileGrid);
+    top.appendChild(titleCard);
+    top.appendChild(profile);
+    root.appendChild(top);
+
+    const playSec = section('PLAY','まずはここから');
+    const playGrid = document.createElement('div');
+    playGrid.className = 'nsv-v25-play';
+    playGrid.appendChild(startBtn);
+    playGrid.appendChild(onlineBtn);
+    playSec.appendChild(playGrid);
+    root.appendChild(playSec);
+
+    const todaySec = section('TODAY','日替わりイベント');
+    const eventWrap = document.createElement('div');
+    eventWrap.className = 'nsv-v25-event-wrap';
+    eventWrap.appendChild(eventBtn);
+    todaySec.appendChild(eventWrap);
+    root.appendChild(todaySec);
+
+    const menuSec = section('MENU','成長・記録・連絡');
+    const grid = document.createElement('div');
+    grid.className = 'nsv-v25-button-grid';
+    [upgradeBtn, missionBtn, collectionBtn, codexBtn, bossBtn, rankBtn, passBtn, shopBtn, adminBtn].forEach(function(b){ grid.appendChild(b); });
+    menuSec.appendChild(grid);
+    root.appendChild(menuSec);
+
+    const settingsSec = section('SETTINGS','操作と軽さ');
+    const settingsGrid = document.createElement('div');
+    settingsGrid.className = 'nsv-v25-settings-grid';
+    settingsGrid.appendChild(settingCard('joystickToggle','ジョイスティック','スマホ・iPadで移動しやすくします。'));
+    settingsGrid.appendChild(settingCard('lightModeToggle','軽量モード','重い時にエフェクトを減らして落ちにくくします。'));
+    settingsSec.appendChild(settingsGrid);
+    root.appendChild(settingsSec);
+
+    const saveSec = section('SAVE CODE','一番下に固定');
+    saveSec.appendChild(buildSaveCard());
+    root.appendChild(saveSec);
+
+    panel.innerHTML = '';
+    panel.appendChild(root);
+
+    try { if (typeof updateHomeEventButtonV24 === 'function') updateHomeEventButtonV24(); } catch(e) {}
+    Array.from(panel.querySelectorAll('button,label,input')).forEach(function(n){
+      n.style.pointerEvents = 'auto';
+      n.style.touchAction = 'manipulation';
+      if ('disabled' in n) n.disabled = false;
+    });
+    return true;
+  }
+
+  function installV25Routes(){
+    if (window.__nsvV25RoutesInstalled) return;
+    window.__nsvV25RoutesInstalled = true;
+    window.addEventListener('click', function(ev){
+      const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+      if (!btn) return;
+      if (btn.id === 'adminContactBtn') {
+        ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+        window.open(ADMIN_FORM_URL_V25, '_blank', 'noopener,noreferrer');
+      }
+    }, true);
+  }
+
+  function bootV25(){
+    organizeHomeV25();
+    installV25Routes();
+    patchLabelV25();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootV25, { once:true });
+  else bootV25();
+  window.addEventListener('pageshow', bootV25, { passive:true });
+  window.addEventListener('orientationchange', function(){ setTimeout(bootV25, 180); }, { passive:true });
 })();
 
 </script>
