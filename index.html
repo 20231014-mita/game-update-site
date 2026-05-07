@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V15 STABLE utf8-button-fix -->
+<!-- V17 STABLE safe-button-patch-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -12299,6 +12299,363 @@
             if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootV14); else bootV14();
             setInterval(() => { try { ensureV14Badge(); stripCapeDataV14(); bindCoreButtonsV14(); alignHomeTogglesV14(); updateDailyEventButtonV14(); } catch(e) {} }, 1000);
         })();
+
+
+/* =========================================================
+   V17 STABLE: SAFE BUTTON / OVERLAY PATCH
+   - 画面の透明重なりを消す
+   - 主要ボタンをmodule内で直接ルーティング
+   - 後ろの古い通常scriptのcapture処理より先に処理する
+   - ゲーム内には短いバージョン表示だけ残す
+========================================================= */
+(function(){
+    'use strict';
+    if (window.__nsvV17SafeButtonPatch) return;
+    window.__nsvV17SafeButtonPatch = true;
+
+    const V17_LABEL = 'V17 STABLE';
+    const ADMIN_FORM_URL_V17 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
+    const SCREEN_IDS_V17 = [
+        'startScreen','upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','bossCodexScreen',
+        'onlineRoleScreen','levelUpScreen','gameOverScreen','pauseScreen','leaderboardScreen','eventModeScreen',
+        'shopScreen','battlePassScreen','tutorialOverlay'
+    ];
+    const NON_BLOCKING_IDS_V17 = [
+        'bossWarning','generalCutin','shatterEffect','missionToast','mapEventForecastHud','seasonLaunchIntro'
+    ];
+    const CORE_BUTTON_IDS_V17 = new Set([
+        'startBtn','onlineStartBtn','pauseBtn','resumeBtn','restartBtn','titleFromPauseBtn',
+        'openUpgradeBtn','closeUpgradeBtn','openMissionBtn','closeMissionsBtn','openCollectionBtn','closeCollectionBtn',
+        'openWeaponCodexBtn','closeWeaponCodexBtn','openBossCodexBtn','closeBossCodexBtn','closeOnlineRoleBtn',
+        'openLeaderboardBtn','closeLeaderboardBtn','closeLeaderboardBtnV13','copyFriendCodeBtn','copyFriendCodeBtnV13',
+        'addFriendCodeBtn','addFriendCodeBtnV13','openDailyEventBtnV13','closeEventModeBtn',
+        'openBattlePassBtn','openBattlePassHeroBtn','openShopBtn','openShopHeroBtn','closeShopBtn','closeBattlePassBtn',
+        'exportBtn','importBtn','adminContactBtn','tutorialStartBtn','tutorialSkipBtn'
+    ]);
+
+    function v17El(id){ return document.getElementById(id); }
+    function v17IsFn(name){ try { return eval('typeof ' + name + ' === "function"'); } catch(e) { return false; } }
+    function v17Call(name){
+        try {
+            const fn = eval('typeof ' + name + ' === "function" ? ' + name + ' : null');
+            if (fn) return fn.apply(null, Array.prototype.slice.call(arguments, 1));
+        } catch(e) {}
+        return undefined;
+    }
+
+    function v17InstallStyle(){
+        if (v17El('nsvV17SafeButtonStyle')) return;
+        const st = document.createElement('style');
+        st.id = 'nsvV17SafeButtonStyle';
+        st.textContent = `
+            button, [role="button"], label, input, select, textarea, .cursor-pointer, .btn-neon, .btn-gold, .btn-purple, .btn-green, .btn-red, .upgrade-card {
+                pointer-events: auto !important;
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: rgba(34,211,238,.28) !important;
+            }
+            button:disabled { opacity: .62; cursor: not-allowed; }
+            #bossWarning, #generalCutin, #shatterEffect, #missionToast, #mapEventForecastHud {
+                pointer-events: none !important;
+            }
+            #uiLayer { pointer-events: none !important; }
+            #uiLayer button, #uiLayer .pointer-events-auto, #pauseBtn {
+                pointer-events: auto !important;
+                touch-action: manipulation !important;
+            }
+            .hidden { pointer-events: none !important; }
+            #startScreen:not(.hidden), #pauseScreen:not(.hidden), #upgradeScreen:not(.hidden), #missionsScreen:not(.hidden),
+            #collectionScreen:not(.hidden), #weaponCodexScreen:not(.hidden), #bossCodexScreen:not(.hidden), #onlineRoleScreen:not(.hidden),
+            #levelUpScreen:not(.hidden), #gameOverScreen:not(.hidden), #leaderboardScreen:not(.hidden), #eventModeScreen:not(.hidden),
+            #shopScreen:not(.hidden), #battlePassScreen:not(.hidden), #tutorialOverlay:not(.hidden) {
+                pointer-events: auto !important;
+            }
+            #nsvV17Badge {
+                position: fixed; left: 10px; bottom: 8px; z-index: 260; color: #67e8f9;
+                font: 700 11px/1.2 'Orbitron','Noto Sans JP',sans-serif; letter-spacing: .08em;
+                padding: 4px 7px; border: 1px solid rgba(103,232,249,.55); border-radius: 999px;
+                background: rgba(2,6,23,.62); box-shadow: 0 0 12px rgba(34,211,238,.28);
+                pointer-events: none;
+            }
+        `;
+        document.head.appendChild(st);
+    }
+
+    function v17EnsureBadge(){
+        let b = v17El('nsvV17Badge');
+        if (!b) { b = document.createElement('div'); b.id = 'nsvV17Badge'; document.body.appendChild(b); }
+        b.textContent = V17_LABEL;
+        ['nsvV13Badge','nsvV14Badge','nsvV15Badge'].forEach(id => { const old = v17El(id); if (old) old.textContent = V17_LABEL; });
+    }
+
+    function v17ClearStuckWarnings(){
+        try {
+            const bw = v17El('bossWarning'); if (bw && gameState !== 'playing') bw.classList.add('hidden');
+            const gc = v17El('generalCutin'); if (gc && gameState !== 'playing') gc.classList.add('hidden');
+            const sf = v17El('shatterEffect'); if (sf && gameState !== 'playing') sf.classList.add('hidden');
+            const mf = v17El('mapEventForecastHud'); if (mf && gameState !== 'playing') mf.classList.add('hidden');
+            const mt = v17El('missionToast'); if (mt && gameState !== 'playing') mt.innerHTML = '';
+            const intro = v17El('seasonLaunchIntro');
+            if (intro && intro.classList.contains('active')) {
+                intro.classList.remove('active','closing');
+                intro.style.display = 'none';
+                intro.style.pointerEvents = 'none';
+            }
+        } catch(e) {}
+    }
+
+    function v17SyncUiLayer(){
+        try {
+            const ui = v17El('uiLayer');
+            if (!ui) return;
+            const shouldShow = (gameState === 'playing' || gameState === 'paused');
+            ui.classList.toggle('hidden', !shouldShow);
+            const pause = v17El('pauseBtn');
+            if (pause) { pause.disabled = false; pause.style.pointerEvents = 'auto'; pause.style.touchAction = 'manipulation'; }
+            const bossHp = v17El('bossHpContainer');
+            if (bossHp && gameState !== 'playing') bossHp.classList.add('hidden');
+        } catch(e) {}
+    }
+
+    function v17HardShow(screenId){
+        try {
+            if (v17IsFn('showScreen')) showScreen(screenId);
+        } catch(e) {}
+        try {
+            SCREEN_IDS_V17.forEach(id => {
+                const el = v17El(id);
+                if (!el) return;
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.style.pointerEvents = 'auto';
+                } else {
+                    el.classList.add('hidden');
+                    el.style.pointerEvents = 'none';
+                }
+            });
+            if (!screenId) SCREEN_IDS_V17.forEach(id => { const el = v17El(id); if (el) el.classList.add('hidden'); });
+            NON_BLOCKING_IDS_V17.forEach(id => { const el = v17El(id); if (el) el.style.pointerEvents = 'none'; });
+            v17ClearStuckWarnings();
+            v17SyncUiLayer();
+        } catch(e) {}
+    }
+
+    function v17MakeAllButtonsPressable(root){
+        try {
+            (root || document).querySelectorAll('button,[role="button"],label,input,.cursor-pointer,.upgrade-card').forEach(el => {
+                el.style.pointerEvents = 'auto';
+                el.style.touchAction = 'manipulation';
+                if (el.tagName === 'BUTTON') el.disabled = false;
+            });
+        } catch(e) {}
+    }
+
+    function v17NormalizeHomeButtons(){
+        try {
+            const panel = document.querySelector('#startScreen .menu-panel') || document.querySelector('#startScreen');
+            const grid = document.querySelector('#startScreen .menu-grid') || document.querySelector('#startScreen .nsv-clean-menu-grid');
+            if (grid) {
+                [
+                    'startBtn','onlineStartBtn','openUpgradeBtn','openMissionBtn','openCollectionBtn','openWeaponCodexBtn',
+                    'openBossCodexBtn','openLeaderboardBtn','openDailyEventBtnV13','openBattlePassBtn','openShopBtn','adminContactBtn'
+                ].forEach(id => { const b = v17El(id); if (b) grid.appendChild(b); });
+            }
+            if (panel) v17MakeAllButtonsPressable(panel);
+        } catch(e) {}
+    }
+
+    function v17OpenOnlineRole(){
+        try {
+            if (v17IsFn('openOnlineRoleSelect')) { openOnlineRoleSelect(); return; }
+            if (v17IsFn('renderOnlineRoleScreen')) renderOnlineRoleScreen();
+            v17HardShow('onlineRoleScreen');
+        } catch(e) { v17HardShow('onlineRoleScreen'); }
+    }
+
+    function v17ReturnTitle(){
+        try { if (gameState === 'playing' || gameState === 'paused') { v17Call('endRunAndReturnToMenu'); } } catch(e) {}
+        try { gameState = 'start'; } catch(e) {}
+        try { v17Call('stopOnlineMode'); } catch(e) {}
+        try { selectedOnlineRoleId = null; currentOnlineRole = null; } catch(e) {}
+        try { v17Call('saveData'); v17Call('loadData'); } catch(e) {}
+        v17HardShow('startScreen');
+        v17NormalizeHomeButtons();
+    }
+
+    function v17TogglePause(forceResume){
+        try {
+            if (forceResume || gameState === 'paused') {
+                gameState = 'playing';
+                v17HardShow(null);
+                v17Call('syncJoystickVisibility');
+                try { lastTime = performance.now(); } catch(e) {}
+                try { Sound.startBGM(); } catch(e) {}
+                try { if (animationId) cancelAnimationFrame(animationId); animationId = requestAnimationFrame(gameLoop); } catch(e) {}
+            } else if (gameState === 'playing') {
+                gameState = 'paused';
+                v17Call('syncJoystickVisibility');
+                v17HardShow('pauseScreen');
+                try { Sound.stopBGM(); } catch(e) {}
+                v17Call('renderPauseWeaponStatusV13');
+                v17Call('ensurePauseCheatAndWeaponList');
+                v17MakeAllButtonsPressable(v17El('pauseScreen'));
+            }
+        } catch(e) {}
+        v17SyncUiLayer();
+    }
+
+    function v17RouteButton(id){
+        switch(id){
+            case 'startBtn':
+            case 'tutorialStartBtn':
+                v17ClearStuckWarnings();
+                if (gameState === 'start' || gameState === 'gameover' || v17El('startScreen')?.classList.contains('hidden') === false) v17Call('initGame','solo');
+                v17SyncUiLayer();
+                return true;
+            case 'onlineStartBtn': v17OpenOnlineRole(); return true;
+            case 'pauseBtn': v17TogglePause(false); return true;
+            case 'resumeBtn': v17TogglePause(true); return true;
+            case 'restartBtn': v17ReturnTitle(); return true;
+            case 'titleFromPauseBtn': v17ReturnTitle(); return true;
+            case 'tutorialSkipBtn': v17HardShow('startScreen'); return true;
+            case 'openUpgradeBtn': v17Call('renderUpgradeScreen'); v17HardShow('upgradeScreen'); return true;
+            case 'closeUpgradeBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openMissionBtn': v17Call('renderMissionScreen'); v17HardShow('missionsScreen'); return true;
+            case 'closeMissionsBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openCollectionBtn': v17Call('renderCollectionScreen'); v17HardShow('collectionScreen'); return true;
+            case 'closeCollectionBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openWeaponCodexBtn': v17Call('renderWeaponCodexScreen'); v17HardShow('weaponCodexScreen'); return true;
+            case 'closeWeaponCodexBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openBossCodexBtn': v17Call('ensureBossCodexScreen'); v17Call('renderBossCodexScreen'); v17HardShow('bossCodexScreen'); return true;
+            case 'closeBossCodexBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'closeOnlineRoleBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openLeaderboardBtn': v17Call('ensureLeaderboardV13'); v17Call('renderV13FriendLeaderboard'); v17HardShow('leaderboardScreen'); return true;
+            case 'closeLeaderboardBtn':
+            case 'closeLeaderboardBtnV13': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'copyFriendCodeBtn':
+            case 'copyFriendCodeBtnV13': v17Call('copyFriendCodeV13'); return true;
+            case 'addFriendCodeBtn':
+            case 'addFriendCodeBtnV13': v17Call('addFriendCodeV13'); return true;
+            case 'openDailyEventBtnV13':
+                try { v17Call('renderEventModeScreen20260504'); v17HardShow('eventModeScreen'); setTimeout(() => v17Call('removeBlackholeEventCardsV13'), 30); }
+                catch(e) { v17Call('renderV13DailyEventFallback'); v17HardShow('eventModeScreen'); }
+                return true;
+            case 'closeEventModeBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'openBattlePassBtn':
+            case 'openBattlePassHeroBtn': v17Call('renderBattlePassV2','base'); v17HardShow('battlePassScreen'); return true;
+            case 'openShopBtn':
+            case 'openShopHeroBtn': v17Call('renderShopV2'); v17HardShow('shopScreen'); return true;
+            case 'closeShopBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'closeBattlePassBtn': v17HardShow('startScreen'); v17NormalizeHomeButtons(); return true;
+            case 'exportBtn': v17Call('exportSaveCode'); return true;
+            case 'importBtn': v17Call('importSaveCode'); return true;
+            case 'adminContactBtn': window.open(ADMIN_FORM_URL_V17, '_blank', 'noopener,noreferrer'); return true;
+            default: return false;
+        }
+    }
+
+    function v17InstallCoreRouter(){
+        if (window.__nsvV17CoreRouterInstalled) return;
+        window.__nsvV17CoreRouterInstalled = true;
+        const downGuard = function(ev){
+            const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+            if (!btn || !btn.id || !CORE_BUTTON_IDS_V17.has(btn.id)) return;
+            btn.style.pointerEvents = 'auto';
+            btn.style.touchAction = 'manipulation';
+            if (btn.disabled) btn.disabled = false;
+        };
+        const route = function(ev){
+            const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+            if (!btn || !btn.id || !CORE_BUTTON_IDS_V17.has(btn.id)) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+            v17RouteButton(btn.id);
+        };
+        document.addEventListener('pointerdown', downGuard, true);
+        document.addEventListener('pointerup', route, true);
+        document.addEventListener('click', function(ev){
+            const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+            if (!btn || !btn.id || !CORE_BUTTON_IDS_V17.has(btn.id)) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+        }, true);
+    }
+
+    function v17InstallToggleGuards(){
+        const bindCheck = function(id, callback){
+            const input = v17El(id);
+            if (!input || input.__nsvV17ToggleBound) return;
+            input.__nsvV17ToggleBound = true;
+            const run = function(){
+                setTimeout(() => {
+                    try { callback(!!input.checked); } catch(e) {}
+                    v17MakeAllButtonsPressable();
+                }, 0);
+            };
+            input.addEventListener('change', run, true);
+            input.addEventListener('pointerup', run, true);
+        };
+        bindCheck('joystickToggle', checked => { v17Call('toggleJoystickFromPause', checked); });
+        bindCheck('pauseJoystickToggle', checked => { v17Call('toggleJoystickFromPause', checked); });
+        bindCheck('lightModeToggle', checked => { v17Call('toggleLightMode', checked); });
+        bindCheck('pauseLightModeToggle', checked => { v17Call('toggleLightMode', checked); });
+    }
+
+    function v17WrapScreenMethods(){
+        try {
+            const oldShow = showScreen;
+            if (oldShow && !oldShow.__nsvV17Wrapped) {
+                showScreen = function(screenId){
+                    const ret = oldShow.apply(this, arguments);
+                    try {
+                        SCREEN_IDS_V17.forEach(id => {
+                            const el = v17El(id); if (!el) return;
+                            if (id === screenId) { el.classList.remove('hidden'); el.style.pointerEvents='auto'; }
+                            else if (screenId !== undefined) { el.classList.add('hidden'); el.style.pointerEvents='none'; }
+                        });
+                        v17ClearStuckWarnings();
+                        v17SyncUiLayer();
+                    } catch(e) {}
+                    return ret;
+                };
+                showScreen.__nsvV17Wrapped = true;
+            }
+        } catch(e) {}
+    }
+
+    function v17Boot(){
+        try {
+            v17InstallStyle();
+            v17EnsureBadge();
+            v17WrapScreenMethods();
+            v17InstallCoreRouter();
+            v17InstallToggleGuards();
+            v17MakeAllButtonsPressable();
+            v17NormalizeHomeButtons();
+            v17ClearStuckWarnings();
+            v17SyncUiLayer();
+            try { document.documentElement.setAttribute('lang','ja'); } catch(e) {}
+        } catch(e) {}
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', v17Boot);
+    else v17Boot();
+    setTimeout(v17Boot, 100);
+    setTimeout(v17Boot, 500);
+    setTimeout(v17Boot, 1200);
+    setInterval(function(){
+        try {
+            v17EnsureBadge();
+            v17MakeAllButtonsPressable();
+            v17ClearStuckWarnings();
+            v17SyncUiLayer();
+            if (gameState === 'start') v17NormalizeHomeButtons();
+        } catch(e) {}
+    }, 900);
+})();
+
+
 </script>
 
 
@@ -12505,15 +12862,15 @@
         // ==========================================================
         (function neonSurvivorV15DisplayButtonFix(){
             'use strict';
-            const PATCH_ID = 'nsvV15DisplayButtonFix20260507';
+            const PATCH_ID = 'nsvV16HomeBackFix20260507';
             if (window[PATCH_ID]) return;
             window[PATCH_ID] = true;
             const ADMIN_FORM_URL_V15 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
-            const V15_VERSION_TEXT = 'V15 STABLE';
+            const V15_VERSION_TEXT = 'V17 STABLE';
             const CORE_IDS = new Set([
                 'startBtn','onlineStartBtn','pauseBtn','resumeBtn','restartBtn','titleFromPauseBtn',
                 'openUpgradeBtn','closeUpgradeBtn','openMissionBtn','closeMissionsBtn','openCollectionBtn','closeCollectionBtn',
-                'openWeaponCodexBtn','closeWeaponCodexBtn','openBossCodexBtn','closeBossCodexBtn',
+                'openWeaponCodexBtn','closeWeaponCodexBtn','closeOnlineRoleBtn','openBossCodexBtn','closeBossCodexBtn',
                 'openLeaderboardBtn','closeLeaderboardBtn','closeLeaderboardBtnV13','copyFriendCodeBtnV13','addFriendCodeBtnV13',
                 'openDailyEventBtnV13','closeEventModeBtn','openBattlePassBtn','openBattlePassHeroBtn','openShopBtn','openShopHeroBtn',
                 'closeShopBtn','closeBattlePassBtn','exportBtn','importBtn','adminContactBtn'
@@ -12588,20 +12945,31 @@
             function restoreHomeButtons(){
                 try {
                     addUtf8Safety(); addStyle(); ensureBadge(); ensureOptionalScreensAndButtons();
+
+                    // V16: FULL MENUを後付けする方式をやめ、最初のホーム配置（PLAY / MENU / SETTINGS / SAVE）に戻す。
                     const panel = document.querySelector('#startScreen .menu-panel');
-                    const root = el('nsvCleanStartRoot20260504') || panel;
+                    const cleanRoot = el('nsvCleanStartRoot20260504');
+                    const root = cleanRoot || panel || document.querySelector('#startScreen');
                     if (!root) return;
-                    let sec = el('nsvV15FullHomeMenu');
-                    if (!sec) {
-                        sec = document.createElement('section');
-                        sec.id = 'nsvV15FullHomeMenu';
-                        sec.className = 'nsv-v15-home-section';
-                        sec.innerHTML = '<div class="nsv-v15-section-title">FULL MENU</div><div id="nsvV15FullHomeGrid" class="nsv-v15-full-grid"></div><div class="nsv-v15-home-note">ボタンを戻しました。各ボタンは1回タップで反応するようにしています。</div>';
-                        const save = el('nsvV13StartCheat') || root.querySelector('.nsv-clean-save') || root.lastElementChild;
-                        if (save && save.parentElement === root) root.insertBefore(sec, save);
-                        else root.appendChild(sec);
+
+                    const fullMenu = el('nsvV15FullHomeMenu');
+                    if (fullMenu) fullMenu.remove();
+                    const oldToggleRow = el('nsvV15ToggleRow');
+                    if (oldToggleRow) oldToggleRow.remove();
+
+                    let menuGrid = root.querySelector('.nsv-clean-menu-grid') || document.querySelector('#startScreen .menu-grid');
+                    if (!menuGrid) {
+                        const menuSec = document.createElement('section');
+                        menuSec.className = 'nsv-clean-section';
+                        menuSec.innerHTML = '<div class="nsv-clean-section-title">MENU</div>';
+                        menuGrid = document.createElement('div');
+                        menuGrid.className = 'nsv-clean-menu-grid';
+                        menuSec.appendChild(menuGrid);
+                        const settings = root.querySelector('.nsv-clean-settings')?.closest('section') || root.querySelector('.nsv-clean-save') || null;
+                        if (settings && settings.parentElement === root) root.insertBefore(menuSec, settings);
+                        else root.appendChild(menuSec);
                     }
-                    const grid = el('nsvV15FullHomeGrid') || sec.querySelector('.nsv-v15-full-grid');
+
                     const order = [
                         ['openUpgradeBtn','bg-gray-800 text-yellow-400 border-2 border-yellow-500 shadow-[0_0_10px_yellow] hover:bg-yellow-500 hover:text-black hover:shadow-[0_0_20px_yellow]','UPGRADE'],
                         ['openMissionBtn','btn-purple','MISSIONS'],
@@ -12616,24 +12984,40 @@
                     ];
                     for (const [id, cls, html] of order) {
                         let b = el(id) || makeButton(id, cls, html);
-                        if (!b.innerHTML || b.innerHTML.trim().length < 2 || id === 'openDailyEventBtnV13' || id === 'openLeaderboardBtn' || id === 'adminContactBtn' || id === 'openBattlePassBtn' || id === 'openShopBtn' || id === 'openBossCodexBtn') {
-                            b.className = cls + ' menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
-                            b.innerHTML = html;
-                        }
+                        b.className = cls + ' menu-secondary px-4 py-3 font-bold rounded cursor-pointer';
+                        b.innerHTML = html;
                         b.disabled = false;
                         b.style.pointerEvents = 'auto';
-                        grid.appendChild(b);
+                        b.style.touchAction = 'manipulation';
+                        menuGrid.appendChild(b);
                     }
+
+                    // トグルは最初のSETTINGS枠に戻す。変な追加段は作らない。
                     const joyBox = el('joystickToggle')?.closest('.bg-gray-900\\/80') || el('joystickToggle')?.closest('div');
                     const lightBox = el('lightModeToggle')?.closest('.bg-gray-900\\/80') || el('lightModeToggle')?.closest('div');
-                    if (joyBox && lightBox && !el('nsvV15ToggleRow')) {
-                        const row = document.createElement('div'); row.id = 'nsvV15ToggleRow'; row.className = 'nsv-v15-toggle-row';
-                        const settings = root.querySelector('.nsv-clean-settings') || root.querySelector('.nsv-v14-duo-toggle') || grid.parentElement;
-                        if (settings) settings.appendChild(row); else root.appendChild(row);
-                        row.appendChild(joyBox); row.appendChild(lightBox);
+                    let settingsGrid = root.querySelector('.nsv-clean-settings');
+                    if (!settingsGrid && joyBox && lightBox) {
+                        const settingsSec = document.createElement('section');
+                        settingsSec.className = 'nsv-clean-section';
+                        settingsSec.innerHTML = '<div class="nsv-clean-section-title">SETTINGS</div>';
+                        settingsGrid = document.createElement('div');
+                        settingsGrid.className = 'nsv-clean-settings';
+                        settingsSec.appendChild(settingsGrid);
+                        const save = root.querySelector('.nsv-clean-save') || el('nsvV13StartCheat');
+                        if (save && save.parentElement === root) root.insertBefore(settingsSec, save);
+                        else root.appendChild(settingsSec);
                     }
-                    document.querySelectorAll('#startScreen button,#pauseScreen button,#gameOverScreen button').forEach(btn => { btn.style.pointerEvents='auto'; btn.style.touchAction='manipulation'; });
-                } catch(e) { console.warn('V15 home restore skipped', e); }
+                    if (settingsGrid && joyBox && lightBox) {
+                        settingsGrid.appendChild(joyBox);
+                        settingsGrid.appendChild(lightBox);
+                    }
+
+                    document.querySelectorAll('button,[role="button"]').forEach(btn => {
+                        btn.style.pointerEvents='auto';
+                        btn.style.touchAction='manipulation';
+                        if ('disabled' in btn && btn.classList && /btn-|cursor-pointer|menu-secondary/.test(btn.className || '')) btn.disabled = false;
+                    });
+                } catch(e) { console.warn('V16 home restore skipped', e); }
             }
             function clearStuckWarnings(){
                 try {
@@ -12668,6 +13052,7 @@
                         case 'closeCollectionBtn': showScreen('startScreen'); break;
                         case 'openWeaponCodexBtn': renderWeaponCodexScreen?.(); showScreen('weaponCodexScreen'); break;
                         case 'closeWeaponCodexBtn': showScreen('startScreen'); break;
+                        case 'closeOnlineRoleBtn': showScreen('startScreen'); break;
                         case 'openBossCodexBtn': ensureBossCodexScreen?.(); renderBossCodexScreen?.(); showScreen('bossCodexScreen'); break;
                         case 'closeBossCodexBtn': showScreen('startScreen'); break;
                         case 'openLeaderboardBtn': ensureLeaderboardV13?.(); renderV13FriendLeaderboard?.(); showScreen('leaderboardScreen'); break;
@@ -12874,6 +13259,65 @@
   else boot();
   setTimeout(boot, 700);
   setTimeout(cleanAllImportantScreens, 1500);
+})();
+</script>
+
+<script>
+/* =========================================================
+   V17 STABLE: home placement + BACK button fallback
+   - プレビューなし
+   - FULL MENUを消して最初のホーム配置に戻す
+   - Back系ボタンを確実に1回タップで戻す
+========================================================= */
+(function(){
+  'use strict';
+  if (window.__nsvV16HomeBackFallback) return;
+  window.__nsvV16HomeBackFallback = true;
+  const ADMIN_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
+  function $(id){ return document.getElementById(id); }
+  function safeShow(id){ try { if (typeof showScreen === 'function') showScreen(id); } catch(e) {} }
+  function normalizeHome(){
+    try {
+      const full = $('nsvV15FullHomeMenu'); if (full) full.remove();
+      const row = $('nsvV15ToggleRow'); if (row) row.remove();
+      const root = $('nsvCleanStartRoot20260504') || document.querySelector('#startScreen .menu-panel');
+      if (!root) return;
+      const grid = root.querySelector('.nsv-clean-menu-grid') || document.querySelector('#startScreen .menu-grid');
+      const ids = ['openUpgradeBtn','openMissionBtn','openCollectionBtn','openWeaponCodexBtn','openBossCodexBtn','openLeaderboardBtn','openDailyEventBtnV13','openBattlePassBtn','openShopBtn','adminContactBtn'];
+      if (grid) ids.forEach(id => { const b=$(id); if (b) { b.disabled=false; b.style.pointerEvents='auto'; b.style.touchAction='manipulation'; grid.appendChild(b); } });
+      const settings = root.querySelector('.nsv-clean-settings');
+      const joy = $('joystickToggle')?.closest('.bg-gray-900\\/80') || $('joystickToggle')?.closest('div');
+      const light = $('lightModeToggle')?.closest('.bg-gray-900\\/80') || $('lightModeToggle')?.closest('div');
+      if (settings && joy && light) { settings.appendChild(joy); settings.appendChild(light); }
+      document.querySelectorAll('button').forEach(b => { b.style.pointerEvents='auto'; b.style.touchAction='manipulation'; });
+      const b13=$('nsvV13Badge'), b14=$('nsvV14Badge'), b15=$('nsvV15Badge');
+      [b13,b14,b15].forEach(b => { if (b) b.textContent='V17 STABLE'; });
+    } catch(e) {}
+  }
+  function route(id){
+    switch(id){
+      case 'closeUpgradeBtn': case 'closeMissionsBtn': case 'closeCollectionBtn': case 'closeWeaponCodexBtn':
+      case 'closeBossCodexBtn': case 'closeLeaderboardBtn': case 'closeLeaderboardBtnV13': case 'closeEventModeBtn':
+      case 'closeShopBtn': case 'closeBattlePassBtn': case 'closeOnlineRoleBtn':
+        try { gameState = (gameState === 'paused') ? 'paused' : 'start'; } catch(e) {}
+        safeShow('startScreen'); normalizeHome(); return true;
+      case 'adminContactBtn':
+        window.open(ADMIN_FORM_URL, '_blank', 'noopener,noreferrer'); return true;
+      default: return false;
+    }
+  }
+  function handler(ev){
+    const btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+    if (!btn || !btn.id) return;
+    if (route(btn.id)) { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }
+  }
+  document.addEventListener('pointerdown', handler, true);
+  document.addEventListener('pointerup', handler, true);
+  document.addEventListener('click', handler, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', normalizeHome); else normalizeHome();
+  setTimeout(normalizeHome, 250);
+  setTimeout(normalizeHome, 1000);
+  setInterval(normalizeHome, 900);
 })();
 </script>
 
