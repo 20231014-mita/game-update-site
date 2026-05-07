@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V30 STABLE deploy-scroll-cache-fix-complete -->
+<!-- V27 STABLE home-settings-ranking-clean-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -2941,8 +2941,6 @@
         window.toggleLightMode = applyLightMode;
 
         function shouldShowTutorial(mode) {
-            // V27: 初回プレイでも説明チュートリアル画面は表示しない。
-            try { localStorage.setItem('neon_survivor_tutorial_done', '1'); } catch(e) {}
             return false;
         }
         function showTutorialOverlay() {
@@ -11233,7 +11231,7 @@
 
 
     /* =========================================================
-       V30 STABLE: READABLE NEON PASS SCREEN
+       V24 STABLE: READABLE NEON PASS SCREEN
        - ネオンパス画面を進行状況・報酬・受け取り状態が見やすい形に整理
        - 元のゲーム内容は維持。表示とボタンの分かりやすさを改善
     ========================================================= */
@@ -11599,7 +11597,7 @@
 
 
 /* =========================================================
-   V30 STABLE FINAL PATCH
+   V13 STABLE FINAL PATCH
    ========================================================= */
 (() => {
   'use strict';
@@ -11608,7 +11606,7 @@
   window[V13_PATCH_ID] = true;
 
   const ADMIN_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
-  const V13_VERSION_TEXT = 'V30 STABLE';
+  const V13_VERSION_TEXT = 'V13 STABLE';
   const ULTIMATE_IDS_V13 = new Set([
     'hollowMurasaki','kamehameha','vader','thor','muryoku','funnel','ironBlaster','disneyMagic','infinitySnap','infiniteBlade','shieldThrow','keraunos','phantomStep',
     'neonLance','phoenixCore','starfallCrown','voidCollector','railCannon','blackholeEmperor','thunderAegis','solarDrill','chronoLotus'
@@ -12261,13 +12259,13 @@
 
 
         // ==========================================================
-        // V30 STABLE add-on: clean UI, unified buttons, preserved saves, roles, daily event, auto-light
+        // V14 STABLE add-on: clean UI, unified buttons, preserved saves, roles, daily event, auto-light
         // ==========================================================
         (function neonSurvivorV14StablePatch(){
             const V14_PATCH_ID = 'nsvV14StablePatch20260507';
             if (window[V14_PATCH_ID]) return;
             window[V14_PATCH_ID] = true;
-            const V14_VERSION_TEXT = 'V30 STABLE';
+            const V14_VERSION_TEXT = 'V14 STABLE';
             let nsvV14Bound = new WeakSet();
             let nsvV14LastFrameTime = performance.now();
             let nsvV14FpsSamples = [];
@@ -12507,7 +12505,7 @@
 
 
 /* =========================================================
-   V30 STABLE: SAFE BUTTON / OVERLAY PATCH
+   V20 STABLE: SAFE BUTTON / OVERLAY PATCH
    - 画面の透明重なりを消す
    - 主要ボタンをmodule内で直接ルーティング
    - 後ろの古い通常scriptのcapture処理より先に処理する
@@ -12518,7 +12516,7 @@
     if (window.__nsvV17SafeButtonPatch) return;
     window.__nsvV17SafeButtonPatch = true;
 
-    const V17_LABEL = 'V30 STABLE';
+    const V17_LABEL = 'V20 STABLE';
     const ADMIN_FORM_URL_V17 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
     const SCREEN_IDS_V17 = [
         'startScreen','upgradeScreen','missionsScreen','collectionScreen','weaponCodexScreen','bossCodexScreen',
@@ -12864,7 +12862,7 @@
 
 
     /* =========================================================
-       V30 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
+       V24 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
        - リザルト画面に武器使用・獲得コイン・達成ミッションをまとめて表示
        - 軽量モードを Lv1 / Lv2 / Lv3 の段階制で自動調整
        - 初心者ミッションを追加
@@ -12874,7 +12872,7 @@
         if (window.__nsvV22ResultLightBeginnerPatch) return;
         window.__nsvV22ResultLightBeginnerPatch = true;
 
-        const V22_LABEL = 'V30 STABLE';
+        const V22_LABEL = 'V24 STABLE';
         const V22_BEGINNER_MISSIONS = [
             { id:'b001', cat:'BEGINNER', title:'初出撃ガイド', desc:'ソロかオンラインを1回プレイする', metric:'totalRuns', target:1, reward:{coins:180} },
             { id:'b002', cat:'BEGINNER', title:'3分生存チャレンジ', desc:'1回のプレイで180秒生き残る', metric:'bestTime', target:180, reward:{coins:360} },
@@ -13200,7 +13198,7 @@
     })();
 
 /* =========================================================
-   V30 STABLE: HARD SCROLL GUARD + FRIEND CODE RANKING + DAILY EVENT
+   V24 STABLE: HARD SCROLL GUARD + FRIEND CODE RANKING + DAILY EVENT
    - プレビューなし
    - スクロール中の誤タップを window capture で最優先ブロック
    - ランキングにコピーできるフレンドコード・貼り付け欄を追加
@@ -13208,7 +13206,7 @@
 ========================================================= */
 (function(){
   'use strict';
-  const V24_LABEL = 'V30 STABLE';
+  const V24_LABEL = 'V24 STABLE';
   const FRIEND_STORE_KEY = 'nsv_v24_friend_rows';
   const DAILY_EVENT_KEY = 'nsv_v24_active_daily_event';
 
@@ -13730,16 +13728,17 @@
         }, 560);
     }
     function showSeasonIntroOnce(){
-        // V27: 初回起動のSeason説明画面も表示しない。
         const intro = document.getElementById('seasonLaunchIntro');
-        try { localStorage.setItem(SEASON_INTRO_KEY, '1'); } catch(e) {}
-        if (intro) {
-            intro.classList.remove('active');
-            intro.classList.remove('closing');
-            intro.style.display = 'none';
-            intro.style.pointerEvents = 'none';
-        }
-        return;
+        if (!intro) return;
+        let seen = false;
+        try { seen = localStorage.getItem(SEASON_INTRO_KEY) === '1'; } catch(e) { seen = false; }
+        if (seen) return;
+        intro.style.display = 'flex';
+        requestAnimationFrame(function(){ intro.classList.add('active'); });
+        intro.addEventListener('click', closeSeasonIntro, { once: true });
+        intro.addEventListener('touchstart', closeSeasonIntro, { once: true, passive: true });
+        window.addEventListener('keydown', closeSeasonIntro, { once: true });
+        setTimeout(closeSeasonIntro, 4200);
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', showSeasonIntroOnce);
@@ -13920,7 +13919,7 @@
             if (window[PATCH_ID]) return;
             window[PATCH_ID] = true;
             const ADMIN_FORM_URL_V15 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
-            const V15_VERSION_TEXT = 'V30 STABLE';
+            const V15_VERSION_TEXT = 'V20 STABLE';
             const CORE_IDS = new Set([
                 'startBtn','onlineStartBtn','pauseBtn','resumeBtn','restartBtn','titleFromPauseBtn',
                 'openUpgradeBtn','closeUpgradeBtn','openMissionBtn','closeMissionsBtn','openCollectionBtn','closeCollectionBtn',
@@ -14318,7 +14317,7 @@
 
 <script>
 /* =========================================================
-   V30 STABLE: home placement + BACK button fallback
+   V20 STABLE: home placement + BACK button fallback
    - プレビューなし
    - FULL MENUを消して最初のホーム配置に戻す
    - Back系ボタンを確実に1回タップで戻す
@@ -14345,7 +14344,7 @@
       if (settings && joy && light) { settings.appendChild(joy); settings.appendChild(light); }
       document.querySelectorAll('button').forEach(b => { b.style.pointerEvents='auto'; b.style.touchAction='manipulation'; });
       const b13=$('nsvV13Badge'), b14=$('nsvV14Badge'), b15=$('nsvV15Badge');
-      [b13,b14,b15].forEach(b => { if (b) b.textContent='V30 STABLE'; });
+      [b13,b14,b15].forEach(b => { if (b) b.textContent='V20 STABLE'; });
     } catch(e) {}
   }
   function route(id){
@@ -14377,7 +14376,7 @@
 
 <script>
 /* =========================================================
-   V30 STABLE: FIXED HOME LAYOUT + BACK BUTTON HARD PATCH
+   V20 STABLE: FIXED HOME LAYOUT + BACK BUTTON HARD PATCH
    - ホームのボタン移動を止める
    - SOLO / ONLINE を上段に固定し、他ボタンの約1.5倍にする
    - Back ボタンを window capture で最優先処理する
@@ -14388,7 +14387,7 @@
   if (window.__nsvV18FixedHomeBackPatch) return;
   window.__nsvV18FixedHomeBackPatch = true;
 
-  const VERSION = 'V30 STABLE';
+  const VERSION = 'V20 STABLE';
   const HOME_BUTTON_IDS = new Set([
     'startBtn','onlineStartBtn','openUpgradeBtn','openMissionBtn','openCollectionBtn','openWeaponCodexBtn',
     'openBossCodexBtn','openLeaderboardBtn','openDailyEventBtnV13','openBattlePassBtn','openShopBtn','adminContactBtn',
@@ -14611,7 +14610,7 @@
 
 <script>
 /* =========================================================
-   V30 STABLE: ORIENTATION ONLY LAYOUT LOCK
+   V20 STABLE: ORIENTATION ONLY LAYOUT LOCK
    - 画面の向きを変えた時以外、ホームボタン位置を動かさない
    - スクロール揺れ・再配置タイマー・透明レイヤー干渉を抑える
    - プレビュー表示なし
@@ -14621,7 +14620,7 @@
   if (window.__nsvV20OrientationLockPatch) return;
   window.__nsvV20OrientationLockPatch = true;
 
-  const VERSION = 'V30 STABLE';
+  const VERSION = 'V20 STABLE';
   const PROTECTED_HOME_IDS = new Set([
     'startBtn','onlineStartBtn','openUpgradeBtn','openMissionBtn','openCollectionBtn','openWeaponCodexBtn',
     'openBossCodexBtn','openLeaderboardBtn','openDailyEventBtnV13','openBattlePassBtn','openShopBtn','adminContactBtn',
@@ -14806,14 +14805,14 @@
 
 <script>
 /* =========================================================
-   V30 STABLE: FINAL LABEL
+   V24 STABLE: FINAL LABEL
 ========================================================= */
 (function(){
   'use strict';
   function setV21(){
     ['nsvV20Badge','nsvV18Badge','nsvV17Badge','nsvV15Badge','nsvV14Badge','nsvV13Badge'].forEach(function(id){
       var el = document.getElementById(id);
-      if (el) el.textContent = 'V30 STABLE';
+      if (el) el.textContent = 'V24 STABLE';
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setV21, { once:true });
@@ -14822,12 +14821,12 @@
 })();
 
 /* =========================================================
-   V30 STABLE - HOME SCROLL MIS-TAP GUARD + TOP3 RANKING
+   V24 STABLE - HOME SCROLL MIS-TAP GUARD + TOP3 RANKING
    プレビューなし / ホーム誤タップ防止 / ランキング3位固定表示
 ========================================================= */
 (function(){
   'use strict';
-  const V23_LABEL = 'V30 STABLE';
+  const V23_LABEL = 'V24 STABLE';
 
   function nsvV23Escape(v){
     try {
@@ -15118,7 +15117,7 @@
 
 
 /* =========================================================
-   V30 STABLE: HOME SETTINGS / DATA TRANSFER LAYOUT FIX
+   V25 STABLE: HOME SETTINGS / DATA TRANSFER LAYOUT FIX
    - データ引き継ぎをホーム最下部へ固定
    - 設定欄から重複イベントボタンを除去
    - 管理者フォームを通常ボタン列へ移動
@@ -15127,7 +15126,7 @@
 ========================================================= */
 (function(){
   'use strict';
-  const V25_LABEL = 'V30 STABLE';
+  const V25_LABEL = 'V25 STABLE';
   const CLEAN_ROOT_ID = 'nsvCleanStartRoot20260504';
   const ADMIN_FORM_URL_V25 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
 
@@ -15387,7 +15386,7 @@
 
 
 /* =========================================================
-   V30 STABLE: HOME CLEANUP / TOGGLE SETTINGS / CHEAT POSITION / BIG RANKING
+   V27 STABLE: HOME CLEANUP / TOGGLE SETTINGS / CHEAT POSITION / BIG RANKING
    - データ引き継ぎ欄の下に残る不要表示を削除
    - SETTINGSをON/OFFトグル式に整理
    - チートコード欄をデータ引き継ぎの真上へ移動
@@ -15396,7 +15395,7 @@
 ========================================================= */
 (function(){
   'use strict';
-  const V26_LABEL = 'V30 STABLE';
+  const V26_LABEL = 'V27 STABLE';
   const ROOT_ID = 'nsvCleanStartRoot20260504';
   const ADMIN_FORM_URL_V26 = 'https://docs.google.com/forms/d/e/1FAIpQLSdFIHTE87vQtcVdiMPRVXVedTB9_5iljxxYBKEVkBJzsN8qVA/viewform';
   const FRIEND_KEY_V26 = 'neon_survivor_friend_rows_v26';
@@ -15716,794 +15715,266 @@
   window.addEventListener('orientationchange', function(){ setTimeout(boot, 180); }, { passive:true });
 })();
 
-</script>
 
-
-<script>
-(function(){
+// ==========================================================
+// V27 STABLE add-on: no first tutorial, game-over scroll fix, pause cheat input
+// ==========================================================
+(() => {
   'use strict';
-  // V30 STABLE: 初回説明画面を常に非表示にする安全パッチ。
-  const keys = ['neon_survivor_tutorial_done','neon_survivor_seen_intro_s1_neon_genesis_v3'];
-  function markDone(){ keys.forEach(k => { try { localStorage.setItem(k, '1'); } catch(e) {} }); }
-  function hideFirstPlayOverlays(){
-    markDone();
-    ['tutorialOverlay','seasonLaunchIntro'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.classList.add('hidden');
-      el.classList.remove('flex','active','closing');
-      el.style.display = 'none';
-      el.style.pointerEvents = 'none';
-    });
-  }
-  hideFirstPlayOverlays();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', hideFirstPlayOverlays, { once:true });
-  window.addEventListener('pageshow', hideFirstPlayOverlays, { passive:true });
-})();
-</script>
-
-
-
-<script>
-(function(){
-  'use strict';
-  // V30 STABLE: ゲームオーバー画面の縦スクロール復旧 + 一時停止画面チート入力。
-  const LABEL = 'V30 STABLE';
+  const V27_VERSION_TEXT = 'V27 STABLE';
 
   function $(id){ return document.getElementById(id); }
+  function safe(fn){ try { fn(); } catch(e) { console.warn('V27 patch skipped:', e); } }
 
-  function installStyle(){
-    if ($('nsvV28Style')) return;
+  function installV27Style(){
+    if ($('nsvV27Style')) return;
     const st = document.createElement('style');
-    st.id = 'nsvV28Style';
+    st.id = 'nsvV27Style';
     st.textContent = `
-      #gameOverScreen:not(.hidden){
-        display:flex!important;
-        flex-direction:column!important;
-        align-items:center!important;
-        justify-content:flex-start!important;
+      /* 初回説明画面は完全に非表示 */
+      #tutorialOverlay{
+        display:none!important;
+        pointer-events:none!important;
+        opacity:0!important;
+        visibility:hidden!important;
+      }
+
+      /* GAME OVER は中身が長くても必ず下までスクロールできる */
+      #gameOverScreen{
         overflow-y:auto!important;
         overflow-x:hidden!important;
-        height:100dvh!important;
-        max-height:100dvh!important;
-        min-height:0!important;
-        padding:clamp(14px,3vw,26px)!important;
-        padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))!important;
-        box-sizing:border-box!important;
+        justify-content:flex-start!important;
+        align-items:center!important;
+        padding:22px 12px 96px!important;
         -webkit-overflow-scrolling:touch!important;
-        overscroll-behavior:contain!important;
         touch-action:pan-y!important;
+        overscroll-behavior:contain!important;
+        pointer-events:auto!important;
       }
-      #gameOverScreen:not(.hidden) > *{
-        flex:0 0 auto!important;
-        max-width:min(94vw,820px)!important;
+      #gameOverScreen.hidden{display:none!important;}
+      #gameOverScreen > *{flex-shrink:0!important;}
+      #gameOverScreen > div{
+        width:min(94vw,720px)!important;
+        max-width:720px!important;
+        margin-bottom:18px!important;
       }
       #gameOverScreen #restartBtn{
         position:sticky!important;
-        bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+        bottom:12px!important;
         z-index:90!important;
-        width:min(92vw,420px)!important;
         min-height:64px!important;
-        margin-top:18px!important;
-        margin-bottom:22px!important;
+        margin:10px auto 34px!important;
+        flex-shrink:0!important;
         pointer-events:auto!important;
-        touch-action:manipulation!important;
       }
-      #gameOverScreen .nsv-v22-result-wrap,
-      #gameOverScreen #resultSummary{
-        max-width:100%!important;
-      }
-      #pauseScreen:not(.hidden){
+
+      /* PAUSE も縦画面で下まで見えるようにする */
+      #pauseScreen{
         overflow-y:auto!important;
         overflow-x:hidden!important;
         justify-content:flex-start!important;
-        padding:clamp(18px,3vw,30px)!important;
-        padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important;
+        align-items:center!important;
+        padding:24px 12px 96px!important;
         -webkit-overflow-scrolling:touch!important;
-        overscroll-behavior:contain!important;
         touch-action:pan-y!important;
-      }
-      #pauseScreen:not(.hidden) > *{flex:0 0 auto!important;}
-      .nsv-v28-pause-cheat{
-        width:min(92vw,560px)!important;
-        border:1px solid rgba(250,204,21,.55)!important;
-        background:linear-gradient(180deg,rgba(24,18,2,.86),rgba(15,23,42,.74))!important;
-        border-radius:18px!important;
-        padding:14px!important;
-        margin-top:14px!important;
-        box-shadow:0 0 18px rgba(250,204,21,.16)!important;
+        overscroll-behavior:contain!important;
         pointer-events:auto!important;
       }
-      .nsv-v28-pause-cheat-title{font-weight:1000;color:#fde68a;margin-bottom:4px;}
-      .nsv-v28-pause-cheat-desc{font-size:12px;color:#cbd5e1;font-weight:800;margin-bottom:10px;}
-      .nsv-v28-pause-cheat-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;}
-      .nsv-v28-pause-cheat input{
-        min-height:46px!important;
-        background:rgba(0,0,0,.68)!important;
-        border:1px solid rgba(250,204,21,.72)!important;
-        border-radius:12px!important;
-        color:white!important;
-        padding:11px 12px!important;
-        font-weight:1000!important;
-        letter-spacing:.18em!important;
-        text-align:center!important;
-        outline:none!important;
-        font-size:16px!important;
-        pointer-events:auto!important;
-        touch-action:manipulation!important;
+      #pauseScreen.hidden{display:none!important;}
+      #pauseScreen > *{flex-shrink:0!important;}
+
+      .nsv-v27-pause-cheat{
+        width:min(94vw,560px);
+        border:1px solid rgba(250,204,21,.55);
+        background:linear-gradient(180deg,rgba(15,23,42,.9),rgba(0,0,0,.72));
+        border-radius:18px;
+        padding:14px;
+        margin:0 0 18px;
+        box-shadow:0 0 18px rgba(250,204,21,.14);
       }
-      .nsv-v28-pause-cheat button{
-        min-height:46px!important;
-        pointer-events:auto!important;
-        touch-action:manipulation!important;
+      .nsv-v27-pause-cheat-title{
+        color:#fde68a;
+        font-weight:900;
+        letter-spacing:.08em;
+        margin-bottom:8px;
+        text-align:center;
+        font-family:Orbitron,'Noto Sans JP',sans-serif;
       }
-      #nsvV28Badge{position:fixed;left:10px;bottom:8px;z-index:2200;pointer-events:none;color:#67e8f9;background:rgba(2,6,23,.82);border:1px solid rgba(103,232,249,.55);border-radius:999px;padding:4px 9px;font:900 11px/1.2 Orbitron,'Noto Sans JP',sans-serif;box-shadow:0 0 12px rgba(34,211,238,.28)}
-      @media(max-width:560px){
-        #gameOverScreen h2{font-size:2.35rem!important;}
-        #gameOverScreen #finalScore{font-size:2.65rem!important;}
-        .nsv-v28-pause-cheat-row{grid-template-columns:1fr!important;}
-        .nsv-v28-pause-cheat button{width:100%!important;}
+      .nsv-v27-pause-cheat-row{
+        display:grid;
+        grid-template-columns:1fr auto;
+        gap:10px;
+        align-items:center;
+      }
+      .nsv-v27-pause-cheat input{
+        width:100%;
+        min-height:48px;
+        background:rgba(0,0,0,.72);
+        border:2px solid rgba(250,204,21,.72);
+        border-radius:14px;
+        color:white;
+        font-size:20px;
+        font-weight:900;
+        letter-spacing:.22em;
+        text-align:center;
+        outline:none;
+      }
+      .nsv-v27-pause-cheat button{
+        min-height:48px;
+        min-width:78px;
+        pointer-events:auto!important;
+      }
+      .nsv-v27-pause-cheat-help{
+        color:#cbd5e1;
+        font-size:12px;
+        text-align:center;
+        margin-top:8px;
+      }
+      @media(max-width:520px){
+        #gameOverScreen{padding-top:16px!important;padding-bottom:112px!important;}
+        #gameOverScreen h2{font-size:2.7rem!important;}
+        #pauseScreen h2{font-size:2.8rem!important;margin-bottom:18px!important;}
+        .nsv-v27-pause-cheat-row{grid-template-columns:1fr;}
+        .nsv-v27-pause-cheat button{width:100%;}
       }
     `;
     document.head.appendChild(st);
   }
 
-  function patchLabel(){
-    try {
-      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(el => {
-        if (el && /V\d+ STABLE/.test(el.textContent || '')) el.textContent = LABEL;
-      });
-      let b = $('nsvV28Badge');
-      if (!b) { b = document.createElement('div'); b.id = 'nsvV28Badge'; document.body.appendChild(b); }
-      b.textContent = LABEL;
-    } catch(e) {}
-  }
-
-  function toast(title, msg){
-    try {
-      if (typeof window.showToast === 'function') return window.showToast(title, msg);
-      const box = $('missionToast') || document.body.appendChild(document.createElement('div'));
-      box.id = box.id || 'missionToast';
-      box.innerHTML = `<div class="toast-card"><b>${String(title || '').replace(/[&<>"]/g, '')}</b><br><span>${String(msg || '').replace(/[&<>"]/g, '')}</span></div>`;
-      setTimeout(() => { if (box) box.innerHTML = ''; }, 2600);
-    } catch(e) {}
-  }
-
-  function runCheat(code){
-    const raw = String(code || '').replace(/\D/g,'').slice(0,7);
-    if (raw.length !== 7) { toast('CHEAT CODE','7桁の数字を入力してください。'); return; }
-    if (typeof window.nsvApplyCheatCodeV26 === 'function') {
-      window.nsvApplyCheatCodeV26(raw);
-      return;
+  function hideTutorialForever(){
+    safe(() => localStorage.setItem('neon_survivor_tutorial_done', '1'));
+    const overlay = $('tutorialOverlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      overlay.style.display = 'none';
+      overlay.style.pointerEvents = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
     }
-    toast('CHEAT CODE','チート処理の準備中です。もう一度押してください。');
   }
 
-  function ensurePauseCheat(){
+  function patchVersionLabel(){
+    const candidates = [
+      'nsvV13Badge','nsvV14Badge','nsvV17Badge','nsvV20Badge','nsvV23Badge','nsvV24Badge','nsvV25Badge','nsvV26Badge','nsvV27Badge'
+    ];
+    candidates.forEach(id => { const el = $(id); if (el) el.textContent = V27_VERSION_TEXT; });
+    document.querySelectorAll('[id*="Badge"],[class*="badge"]').forEach(el => {
+      if (/V\d+\s+STABLE/i.test(el.textContent || '')) el.textContent = V27_VERSION_TEXT;
+    });
+  }
+
+  function ensurePauseCheatV27(){
     const pause = $('pauseScreen');
     if (!pause) return;
-    installStyle();
-    let card = $('nsvV28PauseCheat');
-    if (!card) {
-      card = document.createElement('div');
-      card.id = 'nsvV28PauseCheat';
-      card.className = 'nsv-v28-pause-cheat';
-      card.innerHTML = `
-        <div class="nsv-v28-pause-cheat-title">チートコード</div>
-        <div class="nsv-v28-pause-cheat-desc">一時停止中でも7桁コードを入力できます。0000000で継続効果をキャンセル。</div>
-        <div class="nsv-v28-pause-cheat-row">
-          <input id="nsvV28PauseCheatInput" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="7桁コード">
-          <button id="nsvV28PauseCheatBtn" class="btn-gold px-5 py-2 rounded font-bold">OK</button>
-        </div>`;
-      pause.appendChild(card);
-      const input = $('nsvV28PauseCheatInput');
-      const btn = $('nsvV28PauseCheatBtn');
-      const submit = (ev) => {
+
+    let old = $('nsvV13PauseCheat');
+    if (old) old.style.display = 'none';
+
+    let sec = $('nsvV27PauseCheat');
+    if (!sec) {
+      sec = document.createElement('section');
+      sec.id = 'nsvV27PauseCheat';
+      sec.className = 'nsv-v27-pause-cheat';
+      sec.innerHTML = `
+        <div class="nsv-v27-pause-cheat-title">CHEAT CODE</div>
+        <div class="nsv-v27-pause-cheat-row">
+          <input id="nsvV27PauseCheatInput" inputmode="numeric" pattern="[0-9]*" maxlength="7" placeholder="7桁コード">
+          <button id="nsvV27PauseCheatBtn" class="btn-gold rounded font-bold">OK</button>
+        </div>
+        <div class="nsv-v27-pause-cheat-help">一時停止中でもチートコードを入力できます。</div>
+      `;
+
+      const weaponStatus = $('nsvV13PauseWeaponStatus');
+      if (weaponStatus && weaponStatus.parentElement === pause) pause.insertBefore(sec, weaponStatus);
+      else {
+        const titleMenu = $('titleFromPauseBtn');
+        const row = titleMenu ? titleMenu.closest('div') : null;
+        if (row && row.parentElement === pause) pause.insertBefore(sec, row);
+        else pause.appendChild(sec);
+      }
+
+      const input = sec.querySelector('#nsvV27PauseCheatInput');
+      const btn = sec.querySelector('#nsvV27PauseCheatBtn');
+      const run = (ev) => {
         if (ev) { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }
-        runCheat(input ? input.value : '');
-        if (input) input.value = '';
+        const code = (input.value || '').replace(/\D/g,'').slice(0,7);
+        if (typeof applyCheatCodeV13 === 'function') applyCheatCodeV13(code);
+        else alert('チート処理を読み込めませんでした。');
+        input.value = '';
       };
-      if (input) {
-        input.addEventListener('input', () => { input.value = input.value.replace(/\D/g,'').slice(0,7); });
-        input.addEventListener('keydown', ev => { if (ev.key === 'Enter') submit(ev); });
-      }
-      if (btn) {
-        btn.addEventListener('pointerup', submit, { passive:false });
-        btn.addEventListener('click', submit, { passive:false });
-      }
+      btn.addEventListener('pointerup', run, { passive:false });
+      btn.addEventListener('click', run, { passive:false });
+      input.addEventListener('input', () => { input.value = input.value.replace(/\D/g,'').slice(0,7); });
+      input.addEventListener('keydown', ev => { if (ev.key === 'Enter') run(ev); });
     }
-    card.style.pointerEvents = 'auto';
+
+    sec.style.display = 'block';
+    sec.style.pointerEvents = 'auto';
   }
 
-  function unlockGameOverScroll(){
+  function patchGameOverScroll(){
     const go = $('gameOverScreen');
     if (!go) return;
     go.style.overflowY = 'auto';
-    go.style.overflowX = 'hidden';
-    go.style.justifyContent = 'flex-start';
-    go.style.alignItems = 'center';
     go.style.touchAction = 'pan-y';
     go.style.webkitOverflowScrolling = 'touch';
-    Array.from(go.children || []).forEach(ch => { ch.style.flexShrink = '0'; });
+    go.style.justifyContent = 'flex-start';
+    go.style.paddingBottom = '96px';
     const btn = $('restartBtn');
     if (btn) {
       btn.style.pointerEvents = 'auto';
-      btn.style.touchAction = 'manipulation';
       btn.disabled = false;
+      btn.setAttribute('aria-label', 'タイトルメニューへ戻る');
     }
   }
 
-  function fixVisibleScreens(){
-    installStyle(); patchLabel(); ensurePauseCheat(); unlockGameOverScroll();
-    const go = $('gameOverScreen');
-    if (go && !go.classList.contains('hidden') && !go.__nsvV28ScrolledTop) {
-      go.__nsvV28ScrolledTop = true;
-      try { go.scrollTop = 0; } catch(e) {}
-    }
-    if (go && go.classList.contains('hidden')) go.__nsvV28ScrolledTop = false;
+  function allowOverlayScroll(){
+    ['touchmove','wheel'].forEach(type => {
+      window.addEventListener(type, ev => {
+        const t = ev.target;
+        if (t && t.closest && (t.closest('#gameOverScreen') || t.closest('#pauseScreen'))) {
+          ev.stopPropagation();
+        }
+      }, { capture:true, passive:true });
+    });
   }
 
-  function installObservers(){
-    if (window.__nsvV28Installed) return;
-    window.__nsvV28Installed = true;
-    const obs = new MutationObserver(fixVisibleScreens);
-    obs.observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style'] });
-    window.addEventListener('resize', fixVisibleScreens, { passive:true });
-    window.addEventListener('orientationchange', () => setTimeout(fixVisibleScreens, 180), { passive:true });
-    setInterval(fixVisibleScreens, 900);
+  function wirePauseButtonV27(){
+    window.addEventListener('pointerup', ev => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest('#pauseBtn') : null;
+      if (!btn) return;
+      setTimeout(() => { ensurePauseCheatV27(); patchGameOverScroll(); }, 40);
+    }, true);
+    window.addEventListener('click', ev => {
+      const btn = ev.target && ev.target.closest ? ev.target.closest('#pauseBtn') : null;
+      if (!btn) return;
+      setTimeout(() => { ensurePauseCheatV27(); patchGameOverScroll(); }, 40);
+    }, true);
   }
 
-  function boot(){ fixVisibleScreens(); installObservers(); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once:true }); else boot();
-  window.addEventListener('pageshow', boot, { passive:true });
+  function bootV27(){
+    installV27Style();
+    hideTutorialForever();
+    ensurePauseCheatV27();
+    patchGameOverScroll();
+    patchVersionLabel();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootV27, { once:true });
+  else bootV27();
+  window.addEventListener('pageshow', bootV27, { passive:true });
+  window.addEventListener('orientationchange', () => setTimeout(bootV27, 180), { passive:true });
+  wirePauseButtonV27();
+  allowOverlayScroll();
+
+  setInterval(() => {
+    hideTutorialForever();
+    if ($('pauseScreen') && !$('pauseScreen').classList.contains('hidden')) ensurePauseCheatV27();
+    if ($('gameOverScreen') && !$('gameOverScreen').classList.contains('hidden')) patchGameOverScroll();
+    patchVersionLabel();
+  }, 1000);
 })();
-</script>
 
-
-<script>
-(function(){
-  'use strict';
-  const LABEL = 'V30 STABLE';
-  const DOC = document;
-  const $ = (id) => DOC.getElementById(id);
-
-  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-
-  function installStyle(){
-    if ($('nsvV29ReadableStyle')) return;
-    const st = DOC.createElement('style');
-    st.id = 'nsvV29ReadableStyle';
-    st.textContent = `
-      :root{
-        --nsv-card:rgba(2,6,23,.88);
-        --nsv-card2:rgba(15,23,42,.90);
-        --nsv-line:rgba(34,211,238,.42);
-        --nsv-yellow:rgba(250,204,21,.95);
-        --nsv-text:#f8fafc;
-        --nsv-sub:#cbd5e1;
-      }
-      html,body{
-        text-rendering:optimizeLegibility!important;
-        -webkit-font-smoothing:antialiased!important;
-      }
-      body,button,input,select,textarea{
-        font-family:'Noto Sans JP',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important;
-      }
-      button,[role="button"],label,input,.btn-neon,.btn-gold,.btn-purple,.btn-green,.btn-red{
-        pointer-events:auto!important;
-        touch-action:manipulation!important;
-        -webkit-tap-highlight-color:transparent!important;
-      }
-      button,.btn-neon,.btn-gold,.btn-purple,.btn-green,.btn-red,.speed-btn{
-        min-height:52px!important;
-        border-radius:16px!important;
-        font-weight:1000!important;
-        line-height:1.15!important;
-        white-space:normal!important;
-        text-align:center!important;
-        padding:12px 14px!important;
-      }
-      button:focus-visible,input:focus-visible{
-        outline:3px solid #facc15!important;
-        outline-offset:3px!important;
-      }
-      .nsv-v29-sub{
-        display:block!important;
-        margin-top:4px!important;
-        color:#dbeafe!important;
-        font-size:.78rem!important;
-        line-height:1.25!important;
-        letter-spacing:0!important;
-        font-weight:900!important;
-        opacity:.95!important;
-      }
-      .nsv-v29-section-title{
-        grid-column:1/-1!important;
-        display:flex!important;
-        align-items:center!important;
-        gap:10px!important;
-        width:100%!important;
-        margin:10px 0 2px!important;
-        padding:10px 12px!important;
-        border:1px solid rgba(34,211,238,.38)!important;
-        border-radius:16px!important;
-        background:linear-gradient(90deg,rgba(8,47,73,.88),rgba(2,6,23,.55))!important;
-        color:#a5f3fc!important;
-        font-size:.95rem!important;
-        font-weight:1000!important;
-        letter-spacing:.06em!important;
-        box-shadow:0 0 14px rgba(34,211,238,.13)!important;
-      }
-      .nsv-v29-section-title small{
-        margin-left:auto!important;
-        color:#e2e8f0!important;
-        font-size:.72rem!important;
-        letter-spacing:0!important;
-        font-weight:900!important;
-      }
-      #startScreen{
-        align-items:flex-start!important;
-        justify-content:center!important;
-        padding:14px!important;
-        overflow-y:auto!important;
-        -webkit-overflow-scrolling:touch!important;
-        overscroll-behavior:contain!important;
-      }
-      #startScreen .menu-panel{
-        width:min(96vw,980px)!important;
-        max-height:none!important;
-        min-height:auto!important;
-        overflow:visible!important;
-        gap:14px!important;
-        padding:clamp(16px,2.6vw,28px)!important;
-      }
-      #startScreen .neon-title{
-        margin:0 0 4px!important;
-        font-size:clamp(3rem,8vw,5.8rem)!important;
-        line-height:.92!important;
-      }
-      #startScreen .menu-grid,
-      #startScreen .grid{
-        gap:12px!important;
-      }
-      #startBtn,#onlineStartBtn{
-        min-height:92px!important;
-        font-size:clamp(1.35rem,3.6vw,2.25rem)!important;
-        letter-spacing:.06em!important;
-      }
-      #onlineStartBtn{
-        border-color:#facc15!important;
-      }
-      #currentBestDisplay,#metaCoinsDisplay,#scoreDisplay,#timeDisplay,#levelDisplay,#finalScore,#bestScore,#earnedCoinsDisplay{
-        font-variant-numeric:tabular-nums!important;
-      }
-      .menu-input,input[type="text"],input[type="number"],input[inputmode="numeric"]{
-        min-height:48px!important;
-        font-size:16px!important;
-        font-weight:900!important;
-        border-radius:14px!important;
-      }
-      #uiLayer{
-        font-size:16px!important;
-        text-shadow:0 2px 8px rgba(0,0,0,.75)!important;
-      }
-      #uiLayer > .flex:first-child > div:first-child,
-      #onlineHud,#missionMiniHud{
-        background:rgba(2,6,23,.58)!important;
-        border:1px solid rgba(34,211,238,.28)!important;
-        border-radius:16px!important;
-        padding:10px 12px!important;
-        box-shadow:0 0 18px rgba(0,0,0,.24)!important;
-      }
-      #pauseBtn{
-        min-width:104px!important;
-        min-height:48px!important;
-        font-size:.95rem!important;
-      }
-      #bossHpContainer{
-        max-width:min(92vw,720px)!important;
-      }
-      #bossNameDisplay{
-        font-size:clamp(1.2rem,3vw,2rem)!important;
-      }
-      #hpBar,#expBar,#bossHpBar{
-        transition:width .12s linear!important;
-      }
-      #pauseScreen:not(.hidden),#upgradeScreen:not(.hidden),#missionsScreen:not(.hidden),#collectionScreen:not(.hidden),#weaponCodexScreen:not(.hidden),#onlineRoleScreen:not(.hidden),#leaderboardScreen:not(.hidden),#eventModeScreen:not(.hidden),#gameOverScreen:not(.hidden){
-        color:var(--nsv-text)!important;
-      }
-      #pauseScreen .bg-gray-900\/80,
-      #upgradeScreen .upgrade-card,
-      .mission-card,.collection-card,
-      #weaponCodexScreen [class*="card"],
-      #leaderboardScreen [class*="card"],
-      #eventModeScreen [class*="card"]{
-        border-radius:18px!important;
-        border-color:rgba(34,211,238,.42)!important;
-        box-shadow:0 0 16px rgba(34,211,238,.13)!important;
-      }
-      #pauseScreen:not(.hidden){
-        gap:14px!important;
-      }
-      #pauseScreen h2,#upgradeScreen h2,#missionsScreen h2,#collectionScreen h2,#weaponCodexScreen h2,#leaderboardScreen h2,#eventModeScreen h2{
-        font-size:clamp(2rem,5.8vw,4.2rem)!important;
-        line-height:1!important;
-        text-align:center!important;
-      }
-      #upgradesContainer .upgrade-card,
-      #upgradeListContainer .upgrade-card,
-      #missionsListContainer .mission-card,
-      #collectionListContainer .collection-card{
-        font-size:1rem!important;
-        line-height:1.45!important;
-      }
-      #levelUpScreen:not(.hidden){
-        padding:18px!important;
-        overflow-y:auto!important;
-      }
-      #levelUpScreen #upgradesContainer{
-        width:min(96vw,1040px)!important;
-        display:grid!important;
-        grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important;
-        gap:14px!important;
-      }
-      #levelUpScreen .upgrade-card{
-        min-height:154px!important;
-        padding:16px!important;
-        border-radius:20px!important;
-      }
-      #gameOverScreen:not(.hidden){
-        background:linear-gradient(180deg,rgba(127,29,29,.90),rgba(2,6,23,.96))!important;
-      }
-      #gameOverScreen .bg-black\/50{
-        width:min(94vw,760px)!important;
-        border-radius:24px!important;
-        border-color:rgba(248,113,113,.55)!important;
-      }
-      #resultSummary,
-      .nsv-v22-result-grid,
-      .result-grid{
-        grid-template-columns:repeat(auto-fit,minmax(180px,1fr))!important;
-        gap:10px!important;
-        font-size:1rem!important;
-      }
-      .result-pill,
-      #resultSummary > div,
-      .nsv-v22-result-card{
-        min-height:54px!important;
-        border-radius:16px!important;
-        padding:12px!important;
-        background:rgba(15,23,42,.82)!important;
-        border:1px solid rgba(148,163,184,.34)!important;
-        font-weight:900!important;
-      }
-      #leaderboardScreen:not(.hidden){
-        align-items:flex-start!important;
-        justify-content:flex-start!important;
-        overflow-y:auto!important;
-        padding:14px!important;
-      }
-      #leaderboardScreen .menu-panel{
-        width:min(96vw,980px)!important;
-        max-height:none!important;
-        overflow:visible!important;
-        margin:0 auto!important;
-      }
-      #leaderboardListContainer{
-        display:grid!important;
-        grid-template-columns:repeat(auto-fit,minmax(260px,1fr))!important;
-        gap:12px!important;
-        font-size:1rem!important;
-      }
-      #leaderboardListContainer *{
-        line-height:1.35!important;
-      }
-      #eventModeScreen .menu-panel,
-      #missionsScreen .menu-panel,
-      #collectionScreen .menu-panel,
-      #weaponCodexScreen .menu-panel{
-        width:min(96vw,980px)!important;
-      }
-      #missionTabs,.mission-tabs{
-        gap:10px!important;
-      }
-      .mission-tab-btn{
-        min-height:42px!important;
-        padding:9px 13px!important;
-        font-size:.95rem!important;
-      }
-      #missionMiniHud{
-        max-width:min(92vw,420px)!important;
-        font-size:.9rem!important;
-      }
-      #nsvV29ReadableHint{
-        width:100%!important;
-        display:grid!important;
-        grid-template-columns:repeat(3,minmax(0,1fr))!important;
-        gap:10px!important;
-        margin:2px 0 4px!important;
-      }
-      .nsv-v29-hint-card{
-        background:rgba(15,23,42,.82)!important;
-        border:1px solid rgba(34,211,238,.32)!important;
-        border-radius:16px!important;
-        padding:10px 12px!important;
-        color:#e0f2fe!important;
-        font-size:.86rem!important;
-        font-weight:900!important;
-        line-height:1.35!important;
-      }
-      .nsv-v29-hint-card b{display:block!important;color:#facc15!important;margin-bottom:2px!important;}
-      .nsv-v29-screen-note{
-        width:min(92vw,720px)!important;
-        margin:0 auto 12px!important;
-        padding:10px 12px!important;
-        background:rgba(15,23,42,.82)!important;
-        border:1px solid rgba(34,211,238,.32)!important;
-        border-radius:16px!important;
-        color:#dbeafe!important;
-        font-weight:900!important;
-        text-align:center!important;
-      }
-      #nsvV29Badge{position:fixed;left:10px;bottom:8px;z-index:2400;pointer-events:none;color:#67e8f9;background:rgba(2,6,23,.82);border:1px solid rgba(103,232,249,.55);border-radius:999px;padding:4px 9px;font:900 11px/1.2 Orbitron,'Noto Sans JP',sans-serif;box-shadow:0 0 12px rgba(34,211,238,.28)}
-      @media(max-width:720px){
-        #nsvV29ReadableHint{grid-template-columns:1fr!important;}
-        #startBtn,#onlineStartBtn{min-height:84px!important;}
-        button,.btn-neon,.btn-gold,.btn-purple,.btn-green,.btn-red{min-height:50px!important;}
-        #uiLayer{padding:10px!important;font-size:14px!important;}
-        #leaderboardListContainer{grid-template-columns:1fr!important;}
-      }
-      @media(prefers-reduced-motion:reduce){
-        *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}
-      }
-    `;
-    DOC.head.appendChild(st);
-  }
-
-  function setButton(id, main, sub){
-    const el = $(id);
-    if (!el || el.dataset.nsvV29Labeled === '1') return;
-    el.dataset.nsvV29Labeled = '1';
-    el.innerHTML = `${esc(main)}${sub ? `<span class="nsv-v29-sub">${esc(sub)}</span>` : ''}`;
-  }
-
-  function addBefore(parent, node, before){
-    try { parent.insertBefore(node, before || null); } catch(e) { try { parent.appendChild(node); } catch(_) {} }
-  }
-
-  function ensureHomeGuide(){
-    const screen = $('startScreen');
-    const panel = screen ? screen.querySelector('.menu-panel') : null;
-    if (!panel) return;
-    if (!$('nsvV29ReadableHint')) {
-      const hint = DOC.createElement('div');
-      hint.id = 'nsvV29ReadableHint';
-      hint.innerHTML = `
-        <div class="nsv-v29-hint-card"><b>① はじめる</b>まずはSOLOで練習。慣れたらONLINE。</div>
-        <div class="nsv-v29-hint-card"><b>② 強くする</b>ミッション・ショップ・パスで成長。</div>
-        <div class="nsv-v29-hint-card"><b>③ 保存する</b>最後にデータ引き継ぎコードを保存。</div>`;
-      const title = panel.querySelector('.neon-title');
-      addBefore(panel, hint, title ? title.nextSibling : panel.firstChild);
-    }
-    setButton('startBtn','SOLO START','1人で遊ぶ / 初心者向け');
-    setButton('onlineStartBtn','ONLINE BATTLE','友達・対戦向け');
-    setButton('openUpgradeBtn','UPGRADE','永久強化');
-    setButton('openMissionBtn','MISSIONS','報酬・武器解放');
-    setButton('openCollectionBtn','COLLECTION','見た目・装備');
-    setButton('openWeaponCodexBtn','WEAPON CODEX','武器の役割を確認');
-    setButton('openBattlePassBtn','NEON PASS','報酬トラック');
-    setButton('openBattlePassHeroBtn','NEON PASS','報酬トラック');
-    setButton('openShopBtn','SHOP','コインで購入');
-    setButton('openShopHeroBtn','SHOP','コインで購入');
-    const admin = DOC.querySelector('button[data-admin-form], #adminFormBtn, #contactAdminBtn, a[href*="docs.google.com/forms"]');
-    if (admin && admin.tagName === 'BUTTON' && !admin.dataset.nsvV29Labeled) {
-      admin.dataset.nsvV29Labeled = '1';
-      admin.innerHTML = `管理者へ連絡<span class="nsv-v29-sub">フォームを開く</span>`;
-    }
-  }
-
-  function ensureScreenNotes(){
-    const configs = [
-      ['pauseScreen','一時停止中：武器レベル・設定・チートコードを確認できます。'],
-      ['upgradeScreen','コインで永久強化できます。足りない時はミッションやイベントで集めよう。'],
-      ['missionsScreen','達成できるミッションから受け取ると、武器や報酬が解放されます。'],
-      ['collectionScreen','入手したスキンや報酬を装備・解除できます。'],
-      ['weaponCodexScreen','武器ごとの役割を見て、自分の戦い方に合うものを選ぼう。'],
-      ['leaderboardScreen','フレンドと各部門の3位までを比べられます。'],
-      ['eventModeScreen','今日のイベント内容を確認して、参加ボタンから開始できます。']
-    ];
-    configs.forEach(([id, text]) => {
-      const screen = $(id);
-      if (!screen || screen.classList.contains('hidden')) return;
-      if (screen.querySelector(`.nsv-v29-screen-note[data-for="${id}"]`)) return;
-      const note = DOC.createElement('div');
-      note.className = 'nsv-v29-screen-note';
-      note.dataset.for = id;
-      note.textContent = text;
-      const panel = screen.querySelector('.menu-panel') || screen;
-      const h2 = panel.querySelector('h2');
-      addBefore(panel, note, h2 ? h2.nextSibling : panel.firstChild);
-    });
-  }
-
-  function improveCardsText(){
-    DOC.querySelectorAll('.mission-card,.collection-card,.upgrade-card,.result-pill,.nsv-v22-result-card').forEach(card => {
-      card.style.lineHeight = '1.45';
-      card.style.wordBreak = 'break-word';
-    });
-    DOC.querySelectorAll('small,.text-xs').forEach(el => {
-      if (el.closest('#uiLayer')) return;
-      el.style.lineHeight = '1.35';
-    });
-  }
-
-  function patchLabel(){
-    try {
-      DOC.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(el => {
-        if (el && /V\d+ STABLE/.test(el.textContent || '')) el.textContent = LABEL;
-      });
-      let b = $('nsvV29Badge');
-      if (!b) { b = DOC.createElement('div'); b.id = 'nsvV29Badge'; DOC.body.appendChild(b); }
-      b.textContent = LABEL;
-    } catch(e) {}
-  }
-
-  function normalizeVisibleLayout(){
-    installStyle();
-    patchLabel();
-    ensureHomeGuide();
-    ensureScreenNotes();
-    improveCardsText();
-  }
-
-  function boot(){
-    normalizeVisibleLayout();
-    if (window.__nsvV29ReadableInstalled) return;
-    window.__nsvV29ReadableInstalled = true;
-    // V30: 画面が勝手に動く原因になっていた常時レイアウト監視を停止。
-    // 必要な時だけ、初回表示・画面の向き変更・大きなリサイズで再整理する。
-    let lastOrientationKey = (screen.orientation && screen.orientation.type) || (innerWidth > innerHeight ? 'landscape' : 'portrait');
-    const rerunOnlyOnOrientationChange = () => {
-      const key = (screen.orientation && screen.orientation.type) || (innerWidth > innerHeight ? 'landscape' : 'portrait');
-      if (key === lastOrientationKey) return;
-      lastOrientationKey = key;
-      setTimeout(normalizeVisibleLayout, 220);
-    };
-    window.addEventListener('orientationchange', rerunOnlyOnOrientationChange, { passive:true });
-    window.addEventListener('resize', rerunOnlyOnOrientationChange, { passive:true });
-  }
-  if (DOC.readyState === 'loading') DOC.addEventListener('DOMContentLoaded', boot, { once:true }); else boot();
-  window.addEventListener('pageshow', boot, { passive:true });
-})();
-</script>
-
-
-<script>
-/* =========================================================
-   V30 STABLE: DEPLOY / SCROLL / CACHE FIX
-   - GitHub Pages反映確認用の短い表示を追加
-   - ホーム・ゲームオーバー・ランキングなどの長い画面を最後まで開ける
-   - プレイ中以外は縦スクロール可能
-   - 画面の向き変更時以外の勝手な再配置を抑える
-========================================================= */
-(() => {
-  'use strict';
-  if (window.__nsvV30DeployScrollCacheFix) return;
-  window.__nsvV30DeployScrollCacheFix = true;
-  const DOC = document;
-  const LABEL = 'V30 STABLE';
-  const BUILD = '2026-05-07-1103';
-  const scrollScreens = [
-    'startScreen','gameOverScreen','pauseScreen','upgradeScreen','missionsScreen','collectionScreen',
-    'weaponCodexScreen','bossCodexScreen','leaderboardScreen','eventModeScreen','shopScreen','battlePassScreen','onlineRoleScreen'
-  ];
-
-  function ensureStyle(){
-    if (DOC.getElementById('nsvV30DeployScrollStyle')) return;
-    const st = DOC.createElement('style');
-    st.id = 'nsvV30DeployScrollStyle';
-    st.textContent = `
-      html,body{width:100%;min-height:100%;margin:0;overscroll-behavior:none;}
-      body.nsv-menu-scroll{overflow:hidden!important;touch-action:auto!important;}
-      body.nsv-game-playing{overflow:hidden!important;touch-action:none!important;}
-      #gameCanvas{touch-action:none;}
-      #startScreen,#gameOverScreen,#pauseScreen,#upgradeScreen,#missionsScreen,#collectionScreen,
-      #weaponCodexScreen,#bossCodexScreen,#leaderboardScreen,#eventModeScreen,#shopScreen,#battlePassScreen,#onlineRoleScreen{
-        position:fixed!important;inset:0!important;overflow-y:auto!important;overflow-x:hidden!important;
-        align-items:flex-start!important;justify-content:flex-start!important;-webkit-overflow-scrolling:touch!important;
-        overscroll-behavior:contain!important;touch-action:pan-y!important;padding-top:max(12px,env(safe-area-inset-top))!important;
-        padding-bottom:calc(110px + env(safe-area-inset-bottom))!important;
-      }
-      #startScreen.hidden,#gameOverScreen.hidden,#pauseScreen.hidden,#upgradeScreen.hidden,#missionsScreen.hidden,#collectionScreen.hidden,
-      #weaponCodexScreen.hidden,#bossCodexScreen.hidden,#leaderboardScreen.hidden,#eventModeScreen.hidden,#shopScreen.hidden,#battlePassScreen.hidden,#onlineRoleScreen.hidden{
-        display:none!important;pointer-events:none!important;
-      }
-      #startScreen:not(.hidden),#gameOverScreen:not(.hidden),#pauseScreen:not(.hidden),#upgradeScreen:not(.hidden),#missionsScreen:not(.hidden),#collectionScreen:not(.hidden),
-      #weaponCodexScreen:not(.hidden),#bossCodexScreen:not(.hidden),#leaderboardScreen:not(.hidden),#eventModeScreen:not(.hidden),#shopScreen:not(.hidden),#battlePassScreen:not(.hidden),#onlineRoleScreen:not(.hidden){
-        pointer-events:auto!important;
-      }
-      #startScreen .menu-panel,#pauseScreen .menu-panel,#gameOverScreen .menu-panel,#upgradeScreen .menu-panel,#missionsScreen .menu-panel,#collectionScreen .menu-panel,
-      #weaponCodexScreen .menu-panel,#bossCodexScreen .menu-panel,#leaderboardScreen .menu-panel,#eventModeScreen .menu-panel,#shopScreen .menu-panel,#battlePassScreen .menu-panel,#onlineRoleScreen .menu-panel{
-        max-height:none!important;overflow:visible!important;margin:0 auto 48px auto!important;transform:none!important;
-      }
-      #gameOverScreen{display:flex!important;flex-direction:column!important;}
-      #gameOverScreen.hidden{display:none!important;}
-      #gameOverScreen > *{flex-shrink:0;}
-      #restartBtn,#titleFromPauseBtn,#resumeBtn,[id^="close"],button[id*="Back"],button[id*="back"],.btn-neon,.btn-gold,.btn-purple,.btn-green,.btn-red{
-        touch-action:manipulation!important;pointer-events:auto!important;position:relative;z-index:5;
-      }
-      #nsvV30DeployBadge{position:fixed;right:10px;top:10px;z-index:10050;padding:6px 10px;border:1px solid rgba(34,211,238,.8);border-radius:999px;background:rgba(0,0,0,.72);color:#67e8f9;font-family:Orbitron,'Noto Sans JP',sans-serif;font-size:12px;font-weight:900;box-shadow:0 0 14px rgba(34,211,238,.45);pointer-events:none;}
-      #nsvV30BuildText{position:fixed;right:10px;top:42px;z-index:10050;color:#fef08a;background:rgba(0,0,0,.55);border-radius:999px;padding:3px 8px;font-size:10px;font-weight:800;pointer-events:none;}
-      @media(max-width:720px){#nsvV30DeployBadge{font-size:10px;right:6px;top:6px;}#nsvV30BuildText{font-size:9px;right:6px;top:32px;}#startScreen .menu-panel{width:96vw!important;padding:14px!important;}}
-    `;
-    DOC.head.appendChild(st);
-  }
-
-  function isVisible(el){ return !!el && !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none'; }
-  function anyScrollScreenVisible(){ return scrollScreens.some(id => isVisible(DOC.getElementById(id))); }
-  function gameIsActuallyRunning(){
-    const start = DOC.getElementById('startScreen');
-    const over = DOC.getElementById('gameOverScreen');
-    const pause = DOC.getElementById('pauseScreen');
-    const level = DOC.getElementById('levelUpScreen');
-    return !isVisible(start) && !isVisible(over) && !isVisible(pause) && !isVisible(level);
-  }
-  function syncScrollMode(){
-    ensureStyle();
-    DOC.body.classList.remove('nsv-menu-scroll','nsv-game-playing');
-    if (anyScrollScreenVisible()) DOC.body.classList.add('nsv-menu-scroll');
-    if (gameIsActuallyRunning() && !anyScrollScreenVisible()) DOC.body.classList.add('nsv-game-playing');
-    scrollScreens.forEach(id => {
-      const el = DOC.getElementById(id);
-      if (!el) return;
-      if (isVisible(el)) {
-        el.style.overflowY = 'auto';
-        el.style.webkitOverflowScrolling = 'touch';
-        el.style.touchAction = 'pan-y';
-      }
-    });
-  }
-  function ensureDeployBadge(){
-    let b = DOC.getElementById('nsvV30DeployBadge');
-    if (!b) { b = DOC.createElement('div'); b.id = 'nsvV30DeployBadge'; DOC.body.appendChild(b); }
-    b.textContent = LABEL;
-    let build = DOC.getElementById('nsvV30BuildText');
-    if (!build) { build = DOC.createElement('div'); build.id = 'nsvV30BuildText'; DOC.body.appendChild(build); }
-    build.textContent = 'BUILD ' + BUILD;
-    DOC.querySelectorAll('[id*="nsvV"],.nsv-version-badge').forEach(el => {
-      if (el === b || el === build) return;
-      if (/V\d+ STABLE/.test(el.textContent || '')) el.textContent = LABEL;
-    });
-  }
-  function unlockGameOverScroll(){
-    const g = DOC.getElementById('gameOverScreen');
-    if (!g) return;
-    g.style.overflowY = 'auto';
-    g.style.alignItems = 'center';
-    g.style.justifyContent = 'flex-start';
-    const btn = DOC.getElementById('restartBtn');
-    if (btn) {
-      btn.style.position = 'relative';
-      btn.style.zIndex = '100';
-      btn.style.marginBottom = '80px';
-    }
-  }
-  function safeRun(){
-    ensureStyle();
-    ensureDeployBadge();
-    unlockGameOverScroll();
-    syncScrollMode();
-  }
-  function boot(){
-    safeRun();
-    const obs = new MutationObserver(() => requestAnimationFrame(safeRun));
-    obs.observe(DOC.body || DOC.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style'] });
-    window.addEventListener('pageshow', safeRun, { passive:true });
-    window.addEventListener('orientationchange', () => setTimeout(safeRun, 250), { passive:true });
-    window.addEventListener('resize', () => setTimeout(safeRun, 120), { passive:true });
-  }
-  if (DOC.readyState === 'loading') DOC.addEventListener('DOMContentLoaded', boot, { once:true }); else boot();
-})();
 </script>
 
 </body>
