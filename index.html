@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V23 STABLE home-scroll-rank-top3-complete -->
+<!-- V24 STABLE home-scroll-rank-top3-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -11231,7 +11231,7 @@
 
 
     /* =========================================================
-       V23 STABLE: READABLE NEON PASS SCREEN
+       V24 STABLE: READABLE NEON PASS SCREEN
        - ネオンパス画面を進行状況・報酬・受け取り状態が見やすい形に整理
        - 元のゲーム内容は維持。表示とボタンの分かりやすさを改善
     ========================================================= */
@@ -12862,7 +12862,7 @@
 
 
     /* =========================================================
-       V23 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
+       V24 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
        - リザルト画面に武器使用・獲得コイン・達成ミッションをまとめて表示
        - 軽量モードを Lv1 / Lv2 / Lv3 の段階制で自動調整
        - 初心者ミッションを追加
@@ -12872,7 +12872,7 @@
         if (window.__nsvV22ResultLightBeginnerPatch) return;
         window.__nsvV22ResultLightBeginnerPatch = true;
 
-        const V22_LABEL = 'V23 STABLE';
+        const V22_LABEL = 'V24 STABLE';
         const V22_BEGINNER_MISSIONS = [
             { id:'b001', cat:'BEGINNER', title:'初出撃ガイド', desc:'ソロかオンラインを1回プレイする', metric:'totalRuns', target:1, reward:{coins:180} },
             { id:'b002', cat:'BEGINNER', title:'3分生存チャレンジ', desc:'1回のプレイで180秒生き残る', metric:'bestTime', target:180, reward:{coins:360} },
@@ -13196,6 +13196,468 @@
         else v22Boot();
         window.addEventListener('pageshow', v22Boot, { passive:true });
     })();
+
+/* =========================================================
+   V24 STABLE: HARD SCROLL GUARD + FRIEND CODE RANKING + DAILY EVENT
+   - プレビューなし
+   - スクロール中の誤タップを window capture で最優先ブロック
+   - ランキングにコピーできるフレンドコード・貼り付け欄を追加
+   - 日替わりイベントを毎日表示し、参加ボタンから開始
+========================================================= */
+(function(){
+  'use strict';
+  const V24_LABEL = 'V24 STABLE';
+  const FRIEND_STORE_KEY = 'nsv_v24_friend_rows';
+  const DAILY_EVENT_KEY = 'nsv_v24_active_daily_event';
+
+  function esc(v){
+    try { if (typeof escapeHtmlV13 === 'function') return escapeHtmlV13(v); } catch(e) {}
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function num(v){ return Number.isFinite(Number(v)) ? Number(v) : 0; }
+  function todayKey(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function hashDate(s){
+    let h = 2166136261;
+    for (let i=0;i<s.length;i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return Math.abs(h >>> 0);
+  }
+  function msToMidnight(){
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 0, 0);
+    return Math.max(0, next.getTime() - now.getTime());
+  }
+  function remainText(){
+    const ms = msToMidnight();
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    return `${h}時間${String(m).padStart(2,'0')}分`;
+  }
+
+  function patchLabelV24(){
+    try {
+      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge').forEach(el => {
+        if (el && /V\d+ STABLE/.test(el.textContent || '')) el.textContent = V24_LABEL;
+      });
+      let b = document.getElementById('nsvV24Badge');
+      if (!b) {
+        b = document.createElement('div');
+        b.id = 'nsvV24Badge';
+        document.body.appendChild(b);
+      }
+      b.textContent = V24_LABEL;
+    } catch(e) {}
+  }
+
+  function injectStyleV24(){
+    if (document.getElementById('nsvV24Style')) return;
+    const st = document.createElement('style');
+    st.id = 'nsvV24Style';
+    st.textContent = `
+      #nsvV24Badge{position:fixed;left:10px;bottom:8px;z-index:1200;pointer-events:none;color:#67e8f9;background:rgba(2,6,23,.82);border:1px solid rgba(103,232,249,.55);border-radius:999px;padding:4px 9px;font:900 11px/1.2 Orbitron,'Noto Sans JP',sans-serif;box-shadow:0 0 12px rgba(34,211,238,.28)}
+      #startScreen{touch-action:pan-y!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;}
+      #startScreen .menu-panel{touch-action:pan-y!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;}
+      #startScreen.nsv-v24-scroll-block button,#startScreen.nsv-v24-scroll-block a,#startScreen.nsv-v24-scroll-block label{pointer-events:none!important;}
+      .nsv-v24-friend-box{display:grid;grid-template-columns:1fr;gap:10px;border:1px solid rgba(34,211,238,.38);background:rgba(2,6,23,.82);border-radius:18px;padding:14px;box-shadow:0 0 18px rgba(34,211,238,.12)}
+      .nsv-v24-code{width:100%;min-height:48px;word-break:break-all;text-align:left;background:rgba(0,0,0,.55);border:1px solid rgba(250,204,21,.55);border-radius:14px;color:#fde68a;padding:10px 12px;font:900 12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;cursor:pointer;user-select:text;touch-action:manipulation!important;}
+      .nsv-v24-code-input{width:100%;min-height:74px;resize:vertical;background:rgba(0,0,0,.55);border:1px solid rgba(34,197,94,.55);border-radius:14px;color:white;padding:10px 12px;outline:none;font:800 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;}
+      .nsv-v24-mini-actions{display:flex;gap:8px;flex-wrap:wrap}.nsv-v24-mini-actions button{touch-action:manipulation!important;}
+      .nsv-v24-rank-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.nsv-v24-rank-card{background:rgba(2,6,23,.9);border:1px solid rgba(6,182,212,.45);border-radius:16px;padding:12px}.nsv-v24-rank-row{display:grid;grid-template-columns:42px 1fr auto;gap:8px;align-items:center;min-height:48px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.18)}.nsv-v24-rank-row:last-child{border-bottom:0}.nsv-v24-empty{opacity:.62;filter:grayscale(.2)}
+      .nsv-v24-event-hero{border:2px solid rgba(250,204,21,.85);background:radial-gradient(circle at top left,rgba(250,204,21,.22),transparent 34%),linear-gradient(180deg,rgba(2,6,23,.95),rgba(0,0,0,.88));border-radius:24px;padding:18px;box-shadow:0 0 28px rgba(250,204,21,.22)}
+      .nsv-v24-event-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.nsv-v24-event-card{border:1px solid rgba(148,163,184,.35);background:rgba(15,23,42,.72);border-radius:18px;padding:13px}.nsv-v24-event-card.today{border-color:rgba(250,204,21,.75);box-shadow:0 0 18px rgba(250,204,21,.18)}
+      .nsv-v24-event-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(250,204,21,.45);background:rgba(250,204,21,.12);color:#fde68a;border-radius:999px;padding:4px 9px;font-weight:900;font-size:12px;}
+      #openDailyEventBtnV13 .nsv-v24-home-event{display:flex;flex-direction:column;gap:2px;line-height:1.1;text-align:left;align-items:flex-start}.nsv-v24-home-event b{font-size:1rem;color:#fff}.nsv-v24-home-event span{font-size:.72rem;color:#fde68a;font-weight:900}.nsv-v24-home-event small{font-size:.68rem;color:#c4b5fd;font-weight:800}
+      @media(max-width:820px){.nsv-v24-rank-grid,.nsv-v24-event-grid{grid-template-columns:1fr}.nsv-v24-mini-actions{display:grid;grid-template-columns:1fr 1fr}.nsv-v24-mini-actions button{width:100%;}.nsv-v24-code{font-size:11px}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  // 強めのスクロール誤タップ防止。window capture で古いボタン処理より先に止める。
+  const scrollGuard = { x:0, y:0, active:false, homeStart:false, moved:false, blockUntil:0, timer:0 };
+  function startScreen(){ return document.getElementById('startScreen'); }
+  function inHome(el){ const root = startScreen(); return !!(root && el && (el === root || (root.contains && root.contains(el)))); }
+  function homeInteractiveFromEvent(ev){
+    let t = ev.target;
+    if (t && t.closest) {
+      const found = t.closest('#startScreen button,#startScreen a,#startScreen label,#startScreen input,#startScreen textarea');
+      if (found) return found;
+    }
+    try {
+      const x = ev.clientX || (ev.changedTouches && ev.changedTouches[0] && ev.changedTouches[0].clientX) || 0;
+      const y = ev.clientY || (ev.changedTouches && ev.changedTouches[0] && ev.changedTouches[0].clientY) || 0;
+      const stack = document.elementsFromPoint(x, y);
+      for (const el of stack) {
+        if (el && el.closest) {
+          const found = el.closest('#startScreen button,#startScreen a,#startScreen label,#startScreen input,#startScreen textarea');
+          if (found) return found;
+        }
+      }
+    } catch(e) {}
+    return null;
+  }
+  function markHomeScrollBlock(ms=720){
+    const root = startScreen();
+    scrollGuard.blockUntil = Math.max(scrollGuard.blockUntil, Date.now() + ms);
+    if (root) {
+      root.classList.add('nsv-v24-scroll-block');
+      clearTimeout(scrollGuard.timer);
+      scrollGuard.timer = setTimeout(() => root.classList.remove('nsv-v24-scroll-block'), ms);
+    }
+  }
+  function blockIfHomeScrollGesture(ev){
+    const hit = homeInteractiveFromEvent(ev);
+    if (!hit) return;
+    if (Date.now() < scrollGuard.blockUntil || scrollGuard.moved) {
+      ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      scrollGuard.active = false; scrollGuard.moved = false;
+      markHomeScrollBlock(360);
+      return false;
+    }
+  }
+  function installScrollGuardV24(){
+    if (window.__nsvV24HardScrollGuard) return;
+    window.__nsvV24HardScrollGuard = true;
+    window.addEventListener('pointerdown', ev => {
+      scrollGuard.active = true;
+      scrollGuard.homeStart = inHome(ev.target);
+      scrollGuard.x = ev.clientX || 0;
+      scrollGuard.y = ev.clientY || 0;
+      scrollGuard.moved = false;
+    }, true);
+    window.addEventListener('pointermove', ev => {
+      if (!scrollGuard.active || !scrollGuard.homeStart) return;
+      const dx = Math.abs((ev.clientX || 0) - scrollGuard.x);
+      const dy = Math.abs((ev.clientY || 0) - scrollGuard.y);
+      if (dx > 4 || dy > 4) { scrollGuard.moved = true; markHomeScrollBlock(760); }
+    }, true);
+    window.addEventListener('pointercancel', () => { scrollGuard.active = false; scrollGuard.moved = false; }, true);
+    document.addEventListener('scroll', ev => { if (inHome(ev.target)) markHomeScrollBlock(760); }, true);
+    window.addEventListener('wheel', ev => { if (inHome(ev.target)) markHomeScrollBlock(420); }, true);
+    ['pointerup','click','touchend'].forEach(type => window.addEventListener(type, blockIfHomeScrollGesture, true));
+    // iOS Safari のタッチスクロール対策
+    window.addEventListener('touchstart', ev => {
+      const t = ev.touches && ev.touches[0];
+      scrollGuard.active = true; scrollGuard.homeStart = inHome(ev.target); scrollGuard.moved = false;
+      scrollGuard.x = t ? t.clientX : 0; scrollGuard.y = t ? t.clientY : 0;
+    }, { capture:true, passive:true });
+    window.addEventListener('touchmove', ev => {
+      if (!scrollGuard.homeStart) return;
+      const t = ev.touches && ev.touches[0]; if (!t) return;
+      const dx = Math.abs(t.clientX - scrollGuard.x), dy = Math.abs(t.clientY - scrollGuard.y);
+      if (dx > 3 || dy > 3) { scrollGuard.moved = true; markHomeScrollBlock(820); }
+    }, { capture:true, passive:true });
+  }
+
+  // BACKボタンをさらに強化。透明レイヤーに邪魔されても elementsFromPoint で拾う。
+  const BACK_ID_RE = /^(close|back|titleFromPauseBtn|restartBtn)/i;
+  function buttonFromEvent(ev){
+    let btn = ev.target && ev.target.closest ? ev.target.closest('button,[role="button"],a') : null;
+    if (btn) return btn;
+    try {
+      const x = ev.clientX || (ev.changedTouches && ev.changedTouches[0] && ev.changedTouches[0].clientX) || 0;
+      const y = ev.clientY || (ev.changedTouches && ev.changedTouches[0] && ev.changedTouches[0].clientY) || 0;
+      for (const el of document.elementsFromPoint(x,y)) {
+        if (el && el.closest) { btn = el.closest('button,[role="button"],a'); if (btn) return btn; }
+      }
+    } catch(e) {}
+    return null;
+  }
+  function isBack(btn){
+    if (!btn) return false;
+    const id = btn.id || '';
+    const txt = (btn.textContent || '').trim().toUpperCase();
+    return BACK_ID_RE.test(id) || txt === 'BACK' || txt.includes('BACK TO MENU') || txt.includes('TITLE MENU') || txt.includes('戻る');
+  }
+  function showHomeV24(){
+    try { if (typeof clearStuckWarnings === 'function') clearStuckWarnings(); } catch(e) {}
+    try { if (typeof showScreen === 'function') showScreen('startScreen'); } catch(e) {}
+    try { if (typeof syncJoystickVisibility === 'function') syncJoystickVisibility(); } catch(e) {}
+    try { document.querySelectorAll('#leaderboardScreen,#eventModeScreen,#shopScreen,#battlePassScreen,#missionsScreen,#collectionScreen,#weaponCodexScreen,#bossCodexScreen,#onlineRoleScreen,#upgradeScreen').forEach(el => el.classList.add('hidden')); } catch(e) {}
+    setTimeout(() => { try { updateHomeEventButtonV24(); } catch(e) {} }, 30);
+  }
+  function installBackGuardV24(){
+    if (window.__nsvV24BackGuard) return;
+    window.__nsvV24BackGuard = true;
+    ['pointerup','click','touchend'].forEach(type => window.addEventListener(type, ev => {
+      const btn = buttonFromEvent(ev);
+      if (!isBack(btn)) return;
+      ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+      showHomeV24();
+    }, true));
+  }
+
+  // ===== ランキング + フレンドコード =====
+  function getSaveSnapshot(){
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem('neon_survivor_save') || 'null'); } catch(e) {}
+    try { if (typeof userData !== 'undefined' && userData) data = Object.assign({}, data || {}, userData); } catch(e) {}
+    return data || {};
+  }
+  function getFriendRowsStore(){ try { return JSON.parse(localStorage.getItem(FRIEND_STORE_KEY) || '[]') || []; } catch(e) { return []; } }
+  function saveFriendRowsStore(rows){ try { localStorage.setItem(FRIEND_STORE_KEY, JSON.stringify((rows || []).slice(-80))); } catch(e) {} }
+  function selfRankRow(){
+    const d = getSaveSnapshot(); const st = d.stats || {};
+    return {
+      name: d.nickname || localStorage.getItem('neon_survivor_nickname') || 'YOU',
+      bestScore: num(d.score || st.bestScore || 0),
+      totalBoss: num(st.totalBossLikeKills || st.totalBoss || 0),
+      totalKills: num(st.totalKills || 0),
+      bestTime: num(st.bestTime || 0),
+      totalCoins: num(st.totalCoinsEarned || d.coins || 0),
+      bestLevel: num(st.bestLevel || 0),
+      date:'YOU'
+    };
+  }
+  function makeFriendPayload(){ const r = selfRankRow(); return Object.assign({ v:24, d:todayKey() }, r); }
+  function b64UrlEncode(obj){
+    const json = JSON.stringify(obj);
+    return btoa(unescape(encodeURIComponent(json))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function b64UrlDecode(s){
+    const body = String(s || '').replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(body + '='.repeat((4 - body.length % 4) % 4)))));
+  }
+  function friendCodeV24(){ return 'FR24.' + b64UrlEncode(makeFriendPayload()); }
+  function decodeFriendAny(code){
+    const raw = String(code || '').trim();
+    let m = raw.match(/FR24\.([A-Za-z0-9_-]+)/);
+    if (m) return b64UrlDecode(m[1]);
+    m = raw.match(/FR13\.([A-Za-z0-9_-]+)/);
+    if (m) return b64UrlDecode(m[1]);
+    m = raw.match(/\{[\s\S]+\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('bad friend code');
+  }
+  function copyTextV24(text, okMsg){
+    function fallback(){
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly','');
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+        document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
+      } catch(e) {}
+      try { if (typeof showMissionToast === 'function') showMissionToast('COPY', okMsg || 'コピーしました'); else alert((okMsg || 'コピーしました') + '\n' + text); } catch(e) {}
+    }
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          try { if (typeof showMissionToast === 'function') showMissionToast('COPY', okMsg || 'コピーしました'); else alert(okMsg || 'コピーしました'); } catch(e) {}
+        }).catch(fallback);
+      } else fallback();
+    } catch(e) { fallback(); }
+  }
+  function addFriendFromCodeV24(code){
+    const d = decodeFriendAny(code);
+    const name = String(d.name || d.n || 'FRIEND').slice(0,12) || 'FRIEND';
+    const row = {
+      name,
+      bestScore:num(d.bestScore || d.s || d.score || 0),
+      totalBoss:num(d.totalBoss || d.b || 0),
+      totalKills:num(d.totalKills || d.k || 0),
+      bestTime:num(d.bestTime || d.t || 0),
+      totalCoins:num(d.totalCoins || d.c || 0),
+      bestLevel:num(d.bestLevel || d.l || 0),
+      date:d.d || todayKey()
+    };
+    const rows = getFriendRowsStore().filter(r => r && r.name !== name);
+    rows.push(row); saveFriendRowsStore(rows);
+    try {
+      if (typeof userData !== 'undefined') {
+        userData.leaderboards = userData.leaderboards || {}; userData.leaderboards.friends = rows;
+        if (typeof saveData === 'function') saveData();
+      }
+    } catch(e) {}
+    renderRankingV24();
+    try { if (typeof showMissionToast === 'function') showMissionToast('FRIEND ADDED', `${name} を追加しました`); else alert(`${name} を追加しました`); } catch(e) {}
+  }
+  function rankRowsAll(){
+    let rows = [selfRankRow()].concat(getFriendRowsStore());
+    try { if (typeof userData !== 'undefined' && userData.leaderboards && Array.isArray(userData.leaderboards.friends)) rows = [selfRankRow()].concat(userData.leaderboards.friends, getFriendRowsStore()); } catch(e) {}
+    const seen = new Set();
+    return rows.filter(r => {
+      if (!r) return false; const key = String(r.name || '') + ':' + String(r.date || '');
+      if (seen.has(key)) return false; seen.add(key); return true;
+    });
+  }
+  function top3(rows, key){
+    const a = (Array.isArray(rows) ? rows : []).slice().sort((x,y)=>num(y[key])-num(x[key])).slice(0,3);
+    while (a.length < 3) a.push({ name:'記録なし', date:'友達追加・プレイで表示', __empty:true, bestScore:0,totalBoss:0,totalKills:0,bestTime:0,totalCoins:0,bestLevel:0 });
+    return a;
+  }
+  function rankCard(title, rows, key, suffix=''){
+    return `<div class="nsv-v24-rank-card"><h3 class="text-xl font-bold text-cyan-300">${esc(title)}</h3>${top3(rows,key).map((r,i)=>`<div class="nsv-v24-rank-row ${r.__empty?'nsv-v24-empty':''}"><b class="text-yellow-300">#${i+1}</b><div><b>${esc(r.name || 'PLAYER')}</b><div class="text-xs text-gray-400">${esc(r.date || '')}</div></div><div class="text-right font-bold">${Math.floor(num(r[key])).toLocaleString()}${suffix}</div></div>`).join('')}</div>`;
+  }
+  function ensureRankingScreenV24(){
+    let div = document.getElementById('leaderboardScreen');
+    if (!div) { div = document.createElement('div'); div.id='leaderboardScreen'; div.className='absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3'; document.body.appendChild(div); }
+    div.style.pointerEvents = 'auto';
+    return div;
+  }
+  function renderRankingV24(){
+    const div = ensureRankingScreenV24();
+    const code = friendCodeV24();
+    const rows = rankRowsAll();
+    div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div><h2 class="text-4xl md:text-5xl font-bold text-cyan-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #22d3ee;">RANKING</h2><p class="text-gray-300 text-sm mt-2">つながっている友達と、すべての部門で3位まで勝負できます。</p></div>
+        <button id="closeLeaderboardBtnV24" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+      </div>
+      <div class="nsv-v24-friend-box">
+        <div><div class="text-yellow-300 font-bold text-sm mb-1">自分のフレンドコード</div><button id="friendCodeValueV24" class="nsv-v24-code" title="押すとコピー">${esc(code)}</button><p class="text-xs text-gray-400 mt-1">コード部分かCOPYを押すとコピーできます。</p></div>
+        <div class="nsv-v24-mini-actions"><button id="copyFriendCodeBtnV24" class="btn-gold px-4 py-2 rounded font-bold">COPY</button><button id="readClipboardFriendBtnV24" class="btn-green px-4 py-2 rounded font-bold">クリップボード読込</button></div>
+        <div><div class="text-green-300 font-bold text-sm mb-1">友達のフレンドコードを貼り付け</div><textarea id="friendCodePasteInputV24" class="nsv-v24-code-input" placeholder="ここに友達のFR24/FR13コードを貼り付け"></textarea></div>
+        <div class="nsv-v24-mini-actions"><button id="addFriendCodeBtnV24" class="btn-green px-4 py-2 rounded font-bold">ADD FRIEND</button><button id="clearFriendCodeInputV24" class="btn-neon px-4 py-2 rounded font-bold">CLEAR</button></div>
+      </div>
+      <div id="leaderboardListContainer" class="overflow-y-auto max-h-[58vh] pr-1"><div class="nsv-v24-rank-grid">
+        ${rankCard('スコア部門', rows, 'bestScore')}
+        ${rankCard('ボス討伐部門', rows, 'totalBoss', '体')}
+        ${rankCard('討伐数部門', rows, 'totalKills', '体')}
+        ${rankCard('生存時間部門', rows, 'bestTime', '秒')}
+        ${rankCard('コイン部門', rows, 'totalCoins', '枚')}
+        ${rankCard('最高レベル部門', rows, 'bestLevel', 'Lv')}
+      </div></div>
+    </div>`;
+    const copy = () => copyTextV24(code, 'フレンドコードをコピーしました');
+    div.querySelector('#closeLeaderboardBtnV24')?.addEventListener('click', showHomeV24, { passive:false });
+    div.querySelector('#copyFriendCodeBtnV24')?.addEventListener('click', copy, { passive:false });
+    div.querySelector('#friendCodeValueV24')?.addEventListener('click', copy, { passive:false });
+    div.querySelector('#clearFriendCodeInputV24')?.addEventListener('click', () => { const i=div.querySelector('#friendCodePasteInputV24'); if (i) i.value=''; }, { passive:false });
+    div.querySelector('#addFriendCodeBtnV24')?.addEventListener('click', () => {
+      const i = div.querySelector('#friendCodePasteInputV24'); const v = i ? i.value : '';
+      try { addFriendFromCodeV24(v); } catch(e) { alert('フレンドコードが正しくありません。'); }
+    }, { passive:false });
+    div.querySelector('#readClipboardFriendBtnV24')?.addEventListener('click', async () => {
+      const i = div.querySelector('#friendCodePasteInputV24');
+      try { if (navigator.clipboard && i) i.value = await navigator.clipboard.readText(); else if (i) i.focus(); } catch(e) { if (i) i.focus(); }
+    }, { passive:false });
+  }
+  function openRankingV24(ev){
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation(); }
+    renderRankingV24();
+    try { if (typeof showScreen === 'function') showScreen('leaderboardScreen'); else document.getElementById('leaderboardScreen')?.classList.remove('hidden'); } catch(e) {}
+  }
+  function installRankingButtonV24(){
+    if (window.__nsvV24RankingButton) return; window.__nsvV24RankingButton = true;
+    ['pointerup','click'].forEach(type => window.addEventListener(type, ev => {
+      const btn = buttonFromEvent(ev); if (!btn) return;
+      if (btn.id === 'openLeaderboardBtn' || btn.id === 'openLeaderboardBtnV13' || (btn.textContent || '').toUpperCase().includes('RANKING')) openRankingV24(ev);
+    }, true));
+    try {
+      copyFriendCodeV13 = function(){ copyTextV24(friendCodeV24(), 'フレンドコードをコピーしました'); };
+      addFriendCodeV13 = function(){ openRankingV24(); const i=document.getElementById('friendCodePasteInputV24'); if (i) i.focus(); };
+      renderV13FriendLeaderboard = renderRankingV24;
+      renderLeaderboard20260504 = renderRankingV24;
+    } catch(e) {}
+  }
+
+  // ===== 日替わりイベント =====
+  const EVENT_POOL = [
+    { id:'neon_harvest', name:'ネオン収穫祭', icon:'💎', reward:'コイン +2,500 / ジェム回収ボーナス', desc:'ジェムを集めやすい初心者向けイベント。', bonus:'ジェム回収・経験値アップ' },
+    { id:'boss_practice', name:'ボス特訓デー', icon:'👹', reward:'コイン +3,500 / ボス報酬アップ', desc:'ボス戦の練習に向いた日替わりイベント。', bonus:'ボス撃破報酬アップ' },
+    { id:'coin_fever', name:'コインフィーバー', icon:'🪙', reward:'コイン +5,000 / 獲得コインアップ', desc:'コインを稼ぎやすいイベント。', bonus:'コイン獲得アップ' },
+    { id:'speed_trial', name:'スピードトライアル', icon:'⚡', reward:'コイン +3,000 / 移動速度アップ', desc:'逃げ性能が上がり、長く生き残りやすい。', bonus:'移動速度アップ' },
+    { id:'weapon_trial', name:'武器研究デー', icon:'🔬', reward:'コイン +3,200 / 武器成長アップ', desc:'いろいろな武器を試しやすいイベント。', bonus:'武器選択・成長サポート' },
+    { id:'survival_night', name:'サバイバルナイト', icon:'🌙', reward:'コイン +4,000 / 生存報酬アップ', desc:'長く生き残るほど得をするイベント。', bonus:'生存時間ボーナス' },
+    { id:'mission_sprint', name:'ミッションスプリント', icon:'🎯', reward:'コイン +3,800 / ミッション進捗アップ', desc:'ミッションを進めたい日におすすめ。', bonus:'ミッション進捗サポート' }
+  ];
+  function dailyEvent(offset=0){
+    const base = new Date(); base.setDate(base.getDate()+offset);
+    const key = `${base.getFullYear()}-${String(base.getMonth()+1).padStart(2,'0')}-${String(base.getDate()).padStart(2,'0')}`;
+    return Object.assign({ key }, EVENT_POOL[hashDate(key) % EVENT_POOL.length]);
+  }
+  function updateHomeEventButtonV24(){
+    const e = dailyEvent(0);
+    ['openDailyEventBtnV13','openEventModeBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = false; btn.style.pointerEvents = 'auto'; btn.style.touchAction = 'manipulation';
+      btn.classList.remove('locked');
+      btn.innerHTML = `<span class="nsv-v24-home-event"><span>TODAY EVENT</span><b>${esc(e.icon)} ${esc(e.name)}</b><small>残り ${esc(remainText())} / 報酬: ${esc(e.reward)}</small></span>`;
+    });
+  }
+  function ensureEventScreenV24(){
+    let div = document.getElementById('eventModeScreen');
+    if (!div) { div = document.createElement('div'); div.id='eventModeScreen'; div.className='absolute inset-0 bg-black/92 flex flex-col items-center justify-center backdrop-blur-md z-[56] hidden p-3'; document.body.appendChild(div); }
+    div.style.pointerEvents = 'auto';
+    return div;
+  }
+  function renderDailyEventScreenV24(){
+    const div = ensureEventScreenV24(); const e = dailyEvent(0);
+    const upcoming = [1,2,3].map(i => dailyEvent(i));
+    div.innerHTML = `<div class="menu-panel w-full flex flex-col gap-4">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div><h2 class="text-4xl md:text-5xl font-bold text-yellow-300" style="font-family:Orbitron,sans-serif;text-shadow:0 0 15px #facc15;">DAILY EVENT</h2><p class="text-gray-300 text-sm mt-2">毎日0時にイベントが切り替わります。今日のイベントはここから参加できます。</p></div>
+        <button id="closeEventModeBtnV24" class="btn-neon px-4 py-2 rounded font-bold">BACK</button>
+      </div>
+      <div class="nsv-v24-event-hero">
+        <div class="nsv-v24-event-chip">本日開催中 / 残り ${esc(remainText())}</div>
+        <h3 class="text-3xl md:text-4xl font-bold text-white mt-3">${esc(e.icon)} ${esc(e.name)}</h3>
+        <p class="text-gray-200 mt-2">${esc(e.desc)}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+          <div class="bg-black/35 border border-yellow-400/35 rounded-xl p-3"><b class="text-yellow-300">報酬</b><br><span class="text-white">${esc(e.reward)}</span></div>
+          <div class="bg-black/35 border border-cyan-400/35 rounded-xl p-3"><b class="text-cyan-300">イベント効果</b><br><span class="text-white">${esc(e.bonus)}</span></div>
+        </div>
+        <button id="joinDailyEventBtnV24" class="btn-gold w-full px-6 py-4 rounded font-bold text-xl mt-5">このイベントに参加</button>
+      </div>
+      <div><h3 class="text-lg font-bold text-cyan-300 mb-2">次に来るイベント</h3><div class="nsv-v24-event-grid">${upcoming.map((u,i)=>`<div class="nsv-v24-event-card"><div class="text-xs text-gray-400">${i+1}日後</div><div class="text-xl font-bold text-white mt-1">${esc(u.icon)} ${esc(u.name)}</div><p class="text-sm text-gray-300 mt-2">${esc(u.reward)}</p></div>`).join('')}</div></div>
+    </div>`;
+    div.querySelector('#closeEventModeBtnV24')?.addEventListener('click', showHomeV24, { passive:false });
+    div.querySelector('#joinDailyEventBtnV24')?.addEventListener('click', () => startDailyEventV24(e), { passive:false });
+  }
+  function startDailyEventV24(e){
+    window.__nsvV24ActiveDailyEvent = e.id;
+    try { localStorage.setItem(DAILY_EVENT_KEY, JSON.stringify({ id:e.id, key:e.key, at:Date.now() })); } catch(err) {}
+    try { if (typeof showMissionToast === 'function') showMissionToast('DAILY EVENT', `${e.name} に参加`); } catch(err) {}
+    try { if (typeof initGame === 'function') initGame('solo'); } catch(err) {}
+    setTimeout(applyDailyEventBonusV24, 80);
+  }
+  function applyDailyEventBonusV24(){
+    try {
+      if (!window.__nsvV24ActiveDailyEvent || !player || player.__nsvV24EventApplied) return;
+      player.__nsvV24EventApplied = true;
+      const id = window.__nsvV24ActiveDailyEvent;
+      if (id === 'neon_harvest') { player.magnetBonus = num(player.magnetBonus) + 360; player.expBoost = num(player.expBoost || 1) * 1.20; }
+      else if (id === 'coin_fever') { player.coinBonus = num(player.coinBonus || 1) * 1.35; player.magnetBonus = num(player.magnetBonus) + 120; }
+      else if (id === 'speed_trial') { player.speed = num(player.speed || 1) * 1.18; }
+      else if (id === 'weapon_trial') { player.damage = num(player.damage || 1) * 1.08; player.fireRate = num(player.fireRate || 1) * 0.92; }
+      else if (id === 'survival_night') { player.maxHp = Math.round(num(player.maxHp || 100) * 1.18); player.hp = player.maxHp; player.armorRate = Math.min(0.75, num(player.armorRate || 0) + 0.08); }
+      else if (id === 'mission_sprint') { player.expBoost = num(player.expBoost || 1) * 1.12; player.magnetBonus = num(player.magnetBonus) + 180; }
+      else if (id === 'boss_practice') { player.damage = num(player.damage || 1) * 1.12; player.maxHp = Math.round(num(player.maxHp || 100) * 1.10); player.hp = player.maxHp; }
+      try { if (typeof updateUI === 'function') updateUI(); } catch(e) {}
+    } catch(e) {}
+  }
+  function installDailyEventV24(){
+    if (!window.__nsvV24DailyEventInstalled) {
+      window.__nsvV24DailyEventInstalled = true;
+      ['pointerup','click'].forEach(type => window.addEventListener(type, ev => {
+        const btn = buttonFromEvent(ev); if (!btn) return;
+        const txt = (btn.textContent || '').toUpperCase();
+        if (btn.id === 'openDailyEventBtnV13' || btn.id === 'openEventModeBtn' || txt.includes('DAILY EVENT') || txt.includes('TODAY EVENT')) {
+          ev.preventDefault(); ev.stopPropagation(); if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+          renderDailyEventScreenV24();
+          try { if (typeof showScreen === 'function') showScreen('eventModeScreen'); else document.getElementById('eventModeScreen')?.classList.remove('hidden'); } catch(e) {}
+        }
+      }, true));
+      try {
+        const oldInit = initGame;
+        initGame = function(){ const r = oldInit.apply(this, arguments); setTimeout(applyDailyEventBonusV24, 60); return r; };
+      } catch(e) {}
+      setInterval(() => { updateHomeEventButtonV24(); applyDailyEventBonusV24(); }, 15000);
+    }
+    updateHomeEventButtonV24();
+  }
+
+  function bootV24(){
+    injectStyleV24(); patchLabelV24(); installScrollGuardV24(); installBackGuardV24(); installRankingButtonV24(); installDailyEventV24();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootV24, { once:true }); else bootV24();
+  window.addEventListener('pageshow', bootV24, { passive:true });
+  window.addEventListener('orientationchange', () => setTimeout(bootV24, 160), { passive:true });
+  [120, 700, 1600, 3200].forEach(t => setTimeout(bootV24, t));
+})();
+
 </script>
 
 
@@ -14292,14 +14754,14 @@
 
 <script>
 /* =========================================================
-   V23 STABLE: FINAL LABEL
+   V24 STABLE: FINAL LABEL
 ========================================================= */
 (function(){
   'use strict';
   function setV21(){
     ['nsvV20Badge','nsvV18Badge','nsvV17Badge','nsvV15Badge','nsvV14Badge','nsvV13Badge'].forEach(function(id){
       var el = document.getElementById(id);
-      if (el) el.textContent = 'V23 STABLE';
+      if (el) el.textContent = 'V24 STABLE';
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setV21, { once:true });
@@ -14308,12 +14770,12 @@
 })();
 
 /* =========================================================
-   V23 STABLE - HOME SCROLL MIS-TAP GUARD + TOP3 RANKING
+   V24 STABLE - HOME SCROLL MIS-TAP GUARD + TOP3 RANKING
    プレビューなし / ホーム誤タップ防止 / ランキング3位固定表示
 ========================================================= */
 (function(){
   'use strict';
-  const V23_LABEL = 'V23 STABLE';
+  const V23_LABEL = 'V24 STABLE';
 
   function nsvV23Escape(v){
     try {
