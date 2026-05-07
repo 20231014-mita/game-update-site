@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- V20 STABLE fixed-home-back-patch-complete -->
+<!-- V23 STABLE home-scroll-rank-top3-complete -->
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -11231,7 +11231,7 @@
 
 
     /* =========================================================
-       V22 STABLE: READABLE NEON PASS SCREEN
+       V23 STABLE: READABLE NEON PASS SCREEN
        - ネオンパス画面を進行状況・報酬・受け取り状態が見やすい形に整理
        - 元のゲーム内容は維持。表示とボタンの分かりやすさを改善
     ========================================================= */
@@ -12862,7 +12862,7 @@
 
 
     /* =========================================================
-       V22 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
+       V23 STABLE: RESULT / AUTO LIGHT LEVEL / BEGINNER MISSIONS
        - リザルト画面に武器使用・獲得コイン・達成ミッションをまとめて表示
        - 軽量モードを Lv1 / Lv2 / Lv3 の段階制で自動調整
        - 初心者ミッションを追加
@@ -12872,7 +12872,7 @@
         if (window.__nsvV22ResultLightBeginnerPatch) return;
         window.__nsvV22ResultLightBeginnerPatch = true;
 
-        const V22_LABEL = 'V22 STABLE';
+        const V22_LABEL = 'V23 STABLE';
         const V22_BEGINNER_MISSIONS = [
             { id:'b001', cat:'BEGINNER', title:'初出撃ガイド', desc:'ソロかオンラインを1回プレイする', metric:'totalRuns', target:1, reward:{coins:180} },
             { id:'b002', cat:'BEGINNER', title:'3分生存チャレンジ', desc:'1回のプレイで180秒生き残る', metric:'bestTime', target:180, reward:{coins:360} },
@@ -14292,20 +14292,315 @@
 
 <script>
 /* =========================================================
-   V22 STABLE: FINAL LABEL
+   V23 STABLE: FINAL LABEL
 ========================================================= */
 (function(){
   'use strict';
   function setV21(){
     ['nsvV20Badge','nsvV18Badge','nsvV17Badge','nsvV15Badge','nsvV14Badge','nsvV13Badge'].forEach(function(id){
       var el = document.getElementById(id);
-      if (el) el.textContent = 'V22 STABLE';
+      if (el) el.textContent = 'V23 STABLE';
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setV21, { once:true });
   else setV21();
   window.addEventListener('pageshow', setV21, { passive:true });
 })();
+
+/* =========================================================
+   V23 STABLE - HOME SCROLL MIS-TAP GUARD + TOP3 RANKING
+   プレビューなし / ホーム誤タップ防止 / ランキング3位固定表示
+========================================================= */
+(function(){
+  'use strict';
+  const V23_LABEL = 'V23 STABLE';
+
+  function nsvV23Escape(v){
+    try {
+      if (typeof escapeHtmlV13 === 'function') return escapeHtmlV13(v);
+      if (typeof nsvEscape20260504 === 'function') return nsvEscape20260504(v);
+    } catch(e) {}
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+    });
+  }
+
+  function nsvV23Num(v){ return Number.isFinite(Number(v)) ? Number(v) : 0; }
+
+  function nsvV23PatchLabel(){
+    try {
+      document.querySelectorAll('[id*="nsvV"], .nsv-version-badge, #nsvV20Badge, #nsvV18Badge, #nsvV17Badge, #nsvV15Badge, #nsvV14Badge, #nsvV13Badge').forEach(function(el){
+        if (el && /V\d+ STABLE/.test(el.textContent || '')) el.textContent = V23_LABEL;
+      });
+    } catch(e) {}
+  }
+
+  function nsvV23InjectStyle(){
+    if (document.getElementById('nsvV23Style')) return;
+    const style = document.createElement('style');
+    style.id = 'nsvV23Style';
+    style.textContent = `
+      #startScreen {
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+        scroll-behavior: auto !important;
+      }
+      #startScreen button,
+      #startScreen a,
+      #startScreen label,
+      #startScreen input {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #startScreen.nsv-home-is-scrolling button,
+      #startScreen.nsv-home-is-scrolling a,
+      #startScreen.nsv-home-is-scrolling label {
+        pointer-events: none !important;
+      }
+      #startScreen .menu-panel,
+      #startScreen .menu-grid,
+      #startScreen .nsv-clean-section,
+      #startScreen .nsv-v13-menu-extra {
+        scroll-behavior: auto !important;
+      }
+      .nsv-v23-rank-empty {
+        opacity: .64;
+        filter: grayscale(.15);
+      }
+      .nsv-v13-rank-row,
+      .nsv-rank-row {
+        min-height: 48px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function nsvV23InstallHomeScrollTapGuard(){
+    const root = document.getElementById('startScreen');
+    if (!root || root.__nsvV23ScrollTapGuard) return;
+    root.__nsvV23ScrollTapGuard = true;
+
+    let down = { x:0, y:0, t:0, moved:false, active:false };
+    let lastScrollAt = 0;
+    let scrollTimer = 0;
+    const MOVE_LIMIT = 12;
+    const BLOCK_AFTER_SCROLL_MS = 240;
+
+    function isHomeButtonTarget(target){
+      return !!(target && target.closest && target.closest('#startScreen button, #startScreen a, #startScreen label, #startScreen input'));
+    }
+
+    function markScrolling(){
+      lastScrollAt = Date.now();
+      root.classList.add('nsv-home-is-scrolling');
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function(){
+        root.classList.remove('nsv-home-is-scrolling');
+      }, BLOCK_AFTER_SCROLL_MS);
+    }
+
+    function shouldBlockTap(){
+      return down.moved || (Date.now() - lastScrollAt < BLOCK_AFTER_SCROLL_MS);
+    }
+
+    root.addEventListener('pointerdown', function(e){
+      down = { x:e.clientX || 0, y:e.clientY || 0, t:Date.now(), moved:false, active:true };
+    }, { capture:true, passive:true });
+
+    root.addEventListener('pointermove', function(e){
+      if (!down.active) return;
+      const dx = Math.abs((e.clientX || 0) - down.x);
+      const dy = Math.abs((e.clientY || 0) - down.y);
+      if (dx > MOVE_LIMIT || dy > MOVE_LIMIT) {
+        down.moved = true;
+        markScrolling();
+      }
+    }, { capture:true, passive:true });
+
+    root.addEventListener('pointercancel', function(){
+      down.active = false;
+      down.moved = false;
+    }, { capture:true, passive:true });
+
+    root.addEventListener('scroll', markScrolling, { passive:true });
+
+    ['pointerup','click','touchend'].forEach(function(type){
+      document.addEventListener(type, function(e){
+        const target = e.target;
+        if (!isHomeButtonTarget(target)) return;
+        if (shouldBlockTap()) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+          down.active = false;
+          setTimeout(function(){ down.moved = false; }, BLOCK_AFTER_SCROLL_MS);
+          return false;
+        }
+      }, { capture:true, passive:false });
+    });
+
+    // ホイールやトラックパッドスクロールでも、直後の誤クリックを防ぐ
+    root.addEventListener('wheel', markScrolling, { passive:true });
+  }
+
+  function nsvV23RowsTop3(rows, key){
+    const clean = (Array.isArray(rows) ? rows : []).filter(function(r){ return r && typeof r === 'object'; });
+    const sorted = clean.slice().sort(function(a,b){ return nsvV23Num(b[key]) - nsvV23Num(a[key]); }).slice(0,3);
+    while (sorted.length < 3) {
+      sorted.push({
+        name: '記録なし',
+        date: '友達を追加・プレイで表示',
+        __empty:true,
+        bestScore:0,
+        score:0,
+        totalBoss:0,
+        totalKills:0,
+        bestTime:0,
+        totalCoins:0,
+        bestLevel:0,
+        count:0
+      });
+    }
+    return sorted;
+  }
+
+  function nsvV23RankRowHtml(r, i, key, suffix){
+    const value = Math.floor(nsvV23Num(r[key]));
+    const cls = r.__empty ? ' nsv-v23-rank-empty' : '';
+    return `<div class="nsv-v13-rank-row nsv-rank-row${cls}">
+      <b class="text-yellow-300">#${i+1}</b>
+      <div>
+        <b>${nsvV23Escape(r.name || 'PLAYER')}</b>
+        <div class="text-xs text-gray-400">${nsvV23Escape(r.date || r.week || '')}</div>
+      </div>
+      <div class="text-right font-bold">${value.toLocaleString()}${suffix || ''}</div>
+    </div>`;
+  }
+
+  function nsvV23RankCard(title, rows, key, suffix){
+    const top3 = nsvV23RowsTop3(rows, key);
+    return `<div class="nsv-v13-rank-card nsv-rank-card">
+      <h3 class="text-xl font-bold text-cyan-300">${nsvV23Escape(title)}</h3>
+      <div class="mt-2">${top3.map(function(r,i){ return nsvV23RankRowHtml(r,i,key,suffix || ''); }).join('')}</div>
+    </div>`;
+  }
+
+  function nsvV23BuildFriendRows(){
+    try { if (typeof ensureLeaderboardV13 === 'function') ensureLeaderboardV13(); } catch(e) {}
+    try { if (typeof ensureUserV13 === 'function') ensureUserV13(); } catch(e) {}
+    const st = (window.userData && userData.stats) || (typeof userData !== 'undefined' && userData.stats) || {};
+    const nickname = (typeof userData !== 'undefined' && userData && (userData.nickname || (typeof getNickname === 'function' && getNickname()))) || 'YOU';
+    const self = {
+      name: nickname || 'YOU',
+      bestScore: nsvV23Num((typeof userData !== 'undefined' && userData && userData.score) || 0),
+      score: nsvV23Num((typeof score !== 'undefined' && score) || (typeof userData !== 'undefined' && userData && userData.score) || 0),
+      totalBoss: nsvV23Num(st.totalBossLikeKills || st.totalBoss || 0),
+      totalKills: nsvV23Num(st.totalKills || 0),
+      bestTime: nsvV23Num(st.bestTime || 0),
+      totalCoins: nsvV23Num(st.totalCoinsEarned || (typeof userData !== 'undefined' && userData && userData.coins) || 0),
+      bestLevel: nsvV23Num(st.bestLevel || 0),
+      date: 'YOU'
+    };
+    const friends = (typeof userData !== 'undefined' && userData && userData.leaderboards && Array.isArray(userData.leaderboards.friends)) ? userData.leaderboards.friends : [];
+    return [self].concat(friends).map(function(r){
+      return Object.assign({
+        bestScore:0, score:0, totalBoss:0, totalKills:0, bestTime:0, totalCoins:0, bestLevel:0
+      }, r || {});
+    });
+  }
+
+  function nsvV23PatchRankingFunctions(){
+    try {
+      if (typeof rankCardV13 === 'function') {
+        rankCardV13 = function(title, rows, key, suffix=''){
+          return nsvV23RankCard(title, rows, key, suffix);
+        };
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof renderRankSection20260504 === 'function') {
+        renderRankSection20260504 = function(title, rows, valueKey, suffix=''){
+          return nsvV23RankCard(title, rows, valueKey, suffix);
+        };
+      }
+    } catch(e) {}
+
+    try {
+      renderV13FriendLeaderboard = function(){
+        try { if (typeof ensureLeaderboardV13 === 'function') ensureLeaderboardV13(); } catch(e) {}
+        const box = document.getElementById('leaderboardListContainer');
+        if (!box) return;
+        const rows = nsvV23BuildFriendRows();
+        box.innerHTML = `<div class="nsv-v13-rank-grid">
+          ${nsvV23RankCard('スコア部門', rows, 'bestScore')}
+          ${nsvV23RankCard('ボス討伐部門', rows, 'totalBoss', '体')}
+          ${nsvV23RankCard('討伐数部門', rows, 'totalKills', '体')}
+          ${nsvV23RankCard('生存時間部門', rows, 'bestTime', '秒')}
+          ${nsvV23RankCard('コイン部門', rows, 'totalCoins', '枚')}
+          ${nsvV23RankCard('最高レベル部門', rows, 'bestLevel', 'Lv')}
+        </div>`;
+      };
+    } catch(e) {}
+
+    try {
+      renderLeaderboard20260504 = function(){
+        try { if (typeof ensureLeaderboardScreen20260504 === 'function') ensureLeaderboardScreen20260504(); } catch(e) {}
+        const box = document.getElementById('leaderboardListContainer');
+        if (!box) return;
+        const rows = nsvV23BuildFriendRows();
+        let weaponRows = [];
+        try {
+          weaponRows = Object.entries(((userData.stats || {}).weaponUseCounts) || {})
+            .map(function(pair){ return { name:pair[0], count:nsvV23Num(pair[1]), date:'使用回数' }; })
+            .sort(function(a,b){ return b.count - a.count; });
+        } catch(e) {}
+        box.innerHTML = `<div class="nsv-v13-rank-grid">
+          ${nsvV23RankCard('スコア部門', rows, 'bestScore')}
+          ${nsvV23RankCard('ボス討伐部門', rows, 'totalBoss', '体')}
+          ${nsvV23RankCard('討伐数部門', rows, 'totalKills', '体')}
+          ${nsvV23RankCard('生存時間部門', rows, 'bestTime', '秒')}
+          ${nsvV23RankCard('コイン部門', rows, 'totalCoins', '枚')}
+          ${nsvV23RankCard('最高レベル部門', rows, 'bestLevel', 'Lv')}
+          ${nsvV23RankCard('使用武器部門', weaponRows, 'count', '回')}
+        </div>`;
+      };
+    } catch(e) {}
+  }
+
+  function nsvV23WireRankingButtons(){
+    ['openLeaderboardBtn','openLeaderboardBtnV13'].forEach(function(id){
+      const btn = document.getElementById(id);
+      if (!btn || btn.__nsvV23RankWired) return;
+      btn.__nsvV23RankWired = true;
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        try { if (typeof ensureLeaderboardV13 === 'function') ensureLeaderboardV13(); } catch(err) {}
+        try { nsvV23PatchRankingFunctions(); } catch(err) {}
+        try { renderV13FriendLeaderboard(); } catch(err) {
+          try { renderLeaderboard20260504(); } catch(err2) {}
+        }
+        try { showScreen('leaderboardScreen'); } catch(err) {}
+      }, { passive:false });
+    });
+  }
+
+  function nsvV23Init(){
+    nsvV23InjectStyle();
+    nsvV23PatchLabel();
+    nsvV23InstallHomeScrollTapGuard();
+    nsvV23PatchRankingFunctions();
+    nsvV23WireRankingButtons();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', nsvV23Init, { once:true });
+  else nsvV23Init();
+  window.addEventListener('pageshow', nsvV23Init, { passive:true });
+  window.addEventListener('orientationchange', function(){ setTimeout(nsvV23Init, 160); }, { passive:true });
+})();
+
 </script>
 
 </body>
